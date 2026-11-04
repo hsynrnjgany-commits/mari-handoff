@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA)"
+        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا)"
         default: "breakout"
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
@@ -65,6 +65,10 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          if [ "${{ inputs.kind }}" = "macro" ]; then
+            python -m mari_bot macro --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "classics" ]; then
             python -m mari_bot classics --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0

@@ -36,7 +36,7 @@ def run_weights(daily: dict, syms: list, start_ms: int, end_ms: int, weight_fn, 
     closes = {s: [maps[s][t]["c"] for t in days] for s in syms}
     highs = {s: [maps[s][t]["h"] for t in days] for s in syms}
     lows = {s: [maps[s][t]["l"] for t in days] for s in syms}
-    ctx = {"c": closes, "h": highs, "l": lows, "state": {}}
+    ctx = {"c": closes, "h": highs, "l": lows, "state": {}, "days": days}
     eq, units, cash = 1.0, {s: 0.0 for s in syms}, 1.0
     curve, weekly, last_w, pending, trades, cash_days = [], [], None, None, 0, 0
     for n, k in enumerate(idx):

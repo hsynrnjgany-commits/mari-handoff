@@ -556,6 +556,37 @@ class TestDailyAndHealth(unittest.TestCase):
                 self.assertEqual(len(sent), 2)           # پیام بهبود
 
 
+class TestMacro(unittest.TestCase):
+    def test_parse_and_lag(self):
+        from mari_bot.macro import Series, net_liquidity, parse_fred_csv
+        rows = parse_fred_csv("observation_date,DGS10\n2020-01-01,1.5\n2020-01-02,.\n2020-01-03,1.7\n")
+        self.assertEqual(len(rows), 2)
+        s = Series(rows, lag_days=1)
+        D_ = 86_400_000
+        self.assertIsNone(s.at(rows[0][0]))                  # تأخیر: همان روز هنوز منتشر نشده
+        self.assertEqual(s.at(rows[0][0] + D_), 1.5)
+        self.assertEqual(s.at(rows[1][0] + D_), 1.7)
+        liq = net_liquidity([(0, 8_000_000.0)], [(0, 500_000.0)], [(0, 1000.0)])
+        self.assertEqual(liq[0][1], 8_000_000 - 500_000 - 1_000_000)
+
+    def test_run_macro_shapes(self):
+        from mari_bot.macro import run_macro
+        D_ = 86_400_000
+        bars = synth(700, 0.002, 0.02, seed=1)
+        t0 = 1_600_000_000_000 // D_ * D_
+        for i, b in enumerate(bars):
+            b["t"] = t0 + i * D_
+        rows = [(t0 + i * D_, 100 + (i % 50)) for i in range(700)]
+        res = run_macro({"BTCUSDT": bars}, {"DGS10": rows, "DTWEXBGS": rows, "NETLIQ": rows[::7]},
+                        bars[260]["t"], bars[-1]["t"])
+        for k in ("H-MARI-X-011", "H-MARI-X-012", "H-MARI-X-013", "H-MARI-X-014"):
+            self.assertIn(res[k]["verdict"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+
+    def test_fred_only_allowed_path(self):
+        with self.assertRaises(D.DataError):
+            D.http_get_text("/other", base=D.FRED)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

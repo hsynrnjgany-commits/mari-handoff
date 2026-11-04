@@ -118,6 +118,13 @@ def cmd_classics(a):
                       if k != "D-010" else v for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_macro(a):
+    from .research import run_macro_research
+    r = run_macro_research(start=a.start, out_dir=a.out)
+    print(json.dumps({k: {kk: v.get(kk) for kk in ("verdict", "total_return_pct", "max_drawdown_pct", "sharpe")}
+                      for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -161,6 +168,10 @@ def main(argv=None):
     cl.add_argument("--start", default="2018-06-01")
     cl.add_argument("--out", default="research_out")
     cl.set_defaults(fn=cmd_classics)
+    ma = sub.add_parser("macro", help="فیلترهای اقتصاد کلان آمریکا (FRED) روی BTC")
+    ma.add_argument("--start", default="2018-06-01")
+    ma.add_argument("--out", default="research_out")
+    ma.set_defaults(fn=cmd_macro)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

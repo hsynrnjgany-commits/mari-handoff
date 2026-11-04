@@ -375,3 +375,41 @@ def run_classics_research(start: str = "2018-06-01", out_dir: str = "research_ou
     with open(os.path.join(out_dir, "classics_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_macro_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """فیلترهای اقتصاد کلان آمریکا (X-011..X-014) روی BTC روزانه."""
+    from .macro import LAGS, MACRO_HYPOTHESES, fetch_fred, net_liquidity, run_macro
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    bars = fetch_history("BTCUSDT", start_ms - 260 * DAY_MS, end, interval="1d")
+    daily = {"BTCUSDT": quality_check(bars, interval_ms=DAY_MS)["clean"]}
+    raw = {sid: fetch_fred(sid) for sid in ("DGS10", "DTWEXBGS", "WALCL", "WTREGEN", "RRPONTSYD")}
+    macro = {"DGS10": raw["DGS10"], "DTWEXBGS": raw["DTWEXBGS"],
+             "NETLIQ": net_liquidity(raw["WALCL"], raw["WTREGEN"], raw["RRPONTSYD"])}
+    res = run_macro(daily, macro, start_ms, end)
+    report = {"registered_before_results": True, "hypotheses": MACRO_HYPOTHESES, "publication_lags_days": LAGS,
+              "source": "https://fred.stlouisfed.org/graph/fredgraph.csv (official, public)",
+              "fred_last_obs": {k: datetime.fromtimestamp(v[-1][0] / 1000, timezone.utc).strftime("%Y-%m-%d")
+                                for k, v in raw.items()},
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["تاریخچهٔ FRED ممکن است بازنگری‌شده باشد (نه دقیقاً عدد منتشرشدهٔ همان روز).",
+                               "MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۴ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "macro_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# فیلترهای اقتصاد کلان آمریکا برای بیت‌کوین", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']} — منبع: FRED (رسمی)",
+          f"- تأخیر انتشار اعمال‌شده (روز): {LAGS}", "",
+          "| روش | حکم | بازده کل ٪ | سالانه ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+          "|---|---|---|---|---|---|---|---|"]
+    for k in ["BTC_BUY_HOLD", "T-006_REFERENCE"] + list(MACRO_HYPOTHESES):
+        x = res[k]
+        md.append(f"| {k} | {x.get('verdict', '—')} | {x['total_return_pct']} | {x['cagr_pct']} | "
+                  f"{x['max_drawdown_pct']} | {x['sharpe']} | {x['trades']} | {x['time_in_cash_pct']} |")
+    md += ["", "## سوگیری‌های شناخته‌شده", ""] + [f"- {b}" for b in report["known_biases"]]
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "macro_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
