@@ -409,6 +409,25 @@ class TestMomentum(unittest.TestCase):
         held = run_momentum(d, a, b, MomParams())["symbols_ever_held"]
         self.assertGreater(held, r0["symbols_ever_held"])   # TINY فقط بدون فیلتر حجم نگه داشته می‌شود
 
+    def test_vol_target_reduces_exposure(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        d = {"BTCUSDT": self._daily(400, 0.004, 1), "AAAUSDT": self._daily(400, 0.006, 2)}
+        a, b = d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"]
+        full = run_momentum(d, a, b, MomParams(max_hold=2))
+        vt = run_momentum(d, a, b, MomParams(max_hold=2, vol_target=0.05))
+        self.assertLess(vt["strategy"]["max_drawdown_pct"], full["strategy"]["max_drawdown_pct"] + 1e-9)
+        self.assertLess(abs(vt["strategy"]["total_return_pct"]), abs(full["strategy"]["total_return_pct"]))
+
+    def test_btc_only_daily_trend(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        d = {"BTCUSDT": self._daily(400, 0.004, 1), "AAAUSDT": self._daily(400, 0.006, 2)}
+        a, b = d["BTCUSDT"][160]["t"], d["BTCUSDT"][-1]["t"]
+        r = run_momentum(d, a, b, MomParams(only_symbols=("BTCUSDT",), max_hold=1, sma=150,
+                                            require_momentum=False, rebalance_weekday=-1, min_age_days=0))
+        self.assertEqual(r["symbols_ever_held"], 1)
+        self.assertGreater(r["rebalances"], 200)        # تصمیم روزانه
+        self.assertGreater(r["strategy"]["total_return_pct"], 0)
+
     def test_monday_rebalance(self):
         from mari_bot.momentum import run_momentum
         from datetime import datetime, timezone

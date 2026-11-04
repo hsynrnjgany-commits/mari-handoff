@@ -49,6 +49,10 @@ class MomParams:
     pit_top: int = 0                 # >۰: جهان «هم‌زمان» — هر دوشنبه فقط N نماد پرحجم همان زمان (ضد سوگیری بقا)
     pit_window: int = 30             # روزهای حجم برای رتبه‌بندی هم‌زمان
     delist_haircut: float = 0.0      # کسر ارزش موقعیتی که دادهٔ نمادش قطع شده (حذف از صرافی)
+    vol_target: float = 0.0          # >۰: نوسان سالانهٔ هدف سبد (M-005: ۰٫۴۰)؛ مواجهه = min(1, هدف/نوسان)
+    vol_window: int = 30
+    only_symbols: tuple = ()         # T-006: ("BTCUSDT",)
+    require_momentum: bool = True    # T-006: فقط شرط میانگین متحرک
 
 
 def _sma(xs, i, n):
@@ -115,8 +119,8 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
                 last_px[s] = v
         equity = cash + sum(u * last_px.get(s, 0.0) for s, u in units.items())
         weekday = ((t // DAY_MS) + 3) % 7          # 1970-01-01 پنجشنبه بود → دوشنبه = 0
-        if weekday == p.rebalance_weekday:
-            if last_week_eq:
+        if p.rebalance_weekday < 0 or weekday == p.rebalance_weekday:
+            if last_week_eq and (p.rebalance_weekday >= 0 or weekday == 0):
                 weekly.append(equity / last_week_eq - 1)
             # موقعیت‌هایی که نمادشان دیگر داده ندارد (حذف‌شده): با کسر ارزش خارج می‌شوند
             for s in list(units):
@@ -142,12 +146,14 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
             for s, m in idx.items():
                 if eligible is not None and s not in eligible:
                     continue
+                if p.only_symbols and s not in p.only_symbols:
+                    continue
                 i = m.get(t)
                 if i is None or i < max(p.lookback, p.sma) or t - first[s] < p.min_age_days * DAY_MS:
                     continue
                 c = closes[s]
                 r = c[i] / c[i - p.lookback] - 1
-                if r > 0 and c[i] > _sma(c, i, p.sma):
+                if (r > 0 or not p.require_momentum) and c[i] > _sma(c, i, p.sma):
                     cands.append((r, s))
             cands.sort(reverse=True)
             chosen = [s for _, s in cands[: p.max_hold]]
@@ -157,7 +163,24 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
                 regime_ok = bi is not None and not (bc[bi] <= _sma(bc, bi, p.btc_sma_filter))
                 if not regime_ok or _sma(bc, bi, p.btc_sma_filter) != _sma(bc, bi, p.btc_sma_filter):
                     chosen = []                       # BTC زیر میانگین (یا دادهٔ ناکافی): کاملاً نقد
-            target = {s: equity / p.max_hold for s in chosen}   # وزن ثابت ۱/۱۰؛ جای خالی = نقد
+            scale_v = 1.0
+            if p.vol_target and chosen:
+                rets = []
+                for k in range(1, p.vol_window + 1):
+                    day_r = []
+                    for s in chosen:
+                        i = idx[s].get(t)
+                        if i is not None and i - k >= 0:
+                            day_r.append(closes[s][i - k + 1] / closes[s][i - k] - 1)
+                    if day_r:
+                        rets.append(sum(day_r) / len(day_r))
+                if len(rets) > 5:
+                    mu_r = sum(rets) / len(rets)
+                    vol = math.sqrt(sum((x - mu_r) ** 2 for x in rets) / (len(rets) - 1)) * math.sqrt(365)
+                    port_vol = vol * len(chosen) / p.max_hold
+                    if port_vol > 0:
+                        scale_v = min(1.0, p.vol_target / port_vol)
+            target = {s: equity / p.max_hold * scale_v for s in chosen}   # وزن ۱/حداکثر؛ جای خالی = نقد
             # اجرا روی بستهٔ همان روز (کمی خوش‌بینانه؛ در گزارش ثبت می‌شود). هزینه روی حجم جابه‌جایی.
             cur_val = {s: u * last_px.get(s, 0.0) for s, u in units.items()}
             turnover = sum(abs(target.get(s, 0.0) - cur_val.get(s, 0.0)) for s in set(target) | set(cur_val))
@@ -174,7 +197,8 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
             turnover_sum += turnover / max(equity, 1e-12)
             rebalances += 1
             picks_log.append({"t": t, "held": chosen})
-            last_week_eq = equity
+            if p.rebalance_weekday >= 0 or weekday == 0:
+                last_week_eq = equity
         curve.append(equity)
         curve_t.append(t)
 
@@ -220,4 +244,18 @@ HYPOTHESIS_M003_PIT = {
                  "شامل نمادهایی که بعداً حذف شدند.",
     "falsified_if": "همان قاعدهٔ M-003",
     "origin": "اصلاح روش‌شناختی (سوگیری بقا) — فرضیهٔ تازه نیست؛ پارامترها همان M-003",
+}
+
+HYPOTHESIS_M005 = {
+    "id": "H-MARI-M-005-PIT",
+    "statement": "همان M-003-PIT، به‌علاوهٔ هدف‌گیری نوسان: مواجههٔ سبد طوری کوچک می‌شود که نوسان سالانهٔ "
+                 "تخمینی (۳۰ روز) از ۴۰٪ بیشتر نشود.",
+    "falsified_if": "همان قاعدهٔ M-003",
+    "origin": "ادبیات volatility targeting؛ ثبت‌شده پیش از دیدن نتیجهٔ M-003-PIT",
+}
+HYPOTHESIS_T006 = {
+    "id": "H-MARI-T-006",
+    "statement": "فقط بیت‌کوین: هر روز اگر بسته بالای میانگین ۱۵۰روزه است نگه‌دار، وگرنه کاملاً نقد.",
+    "falsified_if": "همان قاعدهٔ M-003 (بازده کل > ۰، کران پایین CI95 هفتگی > ۰، افت کمتر از نگه‌داری BTC)",
+    "origin": "ادبیات دنبال‌کردن روند ساده؛ بدون سوگیری بقا؛ ثبت‌شده پیش از دیدن نتیجه",
 }

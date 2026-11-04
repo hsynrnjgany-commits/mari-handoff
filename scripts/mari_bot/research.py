@@ -234,17 +234,23 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
                           start_ms: int | None = None, end_ms: int | None = None,
                           variants: tuple = ("H-MARI-M-003", "H-MARI-M-004")) -> dict:
     """فرضیه‌های مومنتوم روزانه روی یک دادهٔ مشترک."""
-    from .momentum import HYPOTHESIS_M003, HYPOTHESIS_M003_PIT, HYPOTHESIS_M004, MomParams, run_momentum
+    from .momentum import (HYPOTHESIS_M003, HYPOTHESIS_M003_PIT, HYPOTHESIS_M004, HYPOTHESIS_M005,
+                           HYPOTHESIS_T006, MomParams, run_momentum)
     hyp = {"H-MARI-M-003": (HYPOTHESIS_M003, MomParams()),
            "H-MARI-M-004": (HYPOTHESIS_M004, MomParams(btc_sma_filter=200)),
            "H-MARI-M-003-PIT": (HYPOTHESIS_M003_PIT, MomParams(pit_top=30)),
            "H-MARI-M-003-PIT-H50": (HYPOTHESIS_M003_PIT, MomParams(pit_top=30, delist_haircut=0.5)),
-           "H-MARI-M-004-PIT": (HYPOTHESIS_M004, MomParams(pit_top=30, btc_sma_filter=200))}
+           "H-MARI-M-004-PIT": (HYPOTHESIS_M004, MomParams(pit_top=30, btc_sma_filter=200)),
+           "H-MARI-M-005-PIT": (HYPOTHESIS_M005, MomParams(pit_top=30, vol_target=0.40)),
+           "H-MARI-T-006": (HYPOTHESIS_T006, MomParams(only_symbols=("BTCUSDT",), max_hold=1, sma=150,
+                                                       require_momentum=False, rebalance_weekday=-1,
+                                                       min_age_days=0))}
     end = (end_ms or int(time.time() * 1000)) // DAY_MS * DAY_MS
     start = (start_ms // DAY_MS * DAY_MS) if start_ms else end - years * 365 * DAY_MS
     warm = 260 * DAY_MS
     pit = any("PIT" in v for v in variants)
-    syms = pick_universe_all() if pit else pick_universe(top)
+    btc_only = all(v == "H-MARI-T-006" for v in variants)
+    syms = ["BTCUSDT"] if btc_only else (pick_universe_all() if pit else pick_universe(top))
     daily, failed, lineage = {}, [], {}
     for s in syms:
         try:
