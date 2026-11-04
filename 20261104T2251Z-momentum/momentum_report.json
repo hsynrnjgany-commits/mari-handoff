@@ -1,0 +1,488 @@
+{
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-04T22:51:40+00:00",
+ "period": {
+  "from": "2018-06-01T00:00:00+00:00",
+  "to": "2026-11-04T00:00:00+00:00"
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines interval=1d (public, read-only)",
+ "universe": {
+  "requested_top": 30,
+  "used": 1,
+  "active_in_period": 1,
+  "failed": []
+ },
+ "known_biases": [
+  "SELECTION: فقط BTC — بزرگ‌ترین ارز در ۲۰۱۸ هم بود (انتخاب پیشاپیش ممکن)، اما بقای BTC تا امروز خودش یک واقعیت پس‌نگر است.",
+  "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+  "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+  "MULTIPLE_TESTS: تا این اجرا ۴ فرضیه آزموده شده."
+ ],
+ "results": {
+  "H-MARI-T-006": {
+   "hypothesis": {
+    "id": "H-MARI-T-006",
+    "statement": "فقط بیت‌کوین: هر روز اگر بسته بالای میانگین ۱۵۰روزه است نگه‌دار، وگرنه کاملاً نقد.",
+    "falsified_if": "همان قاعدهٔ M-003 (بازده کل > ۰، کران پایین CI95 هفتگی > ۰، افت کمتر از نگه‌داری BTC)",
+    "origin": "ادبیات دنبال‌کردن روند ساده؛ بدون سوگیری بقا؛ ثبت‌شده پیش از دیدن نتیجه"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 150,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 0
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.021,
+   "strategy": {
+    "total_return_pct": 2260.46,
+    "cagr_pct": 45.5,
+    "max_drawdown_pct": 45.05,
+    "sharpe": 1.09,
+    "weekly_bootstrap": {
+     "mean_pct": 0.908,
+     "ci95_low": 0.341,
+     "ci95_high": 1.524
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.4,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": -8.21,
+    "2019": 106.37,
+    "2020": 186.65,
+    "2021": 33.9,
+    "2022": -7.24,
+    "2023": 91.34,
+    "2024": 85.13,
+    "2025": -11.14,
+    "2026": 3.82
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "T006-SMA100": {
+   "hypothesis": {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 100,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 0
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.034,
+   "strategy": {
+    "total_return_pct": 2386.28,
+    "cagr_pct": 46.4,
+    "max_drawdown_pct": 38.89,
+    "sharpe": 1.1,
+    "weekly_bootstrap": {
+     "mean_pct": 0.929,
+     "ci95_low": 0.345,
+     "ci95_high": 1.557
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 45.9,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": -9.02,
+    "2019": 133.11,
+    "2020": 166.27,
+    "2021": 74.3,
+    "2022": -21.11,
+    "2023": 81.44,
+    "2024": 56.48,
+    "2025": 2.72,
+    "2026": 2.52
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "T006-SMA200": {
+   "hypothesis": {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 200,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 0
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.02,
+   "strategy": {
+    "total_return_pct": 978.83,
+    "cagr_pct": 32.6,
+    "max_drawdown_pct": 64.43,
+    "sharpe": 0.87,
+    "weekly_bootstrap": {
+     "mean_pct": 0.735,
+     "ci95_low": 0.154,
+     "ci95_high": 1.351
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.0,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": 0.0,
+    "2019": 56.86,
+    "2020": 173.25,
+    "2021": -22.79,
+    "2022": 0.0,
+    "2023": 93.75,
+    "2024": 73.03,
+    "2025": -18.61,
+    "2026": 11.54
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "T006-LAG1": {
+   "hypothesis": {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 150,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 1
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.021,
+   "strategy": {
+    "total_return_pct": 2023.75,
+    "cagr_pct": 43.69,
+    "max_drawdown_pct": 45.05,
+    "sharpe": 1.06,
+    "weekly_bootstrap": {
+     "mean_pct": 0.883,
+     "ci95_low": 0.312,
+     "ci95_high": 1.496
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.4,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": -7.26,
+    "2019": 104.65,
+    "2020": 192.08,
+    "2021": 37.68,
+    "2022": -13.36,
+    "2023": 81.19,
+    "2024": 89.06,
+    "2025": -10.42,
+    "2026": -2.27
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "T006-FEE2X": {
+   "hypothesis": {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 150,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.002,
+    "slippage": 0.001,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 0
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.021,
+   "strategy": {
+    "total_return_pct": 2040.71,
+    "cagr_pct": 43.82,
+    "max_drawdown_pct": 45.7,
+    "sharpe": 1.06,
+    "weekly_bootstrap": {
+     "mean_pct": 0.89,
+     "ci95_low": 0.322,
+     "ci95_high": 1.505
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.4,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": -8.49,
+    "2019": 105.75,
+    "2020": 183.65,
+    "2021": 31.7,
+    "2022": -8.07,
+    "2023": 88.77,
+    "2024": 82.91,
+    "2025": -12.86,
+    "2026": 2.73
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "T006-LAG1-FEE2X-SMA200": {
+   "hypothesis": {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 200,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.002,
+    "slippage": 0.001,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false,
+    "signal_lag": 1
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.02,
+   "strategy": {
+    "total_return_pct": 840.39,
+    "cagr_pct": 30.45,
+    "max_drawdown_pct": 56.31,
+    "sharpe": 0.83,
+    "weekly_bootstrap": {
+     "mean_pct": 0.697,
+     "ci95_low": 0.127,
+     "ci95_high": 1.304
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.0,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": 0.0,
+    "2019": 51.43,
+    "2020": 174.19,
+    "2021": -1.22,
+    "2022": 0.0,
+    "2023": 73.3,
+    "2024": 46.68,
+    "2025": -20.36,
+    "2026": 5.75
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 3338,
+   "sha": "c4bedacfe2c49605",
+   "first": 1505347200000,
+   "issues": []
+  }
+ }
+}
