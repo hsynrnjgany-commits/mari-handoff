@@ -13,6 +13,9 @@ on:
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
         default: "5"
+      variants:
+        description: "فقط momentum: نسخه‌ها، جداشده با کاما (خالی = M-003,M-004)"
+        default: ""
       start_date:
         description: "فقط momentum: شروع دوره YYYY-MM-DD (خالی = اکنون منهای years)"
         default: ""
@@ -64,7 +67,8 @@ jobs:
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
           if [ "${{ inputs.kind }}" = "momentum" ]; then
             python -m mari_bot momentum --years "${{ inputs.years }}" --top "${{ inputs.top }}" \
-              --start "${{ inputs.start_date }}" --end "${{ inputs.end_date }}" --out "$RUN_DIR"
+              --start "${{ inputs.start_date }}" --end "${{ inputs.end_date }}" \
+              --variants "${{ inputs.variants }}" --out "$RUN_DIR"
             exit 0
           fi
           python -m mari_bot research --months "${{ inputs.months }}" --top "${{ inputs.top }}" \

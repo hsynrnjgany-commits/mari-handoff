@@ -46,6 +46,9 @@ class MomParams:
     fee_side: float = 0.001
     slippage: float = 0.0005
     btc_sma_filter: int = 0          # ۰ = خاموش (M-003). M-004: ۲۰۰
+    pit_top: int = 0                 # >۰: جهان «هم‌زمان» — هر دوشنبه فقط N نماد پرحجم همان زمان (ضد سوگیری بقا)
+    pit_window: int = 30             # روزهای حجم برای رتبه‌بندی هم‌زمان
+    delist_haircut: float = 0.0      # کسر ارزش موقعیتی که دادهٔ نمادش قطع شده (حذف از صرافی)
 
 
 def _sma(xs, i, n):
@@ -90,6 +93,9 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
     p = p or MomParams()
     idx = {s: {b["t"]: i for i, b in enumerate(bars)} for s, bars in daily.items()}
     closes = {s: [b["c"] for b in bars] for s, bars in daily.items()}
+    qvs = {s: [b.get("qv") or 0.0 for b in bars] for s, bars in daily.items()}
+    last_t = {s: bars[-1]["t"] for s, bars in daily.items() if bars}
+    stale_exits, stale_value = 0, 0.0
     first = {s: bars[0]["t"] for s, bars in daily.items() if bars}
     days = sorted({t for m in idx.values() for t in m if start_ms <= t <= end_ms})
     cost = p.fee_side + p.slippage
@@ -112,8 +118,30 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
         if weekday == p.rebalance_weekday:
             if last_week_eq:
                 weekly.append(equity / last_week_eq - 1)
+            # موقعیت‌هایی که نمادشان دیگر داده ندارد (حذف‌شده): با کسر ارزش خارج می‌شوند
+            for s in list(units):
+                if idx[s].get(t) is None and last_t[s] < t:
+                    val = units[s] * last_px.get(s, 0.0)
+                    loss = val * p.delist_haircut
+                    stale_exits += 1
+                    stale_value += val / max(equity, 1e-12)
+                    cash += val - loss
+                    equity -= loss
+                    del units[s]
+            eligible = None
+            if p.pit_top:
+                ranked = []
+                for s, m in idx.items():
+                    i = m.get(t)
+                    if i is None or i < p.pit_window:
+                        continue
+                    ranked.append((sum(qvs[s][i - p.pit_window + 1: i + 1]), s))
+                ranked.sort(reverse=True)
+                eligible = {s for _, s in ranked[: p.pit_top]}
             cands = []
             for s, m in idx.items():
+                if eligible is not None and s not in eligible:
+                    continue
                 i = m.get(t)
                 if i is None or i < max(p.lookback, p.sma) or t - first[s] < p.min_age_days * DAY_MS:
                     continue
@@ -167,6 +195,8 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
         "time_in_cash_pct": round(100 * sum(1 for x in picks_log if not x["held"]) / max(1, len(picks_log)), 1),
         "curve": list(zip(curve_t, [round(v, 5) for v in curve])),
         "last_picks": picks_log[-1] if picks_log else None,
+        "delisted_exits": stale_exits, "delisted_exit_value_frac_sum": round(stale_value, 3),
+        "symbols_ever_held": len({x for pk in picks_log for x in pk["held"]}),
     }
     # بازده سالانه
     from datetime import datetime, timezone
@@ -182,3 +212,12 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
                  or (b and s.get("max_drawdown_pct", 100) >= b.get("max_drawdown_pct", 0)))
     res["verdict"] = "FALSIFIED" if falsified else "SUPPORTED_IN_TEST_RANGE"
     return res
+
+
+HYPOTHESIS_M003_PIT = {
+    "id": "H-MARI-M-003-PIT",
+    "statement": "بازآزمایی همان M-003 با جهان هم‌زمان: هر دوشنبه فقط ۳۰ نماد پرحجم ۳۰ روز گذشتهٔ همان زمان، "
+                 "شامل نمادهایی که بعداً حذف شدند.",
+    "falsified_if": "همان قاعدهٔ M-003",
+    "origin": "اصلاح روش‌شناختی (سوگیری بقا) — فرضیهٔ تازه نیست؛ پارامترها همان M-003",
+}

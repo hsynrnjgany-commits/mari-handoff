@@ -70,6 +70,15 @@ def pick_universe(top: int) -> list[str]:
     return ["BTCUSDT"] + [s for s in syms if s != "BTCUSDT"]
 
 
+def pick_universe_all() -> list[str]:
+    """همهٔ جفت‌های USDT که تاکنون فهرست شده‌اند، شامل حذف‌شده‌ها (status=BREAK)."""
+    d = http_get_json("/api/v3/exchangeInfo", base=BINANCE_VISION, timeout=60)
+    out = {s["symbol"] for s in d.get("symbols", [])
+           if s.get("quoteAsset") == "USDT" and str(s.get("status", "")).upper() in ("TRADING", "BREAK")
+           and tradable_symbol(s["symbol"])}
+    return ["BTCUSDT"] + sorted(out - {"BTCUSDT"})
+
+
 def _run(series, quality, cfg, start_ts, end_ts, run_id):
     led = Ledger(None, run_id, cfg.sha())
     bot = MariBot(cfg, led)
@@ -225,17 +234,23 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
                           start_ms: int | None = None, end_ms: int | None = None,
                           variants: tuple = ("H-MARI-M-003", "H-MARI-M-004")) -> dict:
     """فرضیه‌های مومنتوم روزانه روی یک دادهٔ مشترک."""
-    from .momentum import HYPOTHESIS_M003, HYPOTHESIS_M004, MomParams, run_momentum
+    from .momentum import HYPOTHESIS_M003, HYPOTHESIS_M003_PIT, HYPOTHESIS_M004, MomParams, run_momentum
     hyp = {"H-MARI-M-003": (HYPOTHESIS_M003, MomParams()),
-           "H-MARI-M-004": (HYPOTHESIS_M004, MomParams(btc_sma_filter=200))}
+           "H-MARI-M-004": (HYPOTHESIS_M004, MomParams(btc_sma_filter=200)),
+           "H-MARI-M-003-PIT": (HYPOTHESIS_M003_PIT, MomParams(pit_top=30)),
+           "H-MARI-M-003-PIT-H50": (HYPOTHESIS_M003_PIT, MomParams(pit_top=30, delist_haircut=0.5)),
+           "H-MARI-M-004-PIT": (HYPOTHESIS_M004, MomParams(pit_top=30, btc_sma_filter=200))}
     end = (end_ms or int(time.time() * 1000)) // DAY_MS * DAY_MS
     start = (start_ms // DAY_MS * DAY_MS) if start_ms else end - years * 365 * DAY_MS
     warm = 260 * DAY_MS
-    syms = pick_universe(top)
+    pit = any("PIT" in v for v in variants)
+    syms = pick_universe_all() if pit else pick_universe(top)
     daily, failed, lineage = {}, [], {}
     for s in syms:
         try:
             bars = fetch_history(s, start - warm, end, interval="1d")
+            if not bars:
+                continue
         except DataError as e:
             failed.append(f"{s}:{e}")
             continue
@@ -267,6 +282,10 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
         ],
         "results": results, "lineage": lineage,
     }
+    if pit:
+        report["known_biases"][0] = ("SURVIVORSHIP (کاهش‌یافته): جهان هم‌زمان از همهٔ جفت‌های فهرست‌شده/حذف‌شدهٔ "
+                                     "بایننس؛ نمادهایی که پیش از ثبت در exchangeInfo پاک شده‌اند هنوز غایب‌اند.")
+        report["universe"]["listed_or_delisted_considered"] = len(syms)
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "momentum_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
@@ -284,7 +303,8 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
                          ("max_drawdown_pct", "بیشترین افت ٪"), ("sharpe", "شارپ")):
             md.append(f"| {label} | {st.get(k)} | {bt.get(k)} |")
         md += ["", f"- بوت‌استرپ میانگین بازده هفتگی: {st.get('weekly_bootstrap')}",
-               f"- میانگین تعداد ارز: {r['avg_names_held']} — زمان کامل نقد: {r['time_in_cash_pct']}٪",
+               f"- میانگین تعداد ارز: {r['avg_names_held']} — زمان کامل نقد: {r['time_in_cash_pct']}٪ — "
+               f"نمادهای نگه‌داشته‌شده: {r['symbols_ever_held']} — خروج از نماد حذف‌شده: {r['delisted_exits']}",
                "", "| سال | بازده ٪ |", "|---|---|"]
         md += [f"| {y} | {v} |" for y, v in r["by_year_pct"].items()]
         md.append("")

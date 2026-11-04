@@ -380,6 +380,29 @@ class TestMomentum(unittest.TestCase):
         off = run_momentum(d, a, b, MomParams())
         self.assertGreater(on["time_in_cash_pct"], off["time_in_cash_pct"])
 
+    def test_pit_universe_and_delisting(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        big = self._daily(400, 0.004, 1)
+        for b in big:
+            b["qv"] = 1e9
+        dead = self._daily(250, 0.01, 2)                 # صعود، سپس حذف از صرافی
+        for b in dead:
+            b["qv"] = 1e9
+        tiny = self._daily(400, 0.02, 3)                 # بهترین بازده ولی حجم ناچیز
+        for b in tiny:
+            b["qv"] = 1.0
+        big2 = self._daily(400, 0.003, 4)
+        for b in big2:
+            b["qv"] = 1e9
+        d = {"BTCUSDT": big, "BIGUSDT": big2, "DEADUSDT": dead, "TINYUSDT": tiny}
+        a, b = big[100]["t"], big[-1]["t"]
+        r0 = run_momentum(d, a, b, MomParams(pit_top=2))
+        r5 = run_momentum(d, a, b, MomParams(pit_top=2, delist_haircut=0.5))
+        self.assertGreaterEqual(r0["delisted_exits"], 1)
+        self.assertGreater(r0["strategy"]["total_return_pct"], r5["strategy"]["total_return_pct"])
+        held = run_momentum(d, a, b, MomParams())["symbols_ever_held"]
+        self.assertGreater(held, r0["symbols_ever_held"])   # TINY فقط بدون فیلتر حجم نگه داشته می‌شود
+
     def test_monday_rebalance(self):
         from mari_bot.momentum import run_momentum
         from datetime import datetime, timezone

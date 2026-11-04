@@ -104,7 +104,9 @@ def cmd_momentum(a):
 
     def ms(d):
         return int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000) if d else None
-    r = run_momentum_research(years=a.years, top=a.top, out_dir=a.out, start_ms=ms(a.start), end_ms=ms(a.end))
+    variants = tuple(v.strip() for v in a.variants.split(",") if v.strip()) or ("H-MARI-M-003", "H-MARI-M-004")
+    r = run_momentum_research(years=a.years, top=a.top, out_dir=a.out, start_ms=ms(a.start), end_ms=ms(a.end),
+                              variants=variants)
     print(json.dumps({k: {"verdict": v["verdict"], "strategy": v["strategy"], "by_year_pct": v["by_year_pct"]}
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
@@ -144,6 +146,7 @@ def main(argv=None):
     mo.add_argument("--years", type=int, default=5)
     mo.add_argument("--top", type=int, default=30)
     mo.add_argument("--out", default="research_out")
+    mo.add_argument("--variants", default="", help="مثلاً H-MARI-M-003-PIT,H-MARI-M-004-PIT")
     mo.add_argument("--start", default="", help="شروع YYYY-MM-DD (خالی = اکنون منهای years)")
     mo.add_argument("--end", default="", help="پایان YYYY-MM-DD (خالی = اکنون)")
     mo.set_defaults(fn=cmd_momentum)
