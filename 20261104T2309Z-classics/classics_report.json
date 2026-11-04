@@ -1,0 +1,109 @@
+{
+ "registered_before_results": true,
+ "falsified_if": "شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC یا کران پایین CI95 هفتگی ≤ ۰",
+ "hypotheses": {
+  "H-MARI-C-007": "Turtle: شکست سقف ۵۵روزه → خرید BTC؛ شکست کف ۲۰روزه → نقد.",
+  "H-MARI-C-008": "Dual Momentum: ماهانه، قوی‌ترِ BTC/ETH در ۹۰ روز اگر بازده مثبت؛ وگرنه نقد.",
+  "H-MARI-C-009": "RSI(2) Connors: BTC بالای SMA200 و RSI2<10 → خرید؛ بسته > SMA5 → فروش."
+ },
+ "code": "MARI-BOT-1.0.0",
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-04"
+ },
+ "execution": "تصمیم روی بستهٔ روز t، اجرا روی بستهٔ روز t+1؛ کارمزد ۰٫۱٪ + لغزش ۰٫۰۵٪",
+ "known_biases": [
+  "SELECTION: BTC و ETH بزرگ‌ترین ارزهای ۲۰۱۸ هم بودند، اما بقایشان پس‌نگر است.",
+  "MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۰ می‌رسد."
+ ],
+ "results": {
+  "BTC_BUY_HOLD": {
+   "total_return_pct": 912.27,
+   "cagr_pct": 31.6,
+   "max_drawdown_pct": 76.63,
+   "sharpe": 0.76,
+   "weekly_bootstrap": {
+    "mean_pct": 0.885,
+    "ci95_low": 0.142,
+    "ci95_high": 1.691
+   },
+   "trades": 1,
+   "time_in_cash_pct": 0.0
+  },
+  "H-MARI-C-007": {
+   "statement": "Turtle: شکست سقف ۵۵روزه → خرید BTC؛ شکست کف ۲۰روزه → نقد.",
+   "verdict": "SUPPORTED_IN_TEST_RANGE",
+   "total_return_pct": 816.48,
+   "cagr_pct": 30.06,
+   "max_drawdown_pct": 42.05,
+   "sharpe": 0.87,
+   "weekly_bootstrap": {
+    "mean_pct": 0.652,
+    "ci95_low": 0.152,
+    "ci95_high": 1.185
+   },
+   "trades": 44,
+   "time_in_cash_pct": 58.3
+  },
+  "H-MARI-C-008": {
+   "statement": "Dual Momentum: ماهانه، قوی‌ترِ BTC/ETH در ۹۰ روز اگر بازده مثبت؛ وگرنه نقد.",
+   "verdict": "FALSIFIED",
+   "total_return_pct": 853.48,
+   "cagr_pct": 30.67,
+   "max_drawdown_pct": 69.71,
+   "sharpe": 0.76,
+   "weekly_bootstrap": {
+    "mean_pct": 0.825,
+    "ci95_low": 0.113,
+    "ci95_high": 1.568
+   },
+   "trades": 39,
+   "time_in_cash_pct": 40.0
+  },
+  "H-MARI-C-009": {
+   "statement": "RSI(2) Connors: BTC بالای SMA200 و RSI2<10 → خرید؛ بسته > SMA5 → فروش.",
+   "verdict": "FALSIFIED",
+   "total_return_pct": -8.98,
+   "cagr_pct": -1.11,
+   "max_drawdown_pct": 50.26,
+   "sharpe": 0.04,
+   "weekly_bootstrap": {
+    "mean_pct": 0.012,
+    "ci95_low": -0.223,
+    "ci95_high": 0.239
+   },
+   "trades": 141,
+   "time_in_cash_pct": 91.1
+  },
+  "D-010": {
+   "dca_plain": {
+    "weeks": 440,
+    "weekly_usd": 10.0,
+    "invested": 4400.0,
+    "final_value": 20026.48,
+    "multiple": 4.551,
+    "max_drawdown_of_value_pct": 74.37
+   },
+   "dca_trend150": {
+    "weeks": 440,
+    "weekly_usd": 10.0,
+    "invested": 4400.0,
+    "final_value": 28125.67,
+    "multiple": 6.392,
+    "max_drawdown_of_value_pct": 42.77
+   }
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 3338,
+   "sha": "c4bedacfe2c49605",
+   "issues": []
+  },
+  "ETHUSDT": {
+   "bars": 3338,
+   "sha": "2f37d9c6953804be",
+   "issues": []
+  }
+ }
+}
