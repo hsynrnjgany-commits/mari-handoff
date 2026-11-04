@@ -1,0 +1,250 @@
+{
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-04T22:05:48+00:00",
+ "period": {
+  "from": "2018-06-01T00:00:00+00:00",
+  "to": "2021-11-05T00:00:00+00:00"
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines interval=1d (public, read-only)",
+ "universe": {
+  "requested_top": 30,
+  "used": 15,
+  "active_in_period": 15,
+  "failed": []
+ },
+ "known_biases": [
+  "SURVIVORSHIP (قوی): نمادها با حجم امروز انتخاب شدند؛ ارزهای مرده غایب‌اند — به نفع نتیجه.",
+  "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+  "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+  "MULTIPLE_TESTS: تا این اجرا ۴ فرضیه آزموده شده."
+ ],
+ "results": {
+  "H-MARI-M-003": {
+   "hypothesis": {
+    "id": "H-MARI-M-003",
+    "statement": "نگه‌داری هفتگی حداکثر ۱۰ ارز با بازده ۲۸روزهٔ مثبت و قیمت بالای میانگین ۵۰روزه (وزن برابر، بقیه نقد) پس از هزینه‌ها سود می‌دهد و افتی کمتر از نگه‌داری BTC دارد.",
+    "falsified_if": "بازده کل ≤ ۰ یا کران پایین CI95 میانگین بازده هفتگی ≤ ۰ یا بیشترین افت ≥ افت BTC",
+    "origin": "ادبیات مومنتوم سری‌زمانی؛ مستقل از نتایج H-001/H-002"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 50,
+    "max_hold": 10,
+    "min_age_days": 60,
+    "rebalance_weekday": 0,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0
+   },
+   "days": 1253,
+   "rebalances": 179,
+   "avg_weekly_turnover": 0.21,
+   "strategy": {
+    "total_return_pct": 9335.46,
+    "cagr_pct": 276.45,
+    "max_drawdown_pct": 42.34,
+    "sharpe": 2.45,
+    "weekly_bootstrap": {
+     "mean_pct": 3.008,
+     "ci95_low": 1.629,
+     "ci95_high": 4.485
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 716.31,
+    "cagr_pct": 84.43,
+    "max_drawdown_pct": 63.34,
+    "sharpe": 1.21,
+    "weekly_bootstrap": {
+     "mean_pct": 1.705,
+     "ci95_low": 0.233,
+     "ci95_high": 3.151
+    }
+   },
+   "avg_names_held": 4.57,
+   "time_in_cash_pct": 20.7,
+   "last_picks": {
+    "t": 1635724800000,
+    "held": [
+     "ZECUSDT",
+     "NEARUSDT",
+     "BNBUSDT",
+     "ETHUSDT",
+     "BTCUSDT",
+     "SOLUSDT",
+     "LINKUSDT",
+     "DOGEUSDT",
+     "AAVEUSDT",
+     "TRXUSDT"
+    ]
+   },
+   "by_year_pct": {
+    "2018": -13.51,
+    "2019": 52.39,
+    "2020": 168.85,
+    "2021": 2493.87
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  },
+  "H-MARI-M-004": {
+   "hypothesis": {
+    "id": "H-MARI-M-004",
+    "statement": "همان M-003، به‌علاوهٔ فیلتر رژیم: اگر در روز بازتوزیع، بستهٔ BTC زیر میانگین ۲۰۰روزه باشد، کل سبد نقد می‌شود.",
+    "falsified_if": "همان قاعدهٔ M-003: بازده کل ≤ ۰ یا کران پایین CI95 میانگین بازده هفتگی ≤ ۰ یا بیشترین افت ≥ افت BTC",
+    "origin": "ادبیات فیلتر روند ۲۰۰روزه + مشاهدهٔ افت بزرگ M-003؛ فقط روی دورهٔ دیده‌نشدهٔ پیش از 2021-11-05 معتبر است"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 50,
+    "max_hold": 10,
+    "min_age_days": 60,
+    "rebalance_weekday": 0,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 200
+   },
+   "days": 1253,
+   "rebalances": 179,
+   "avg_weekly_turnover": 0.184,
+   "strategy": {
+    "total_return_pct": 5602.41,
+    "cagr_pct": 225.05,
+    "max_drawdown_pct": 42.34,
+    "sharpe": 2.29,
+    "weekly_bootstrap": {
+     "mean_pct": 2.695,
+     "ci95_low": 1.393,
+     "ci95_high": 4.14
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 716.31,
+    "cagr_pct": 84.43,
+    "max_drawdown_pct": 63.34,
+    "sharpe": 1.21,
+    "weekly_bootstrap": {
+     "mean_pct": 1.705,
+     "ci95_low": 0.233,
+     "ci95_high": 3.151
+    }
+   },
+   "avg_names_held": 3.58,
+   "time_in_cash_pct": 49.7,
+   "last_picks": {
+    "t": 1635724800000,
+    "held": [
+     "ZECUSDT",
+     "NEARUSDT",
+     "BNBUSDT",
+     "ETHUSDT",
+     "BTCUSDT",
+     "SOLUSDT",
+     "LINKUSDT",
+     "DOGEUSDT",
+     "AAVEUSDT",
+     "TRXUSDT"
+    ]
+   },
+   "by_year_pct": {
+    "2018": 0.0,
+    "2019": 27.11,
+    "2020": 95.84,
+    "2021": 2147.41
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 1513,
+   "sha": "0c2afd4bf9776a7f",
+   "first": 1505347200000,
+   "issues": []
+  },
+  "ETHUSDT": {
+   "bars": 1513,
+   "sha": "11bf93745de5ba1f",
+   "first": 1505347200000,
+   "issues": []
+  },
+  "SOLUSDT": {
+   "bars": 451,
+   "sha": "adf58e5ed9bd414d",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "ZECUSDT": {
+   "bars": 960,
+   "sha": "b55e8da2efd14348",
+   "first": 1553126400000,
+   "issues": []
+  },
+  "XRPUSDT": {
+   "bars": 1281,
+   "sha": "df455259b515b809",
+   "first": 1525392000000,
+   "issues": []
+  },
+  "NEARUSDT": {
+   "bars": 387,
+   "sha": "1746f65f01202e4e",
+   "first": 1602633600000,
+   "issues": []
+  },
+  "BNBUSDT": {
+   "bars": 1460,
+   "sha": "0b502e5d29a723a9",
+   "first": 1509926400000,
+   "issues": []
+  },
+  "UNIUSDT": {
+   "bars": 414,
+   "sha": "9d15a8e52f8f6ebc",
+   "first": 1600300800000,
+   "issues": []
+  },
+  "DOGEUSDT": {
+   "bars": 854,
+   "sha": "ca5417ed16591dd6",
+   "first": 1562284800000,
+   "issues": []
+  },
+  "TRXUSDT": {
+   "bars": 1243,
+   "sha": "d9c1dcbf8d3c1744",
+   "first": 1528675200000,
+   "issues": []
+  },
+  "LINKUSDT": {
+   "bars": 1024,
+   "sha": "936b9d3f3f1eda82",
+   "first": 1547596800000,
+   "issues": []
+  },
+  "AAVEUSDT": {
+   "bars": 386,
+   "sha": "ca684b2ca91e58ad",
+   "first": 1602720000000,
+   "issues": []
+  },
+  "ADAUSDT": {
+   "bars": 1298,
+   "sha": "cda1b10c6843e190",
+   "first": 1523923200000,
+   "issues": []
+  },
+  "AVAXUSDT": {
+   "bars": 409,
+   "sha": "b426fb895b9ba9fe",
+   "first": 1600732800000,
+   "issues": []
+  },
+  "QNTUSDT": {
+   "bars": 99,
+   "sha": "06dd6e7baac2e2c1",
+   "first": 1627516800000,
+   "issues": []
+  }
+ }
+}
