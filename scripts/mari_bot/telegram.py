@@ -99,6 +99,42 @@ def fmt_btc_event(ev: dict, summ: dict | None = None) -> str:
     return _end(lines)
 
 
+CHANNEL_DISCLAIMER = ("این کانال آموزشی است، نه توصیهٔ مالی. هیچ سودی تضمین نمی‌شود و ممکن است ضرر کنید. "
+                      "فقط با پولی کار کنید که از دست دادنش زندگی‌تان را تغییر نمی‌دهد. "
+                      "ما هرگز پول کسی را مدیریت نمی‌کنیم و هیچ سیگنال پولی نمی‌فروشیم.")
+
+
+def fmt_channel_event(ev: dict, summ: dict | None, ledger_url: str) -> str:
+    if ev["to"] == "BTC":
+        head = "🟢 <b>روند بیت‌کوین: وضعیت «نگه‌داری»</b>"
+        why = "قیمت بستهٔ روزانه بالای میانگین ۱۵۰روزه است."
+    else:
+        head = "⚪ <b>روند بیت‌کوین: وضعیت «نقد»</b>"
+        why = "قیمت بستهٔ روزانه زیر میانگین ۱۵۰روزه آمد."
+    lines = [head, f"قیمت: {fa(ev['close'], 0)} دلار — میانگین ۱۵۰روزه: {fa(ev['sma'], 0)}", f"قانون: {why}"]
+    if summ and summ.get("return_pct") is not None:
+        lines.append(f"نتیجهٔ تمرینی از شروع پیگیری: {fa(summ['return_pct'], sign=True)}٪ "
+                     f"(نگه‌داری سادهٔ BTC: {fa(summ['btc_hold_return_pct'], sign=True)}٪)")
+    lines += ["", f"🔍 دفتر ثبت قابل‌بررسی (همهٔ تصمیم‌ها، حتی ضررها): {ledger_url}",
+              "", f"ℹ️ {CHANNEL_DISCLAIMER}"]
+    return _end(lines)
+
+
+def fmt_channel_weekly(b: dict, ledger_url: str) -> str:
+    pos = "نگه‌داری بیت‌کوین" if b["position"] == "BTC" else "نقد"
+    lines = ["📅 <b>گزارش شفاف هفتگی — روند بیت‌کوین</b>",
+             f"وضعیت فعلی: {pos}",
+             f"قیمت: {fa(b['close'], 0)} — میانگین ۱۵۰روزه: {fa(b['sma150'], 0)}",
+             f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ — "
+             f"نگه‌داری سادهٔ BTC در همین مدت: {fa(b['btc_hold_return_pct'], sign=True)}٪",
+             f"تعداد تغییر وضعیت تا امروز: {fa(b['switches'])}",
+             "",
+             "این روش در آزمون ۸ساله (۲۰۱۸ تا ۲۰۲۶) ریزش‌های کوچک‌تری از نگه‌داری BTC داشت؛ "
+             "حالا روی دادهٔ زنده در حال سنجش است. نتیجه هر چه باشد، همین‌جا منتشر می‌شود.",
+             "", f"🔍 دفتر ثبت: {ledger_url}", "", f"ℹ️ {CHANNEL_DISCLAIMER}"]
+    return _end(lines)
+
+
 def fmt_trades(bot) -> str:
     lines = ["📒 <b>موقعیت‌های باز</b>"]
     if not bot.positions:
@@ -179,6 +215,8 @@ class Telegram:
         self.token = (os.environ.get("MARI_TELEGRAM_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
         owner = (os.environ.get("MARI_TELEGRAM_CHAT_ID") or "").strip()
         self.owner = int(owner) if owner.lstrip("-").isdigit() else None
+        # کانال عمومی (اختیاری): مثل @mari_honest یا -100xxxxxxxxxx. فقط روش قبول‌شده آنجا منتشر می‌شود.
+        self.channel = (os.environ.get("MARI_TELEGRAM_CHANNEL_ID") or "").strip() or None
         self.path = store_path
         self.store = {"subscribers": [], "offset": 0, "last_daily": "", "hello_sent": False}
         self.diag = {"enabled": False, "token_ok": None, "sent_ok": 0, "sent_fail": 0, "fail_codes": [],
@@ -239,6 +277,48 @@ class Telegram:
                 print(text + "\n")
             return 0
         return sum(self.send(c, text) for c in list(self.store["subscribers"]))
+
+    def post_channel(self, text: str) -> bool:
+        if not self.enabled or not self.channel:
+            return False
+        ok = self.send(self.channel, text)
+        self.diag["channel_posts"] = self.diag.get("channel_posts", 0) + int(ok)
+        return ok
+
+    def maybe_channel_intro(self, btc_summary: dict | None, ledger_url: str) -> bool:
+        """اولین بار که کانال تنظیم شد: معرفی کانال + وضعیت فعلی."""
+        if not self.enabled or not self.channel or self.store.get("channel_intro") or not btc_summary:
+            return False
+        pos = "نگه‌داری بیت‌کوین" if btc_summary.get("position") == "BTC" else "نقد"
+        text = _end([
+            "👋 <b>به کانال صادق ماری خوش آمدید</b>",
+            "اینجا فقط یک قانون ساده و آزموده‌شده دنبال می‌شود:",
+            "بیت‌کوین بالای میانگین ۱۵۰روزه → نگه‌داری؛ زیر آن → نقد.",
+            "",
+            "این قانون در آزمون ۸ساله ریزش‌های کوچک‌تری از نگه‌داری سادهٔ بیت‌کوین داشت. ۶ ایدهٔ دیگر ما رد شدند "
+            "و منتشر نمی‌شوند. هر تغییر وضعیت و یک گزارش هفتگی اینجا می‌آید، با برد و باخت.",
+            "",
+            f"وضعیت فعلی: {pos} — قیمت {fa(btc_summary.get('close'), 0)} — میانگین ۱۵۰روزه "
+            f"{fa(btc_summary.get('sma150'), 0)}",
+            "", f"🔍 دفتر ثبت: {ledger_url}", "", f"ℹ️ {CHANNEL_DISCLAIMER}"])
+        if self.post_channel(text):
+            self.store["channel_intro"] = True
+            self.save()
+            return True
+        return False
+
+    def maybe_weekly_channel(self, btc_summary: dict | None, ledger_url: str) -> bool:
+        """هر دوشنبه بعد از ساعت ۱۰ تهران: گزارش شفاف هفتگی در کانال."""
+        if not self.enabled or not self.channel or not btc_summary or not btc_summary.get("position"):
+            return False
+        now = datetime.now(TEHRAN)
+        week = now.strftime("%G-W%V")
+        if now.weekday() == 0 and now.hour >= 10 and self.store.get("last_weekly") != week:
+            if self.post_channel(fmt_channel_weekly(btc_summary, ledger_url)):
+                self.store["last_weekly"] = week
+                self.save()
+                return True
+        return False
 
     def handle_updates(self, bot, wait: int = 0) -> int:
         if not self.enabled:

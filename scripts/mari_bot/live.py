@@ -16,7 +16,9 @@ from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quo
 from .engine import MariBot
 from .ledger import Ledger
 from .btc_trend import DAY_MS, BtcTrend
-from .telegram import Telegram, fmt_btc_event, fmt_event
+from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event
+
+LEDGER_URL = "https://github.com/hsynrnjgany-commits/mari-handoff/blob/mari-bot-state/ledger.jsonl"
 from .trend import SymbolSeries
 
 HOUR_MS = 3_600_000
@@ -134,6 +136,9 @@ class LiveRunner:
         self.tg.maybe_hello(self.bot)
         for ev in btc_events:
             sent += self.tg.broadcast(fmt_btc_event(ev, self.btc.summary()))
+            self.tg.post_channel(fmt_channel_event(ev, self.btc.summary(), LEDGER_URL))
+        self.tg.maybe_channel_intro(self.bot.btc_summary, LEDGER_URL)
+        self.tg.maybe_weekly_channel(self.bot.btc_summary, LEDGER_URL)
         for rec in self.bot.new_events:
             msg = fmt_event(rec)
             if msg:

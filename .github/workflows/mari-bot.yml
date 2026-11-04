@@ -5,6 +5,7 @@
 # اسرار لازم (Settings → Secrets and variables → Actions):
 #   MARI_TELEGRAM_TOKEN    توکن ربات تلگرام (از BotFather)
 #   MARI_TELEGRAM_CHAT_ID  شناسهٔ عددی چت شما (از userinfobot)
+#   MARI_TELEGRAM_CHANNEL_ID  (اختیاری) کانال عمومی، مثل @mari_honest — ربات باید ادمین کانال باشد
 # بدون این دو، ربات کار می‌کند ولی پیام تلگرام نمی‌فرستد.
 
 name: mari-bot
@@ -52,6 +53,7 @@ jobs:
         env:
           MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
           MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+          MARI_TELEGRAM_CHANNEL_ID: ${{ secrets.MARI_TELEGRAM_CHANNEL_ID }}
         run: python -m mari_bot once --state ../state-wt
 
       - name: Save state

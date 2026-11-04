@@ -467,6 +467,32 @@ class TestBtcTrendLive(unittest.TestCase):
             self.assertEqual(BtcTrend(os.path.join(d, "b.json")).update(crash), [])   # تکراری نه
 
 
+class TestChannel(unittest.TestCase):
+    def test_channel_posts_only_with_config_and_disclaimer(self):
+        from mari_bot.telegram import CHANNEL_DISCLAIMER, Telegram, fmt_channel_event, fmt_channel_weekly
+        ev = {"t": 0, "to": "CASH", "close": 70000.0, "sma": 72000.0, "boot": False, "equity": 990.0}
+        summ = {"position": "CASH", "equity": 990.0, "return_pct": -1.0, "btc_hold_return_pct": -3.0,
+                "close": 70000.0, "sma150": 72000.0, "switches": 2}
+        for m in (fmt_channel_event(ev, summ, "u"), fmt_channel_weekly(summ, "u")):
+            self.assertIn(CHANNEL_DISCLAIMER, m)
+            self.assertIn(LOCK_LINE, m)
+            self.assertNotRegex(m, "تضمین(ی)? (سود|می‌کنیم)")
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "7",
+                                             "MARI_TELEGRAM_CHANNEL_ID": ""}):
+            tg = Telegram(os.path.join(d, "t.json"))
+            with mock.patch.object(tg, "_call", return_value=({"ok": True}, 200)) as c:
+                self.assertFalse(tg.post_channel("x"))
+                c.assert_not_called()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "7",
+                                             "MARI_TELEGRAM_CHANNEL_ID": "@mari_test"}):
+            tg = Telegram(os.path.join(d, "t.json"))
+            with mock.patch.object(tg, "_call", return_value=({"ok": True}, 200)) as c:
+                self.assertTrue(tg.post_channel("x"))
+                self.assertEqual(c.call_args[0][1]["chat_id"], "@mari_test")
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
