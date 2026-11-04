@@ -1,0 +1,265 @@
+{
+ "hypothesis": {
+  "id": "H-MARI-M-003",
+  "statement": "نگه‌داری هفتگی حداکثر ۱۰ ارز با بازده ۲۸روزهٔ مثبت و قیمت بالای میانگین ۵۰روزه (وزن برابر، بقیه نقد) پس از هزینه‌ها سود می‌دهد و افتی کمتر از نگه‌داری BTC دارد.",
+  "falsified_if": "بازده کل ≤ ۰ یا کران پایین CI95 میانگین بازده هفتگی ≤ ۰ یا بیشترین افت ≥ افت BTC",
+  "origin": "ادبیات مومنتوم سری‌زمانی؛ مستقل از نتایج H-001/H-002"
+ },
+ "registered_before_results": true,
+ "verdict": "FALSIFIED",
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-04T22:02:23+00:00",
+ "period": {
+  "from": "2021-11-05T00:00:00+00:00",
+  "to": "2026-11-04T00:00:00+00:00",
+  "years": 5
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines interval=1d (public, read-only)",
+ "universe": {
+  "requested_top": 30,
+  "used": 30,
+  "failed": []
+ },
+ "known_biases": [
+  "SURVIVORSHIP (قوی): نمادها با حجم امروز انتخاب شدند؛ ارزهایی که طی ۵ سال مردند غایب‌اند — به نفع نتیجه.",
+  "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+  "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+  "MULTIPLE_TESTS: سومین فرضیهٔ آزموده‌شده (ایدهٔ مستقل از ادبیات، نه از دادهٔ قبلی)."
+ ],
+ "result": {
+  "params": {
+   "lookback": 28,
+   "sma": 50,
+   "max_hold": 10,
+   "min_age_days": 60,
+   "rebalance_weekday": 0,
+   "fee_side": 0.001,
+   "slippage": 0.0005
+  },
+  "days": 1825,
+  "rebalances": 261,
+  "avg_weekly_turnover": 0.36,
+  "strategy": {
+   "total_return_pct": 57.97,
+   "cagr_pct": 9.58,
+   "max_drawdown_pct": 61.54,
+   "sharpe": 0.43,
+   "weekly_bootstrap": {
+    "mean_pct": 0.46,
+    "ci95_low": -0.42,
+    "ci95_high": 1.359
+   }
+  },
+  "btc_buy_hold": {
+   "total_return_pct": 27.1,
+   "cagr_pct": 4.92,
+   "max_drawdown_pct": 76.63,
+   "sharpe": 0.35,
+   "weekly_bootstrap": {
+    "mean_pct": 0.341,
+    "ci95_low": -0.518,
+    "ci95_high": 1.174
+   }
+  },
+  "avg_names_held": 5.3,
+  "time_in_cash_pct": 12.3,
+  "last_picks": {
+   "t": 1793577600000,
+   "held": [
+    "PEPEUSDT",
+    "BMTUSDT"
+   ]
+  },
+  "by_year_pct": {
+   "2021": -14.53,
+   "2022": -48.37,
+   "2023": 82.14,
+   "2024": 76.13,
+   "2025": 22.77,
+   "2026": -15.24
+  },
+  "verdict": "FALSIFIED"
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 1885,
+   "sha": "4e197fae26493caa",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "ETHUSDT": {
+   "bars": 1885,
+   "sha": "30904664fa25e6a8",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "SOLUSDT": {
+   "bars": 1885,
+   "sha": "7bbb1b77cd54c92a",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "ZECUSDT": {
+   "bars": 1885,
+   "sha": "c3b34b1aeec67114",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "XRPUSDT": {
+   "bars": 1885,
+   "sha": "74e967990c3de313",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "NEARUSDT": {
+   "bars": 1885,
+   "sha": "9dbb36c81879bfd3",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "BNBUSDT": {
+   "bars": 1885,
+   "sha": "b5564b25b78eb1ba",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "PEPEUSDT": {
+   "bars": 1279,
+   "sha": "e93313c2fbeb6cd7",
+   "first": 1683244800000,
+   "issues": []
+  },
+  "UNIUSDT": {
+   "bars": 1885,
+   "sha": "efb0d12fe0c93cc9",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "SNDKBUSDT": {
+   "bars": 146,
+   "sha": "e041f36390f2b9cd",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "SUIUSDT": {
+   "bars": 1281,
+   "sha": "5b60b4957098d40a",
+   "first": 1683072000000,
+   "issues": []
+  },
+  "DOGEUSDT": {
+   "bars": 1885,
+   "sha": "53a362288cc2a6d9",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "SOXLBUSDT": {
+   "bars": 120,
+   "sha": "f29e109c720b439e",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "HYPEUSDT": {
+   "bars": 41,
+   "sha": "ef601dc2771c4647",
+   "first": 1790208000000,
+   "issues": []
+  },
+  "TRXUSDT": {
+   "bars": 1885,
+   "sha": "76e7d851bc840555",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "ENAUSDT": {
+   "bars": 946,
+   "sha": "63ece4f82792d131",
+   "first": 1712016000000,
+   "issues": []
+  },
+  "SPCXBUSDT": {
+   "bars": 145,
+   "sha": "5e60256c09c90cf2",
+   "first": 1781222400000,
+   "issues": []
+  },
+  "TRUMPUSDT": {
+   "bars": 654,
+   "sha": "d77858db4f4e751c",
+   "first": 1737244800000,
+   "issues": []
+  },
+  "LINKUSDT": {
+   "bars": 1885,
+   "sha": "8385344fd9a235f3",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "CRCLBUSDT": {
+   "bars": 146,
+   "sha": "c9324c2c812755f3",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "WLDUSDT": {
+   "bars": 1199,
+   "sha": "72f77f57d95fe70d",
+   "first": 1690156800000,
+   "issues": []
+  },
+  "MUBUSDT": {
+   "bars": 146,
+   "sha": "03d9fb2625e6ffd2",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "GOOGLBUSDT": {
+   "bars": 120,
+   "sha": "1ebd1150528b7770",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "AAVEUSDT": {
+   "bars": 1885,
+   "sha": "1e913e2d1dcf5c6c",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "PUMPUSDT": {
+   "bars": 419,
+   "sha": "770d88c9f06e4846",
+   "first": 1757548800000,
+   "issues": []
+  },
+  "ADAUSDT": {
+   "bars": 1885,
+   "sha": "5a70342c754d9494",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "MSTRBUSDT": {
+   "bars": 134,
+   "sha": "4b9dfdf743421832",
+   "first": 1782172800000,
+   "issues": []
+  },
+  "AVAXUSDT": {
+   "bars": 1885,
+   "sha": "cee45273f22db017",
+   "first": 1630886400000,
+   "issues": []
+  },
+  "BMTUSDT": {
+   "bars": 596,
+   "sha": "c0675d559495a28c",
+   "first": 1742256000000,
+   "issues": []
+  },
+  "QNTUSDT": {
+   "bars": 1885,
+   "sha": "21f6f0cbdb75125e",
+   "first": 1630886400000,
+   "issues": []
+  }
+ }
+}
