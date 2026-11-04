@@ -1,0 +1,1 @@
+{"position": "BTC", "cash": 0.0, "units": 0.012891555690383767, "start_equity": 1000.0, "last_day_ts": 1793664000000, "switches": [{"t": 1793664000000, "to": "BTC", "close": 77453.86, "sma": 72244.93, "boot": true, "equity": 998.5}], "last_close": 77453.86, "last_sma": 72244.93, "first_price": 77453.86}
