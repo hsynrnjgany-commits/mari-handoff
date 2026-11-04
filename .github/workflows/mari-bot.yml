@@ -1,0 +1,68 @@
+# ربات تمرینی ماری — اجرای خودکار ساعتی روی سرورهای رایگان گیت‌هاب
+# قفل: فقط خواندن داده | فقط تمرینی | بدون سفارش واقعی — هیچ کلید صرافی لازم نیست و استفاده نمی‌شود.
+#
+# وضعیت ربات (معامله‌های فرضی، دفتر شواهد) در برانچ جداگانهٔ «mari-bot-state» ذخیره می‌شود.
+# اسرار لازم (Settings → Secrets and variables → Actions):
+#   MARI_TELEGRAM_TOKEN    توکن ربات تلگرام (از BotFather)
+#   MARI_TELEGRAM_CHAT_ID  شناسهٔ عددی چت شما (از userinfobot)
+# بدون این دو، ربات کار می‌کند ولی پیام تلگرام نمی‌فرستد.
+
+name: mari-bot
+
+on:
+  schedule:
+    - cron: "7 * * * *"      # هر ساعت، دقیقهٔ ۷ (پس از بسته‌شدن کندل ساعتی)
+  workflow_dispatch: {}      # دکمهٔ اجرای دستی
+
+permissions:
+  contents: write            # فقط برای ذخیرهٔ وضعیت در برانچ mari-bot-state
+
+concurrency:
+  group: mari-bot
+  cancel-in-progress: false
+
+jobs:
+  cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Load saved state
+        run: |
+          git config user.name "mari-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin mari-bot-state >/dev/null; then
+            git fetch --depth=1 origin mari-bot-state:mari-bot-state
+            git worktree add state-wt mari-bot-state
+          else
+            git worktree add --orphan -b mari-bot-state state-wt
+          fi
+
+      - name: Tests
+        working-directory: scripts
+        run: python -m unittest discover -s mari_bot/tests -t .
+
+      - name: Run one paper cycle
+        working-directory: scripts
+        env:
+          MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
+          MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+        run: python -m mari_bot once --state ../state-wt
+
+      - name: Save state
+        if: always()
+        working-directory: state-wt
+        run: |
+          rm -f *.tmp
+          git add -A
+          if git diff --cached --quiet; then
+            echo "تغییری نبود"
+          else
+            git commit -q -m "state: $(date -u +%Y-%m-%dT%H:%MZ)"
+            for i in 1 2 3; do git push origin mari-bot-state && break; sleep $((i*5)); done
+          fi

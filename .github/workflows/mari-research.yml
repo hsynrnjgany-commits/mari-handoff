@@ -1,0 +1,84 @@
+# پژوهش خارج از نمونهٔ ربات ماری — فقط با اجرای دستی
+# تاریخچهٔ عمومی چندماهه را می‌خواند، آزمون‌های دکترین (بخش ۱۱) را اجرا می‌کند
+# و گزارش را در برانچ «mari-research» ذخیره می‌کند. قفل: فقط تمرینی — بدون سفارش واقعی.
+
+name: mari-research
+
+on:
+  workflow_dispatch:
+    inputs:
+      kind:
+        description: "breakout (ساعتی، فرضیه‌های B) یا momentum (روزانه، H-MARI-M-003)"
+        default: "breakout"
+      years:
+        description: "فقط برای momentum: تعداد سال تاریخچه"
+        default: "5"
+      variants:
+        description: "فقط momentum: نسخه‌ها، جداشده با کاما (خالی = M-003,M-004)"
+        default: ""
+      start_date:
+        description: "فقط momentum: شروع دوره YYYY-MM-DD (خالی = اکنون منهای years)"
+        default: ""
+      months:
+        description: "تعداد ماه تاریخچه"
+        default: "6"
+      top:
+        description: "تعداد نمادهای پرحجم"
+        default: "60"
+      end_date:
+        description: "پایان دوره YYYY-MM-DD (خالی = اکنون)"
+        default: ""
+      hypotheses:
+        description: "فرضیه‌ها، جداشده با کاما (خالی = همه)"
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: mari-research
+  cancel-in-progress: false
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Tests
+        working-directory: scripts
+        run: python -m unittest discover -s mari_bot/tests -t .
+      - name: Prepare output branch
+        run: |
+          git config user.name "mari-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin mari-research >/dev/null; then
+            git fetch --depth=1 origin mari-research:mari-research
+            git worktree add out-wt mari-research
+          else
+            git worktree add --orphan -b mari-research out-wt
+          fi
+      - name: Run research
+        working-directory: scripts
+        run: |
+          RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          if [ "${{ inputs.kind }}" = "momentum" ]; then
+            python -m mari_bot momentum --years "${{ inputs.years }}" --top "${{ inputs.top }}" \
+              --start "${{ inputs.start_date }}" --end "${{ inputs.end_date }}" \
+              --variants "${{ inputs.variants }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          python -m mari_bot research --months "${{ inputs.months }}" --top "${{ inputs.top }}" \
+            --end "${{ inputs.end_date }}" --hypotheses "${{ inputs.hypotheses }}" --out "$RUN_DIR"
+      - name: Save report
+        if: always()
+        working-directory: out-wt
+        run: |
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -q -m "research: $(date -u +%Y-%m-%dT%H:%MZ)"
+            for i in 1 2 3; do git push origin mari-research && break; sleep $((i*5)); done
+          fi
