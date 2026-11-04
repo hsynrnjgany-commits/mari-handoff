@@ -7,6 +7,12 @@ name: mari-research
 on:
   workflow_dispatch:
     inputs:
+      kind:
+        description: "breakout (ساعتی، فرضیه‌های B) یا momentum (روزانه، H-MARI-M-003)"
+        default: "breakout"
+      years:
+        description: "فقط برای momentum: تعداد سال تاریخچه"
+        default: "5"
       months:
         description: "تعداد ماه تاریخچه"
         default: "6"
@@ -52,7 +58,11 @@ jobs:
       - name: Run research
         working-directory: scripts
         run: |
-          RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)"
+          RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          if [ "${{ inputs.kind }}" = "momentum" ]; then
+            python -m mari_bot momentum --years "${{ inputs.years }}" --top "${{ inputs.top }}" --out "$RUN_DIR"
+            exit 0
+          fi
           python -m mari_bot research --months "${{ inputs.months }}" --top "${{ inputs.top }}" \
             --end "${{ inputs.end_date }}" --hypotheses "${{ inputs.hypotheses }}" --out "$RUN_DIR"
       - name: Save report

@@ -98,6 +98,14 @@ def cmd_research(a):
     print(json.dumps(out, ensure_ascii=False, indent=2))
 
 
+def cmd_momentum(a):
+    from .research import run_momentum_research
+    r = run_momentum_research(years=a.years, top=a.top, out_dir=a.out)
+    print(json.dumps({"verdict": r["verdict"], "strategy": r["result"]["strategy"],
+                      "btc_buy_hold": r["result"]["btc_buy_hold"], "by_year_pct": r["result"]["by_year_pct"]},
+                     ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -129,6 +137,11 @@ def main(argv=None):
     rs.add_argument("--end", default="", help="پایان دوره YYYY-MM-DD (خالی = اکنون)")
     rs.add_argument("--hypotheses", default="", help="مثلاً H-MARI-B-001,H-MARI-B-002 (خالی = همه)")
     rs.set_defaults(fn=cmd_research)
+    mo = sub.add_parser("momentum", help="آزمون H-MARI-M-003 مومنتوم روزانه (نیازمند اینترنت)")
+    mo.add_argument("--years", type=int, default=5)
+    mo.add_argument("--top", type=int, default=30)
+    mo.add_argument("--out", default="research_out")
+    mo.set_defaults(fn=cmd_momentum)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

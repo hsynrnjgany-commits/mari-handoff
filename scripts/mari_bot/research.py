@@ -45,6 +45,7 @@ FALSIFIED_IF = ("بازده خالص کل ≤ ۰ یا کران پایین باز
 
 
 def fetch_history(symbol: str, start_ms: int, end_ms: int, interval: str = "1h") -> list[dict]:
+    step = {"1h": HOUR_MS, "4h": 4 * HOUR_MS, "1d": DAY_MS}[interval]
     out, cur = [], start_ms
     while cur < end_ms:
         rows = http_get_json("/api/v3/klines", {"symbol": symbol, "interval": interval, "startTime": cur,
@@ -52,8 +53,8 @@ def fetch_history(symbol: str, start_ms: int, end_ms: int, interval: str = "1h")
         bars = parse_toobit_klines(rows)
         if not bars:
             break
-        out.extend(b for b in bars if b["t"] + HOUR_MS <= end_ms)
-        nxt = bars[-1]["t"] + HOUR_MS
+        out.extend(b for b in bars if b["t"] + step <= end_ms)
+        nxt = bars[-1]["t"] + step
         if nxt <= cur:
             break
         cur = nxt
@@ -218,3 +219,65 @@ def render_fa(r: dict) -> str:
     L += ["## سوگیری‌های شناخته‌شده", ""] + [f"- {b}" for b in r["known_biases"]]
     L += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
     return "\n".join(L) + "\n"
+
+
+def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "research_out") -> dict:
+    """H-MARI-M-003 روی تاریخچهٔ روزانهٔ چندساله."""
+    from .momentum import HYPOTHESIS_M003, MomParams, run_momentum
+    p = MomParams()
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    start = end - years * 365 * DAY_MS
+    warm = (max(p.lookback, p.sma) + 10) * DAY_MS
+    syms = pick_universe(top)
+    daily, failed, lineage = {}, [], {}
+    for s in syms:
+        try:
+            bars = fetch_history(s, start - warm, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        q = quality_check(bars, interval_ms=DAY_MS)
+        if q["n"] > 0:
+            daily[s] = q["clean"]
+            lineage[s] = {"bars": q["n"], "sha": bars_sha(q["clean"]), "first": q["clean"][0]["t"],
+                          "issues": q["issues"]}
+    res = run_momentum(daily, start, end, p)
+    curve = res.pop("curve")
+    report = {
+        "hypothesis": HYPOTHESIS_M003, "registered_before_results": True, "verdict": res["verdict"],
+        "code": CODE_VERSION, "fetched_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "period": {"from": datetime.fromtimestamp(start / 1000, timezone.utc).isoformat(),
+                   "to": datetime.fromtimestamp(end / 1000, timezone.utc).isoformat(), "years": years},
+        "source": BINANCE_VISION + "/api/v3/klines interval=1d (public, read-only)",
+        "universe": {"requested_top": top, "used": len(daily), "failed": failed},
+        "known_biases": [
+            "SURVIVORSHIP (قوی): نمادها با حجم امروز انتخاب شدند؛ ارزهایی که طی ۵ سال مردند غایب‌اند — به نفع نتیجه.",
+            "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+            "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+            "MULTIPLE_TESTS: سومین فرضیهٔ آزموده‌شده (ایدهٔ مستقل از ادبیات، نه از دادهٔ قبلی).",
+        ],
+        "result": res, "lineage": lineage,
+    }
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "momentum_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    with open(os.path.join(out_dir, "momentum_curve.json"), "w", encoding="utf-8") as fh:
+        json.dump(curve, fh)
+    st, bt = res["strategy"], res["btc_buy_hold"] or {}
+    md = [f"# {HYPOTHESIS_M003['id']} — حکم: **{res['verdict']}**", "", HYPOTHESIS_M003["statement"], "",
+          f"- دوره: {report['period']['from'][:10]} تا {report['period']['to'][:10]} — نمادها: {len(daily)}",
+          f"- شرط رد (ثبت پیشاپیش): {HYPOTHESIS_M003['falsified_if']}", "",
+          "| شاخص | استراتژی | نگه‌داری BTC |", "|---|---|---|"]
+    for k, label in (("total_return_pct", "بازده کل ٪"), ("cagr_pct", "بازده سالانه ٪"),
+                     ("max_drawdown_pct", "بیشترین افت ٪"), ("sharpe", "شارپ")):
+        md.append(f"| {label} | {st.get(k)} | {bt.get(k)} |")
+    md += ["", f"- بوت‌استرپ میانگین بازده هفتگی: {st.get('weekly_bootstrap')}",
+           f"- میانگین تعداد ارز نگه‌داری‌شده: {res['avg_names_held']} — زمان کامل نقد: {res['time_in_cash_pct']}٪",
+           f"- میانگین جابه‌جایی هفتگی: {res['avg_weekly_turnover']}", "", "## بازده سالانه", "",
+           "| سال | بازده ٪ |", "|---|---|"]
+    md += [f"| {y} | {v} |" for y, v in res["by_year_pct"].items()]
+    md += ["", "## سوگیری‌های شناخته‌شده", ""] + [f"- {b}" for b in report["known_biases"]]
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "momentum_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

@@ -337,6 +337,43 @@ class TestResearch(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(d, "report_fa.md")))
 
 
+class TestMomentum(unittest.TestCase):
+    def _daily(self, n, drift, seed, start=1_600_000_000_000 // 86_400_000 * 86_400_000):
+        D_ = 86_400_000
+        bars = synth(n, drift, 0.02, seed=seed)
+        for i, b in enumerate(bars):
+            b["t"] = start + i * D_
+        return bars
+
+    def test_uptrend_held_downtrend_cash(self):
+        from mari_bot.momentum import run_momentum
+        up = {"BTCUSDT": self._daily(400, 0.004, 1), "AAAUSDT": self._daily(400, 0.006, 2)}
+        r = run_momentum(up, up["BTCUSDT"][100]["t"], up["BTCUSDT"][-1]["t"])
+        self.assertGreater(r["strategy"]["total_return_pct"], 0)
+        self.assertGreater(r["avg_names_held"], 0)
+        dn = {"BTCUSDT": self._daily(400, -0.004, 1), "AAAUSDT": self._daily(400, -0.006, 2)}
+        r = run_momentum(dn, dn["BTCUSDT"][100]["t"], dn["BTCUSDT"][-1]["t"])
+        self.assertGreater(r["time_in_cash_pct"], 80)              # بازار نزولی: بیشتر نقد
+        self.assertGreater(r["strategy"]["total_return_pct"], r["btc_buy_hold"]["total_return_pct"])
+
+    def test_costs_reduce_return(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        d = {"BTCUSDT": self._daily(500, 0.001, 3), "AAAUSDT": self._daily(500, 0.001, 4),
+             "BBBUSDT": self._daily(500, 0.0, 5)}
+        a, b = d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"]
+        lo = run_momentum(d, a, b, MomParams(fee_side=0.0, slippage=0.0))["strategy"]["total_return_pct"]
+        hi = run_momentum(d, a, b, MomParams(fee_side=0.005))["strategy"]["total_return_pct"]
+        self.assertGreater(lo, hi)
+
+    def test_monday_rebalance(self):
+        from mari_bot.momentum import run_momentum
+        from datetime import datetime, timezone
+        d = {"BTCUSDT": self._daily(300, 0.003, 1)}
+        r = run_momentum(d, d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"])
+        t = r["last_picks"]["t"]
+        self.assertEqual(datetime.fromtimestamp(t / 1000, timezone.utc).weekday(), 0)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
