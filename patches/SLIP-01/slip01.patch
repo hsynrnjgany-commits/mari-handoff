@@ -1,0 +1,110 @@
+diff -ruN a/src/lib/paper/engine.ts b/src/lib/paper/engine.ts
+--- a/src/lib/paper/engine.ts	2026-11-04 22:04:50.257817848 +0330
++++ b/src/lib/paper/engine.ts	2026-11-04 22:04:50.263820164 +0330
+@@ -18,10 +18,10 @@
+ import { PAPER_PARAMS, type CandleQualitySnapshot, type PaperStoreShape, type PaperTrade } from "./types";
+ import { readStore, writeStore, trimStore } from "./store";
+ import { V2_PARAMS, computeAtrPct, computeV2Stops, v2EntryFilter, positionSizeUsd } from "./v2";
+-import { grossPct, netPct, BREAKEVEN_EPS } from "./pnl";
++import { grossPct, netPctWithCost, roundTripCostPct, BREAKEVEN_EPS } from "./pnl";
+ import { pushDecision, bePromotion, trailPromotion, openDecision } from "./decisionlog";
+ 
+-const { tpPct, slPct, feePct, maxHoldMs, cooldownMs, interval, sourceVersion } = PAPER_PARAMS;
++const { tpPct, slPct, maxHoldMs, cooldownMs, interval, sourceVersion } = PAPER_PARAMS;
+ const intervalMs = INTERVALS[interval].ms;
+ 
+ // نمادهای قابل بررسی: همه نمادهای غیر استیبل واچ‌لیست داشبورد
+@@ -46,7 +46,8 @@
+   t.exitPrice = price;
+   t.exitTime = timeMs;
+   t.exitReason = reason;
+-  t.realizedPnlPct = netPct(t.side, t.entryPrice, price); // ناخالص − کارمزد رفت‌وبرگشت (فقط یک بار)
++  t.costPctApplied = roundTripCostPct(); // ثبت هزینهٔ اعمال‌شده تا بازمحاسبهٔ آمار تاریخچه را عوض نکند
++  t.realizedPnlPct = netPctWithCost(t.side, t.entryPrice, price, t.costPctApplied); // ناخالص − هزینه رفت‌وبرگشت (فقط یک بار)
+   t.status = "CLOSED";
+ }
+ 
+@@ -113,7 +114,7 @@
+ function updateV2StopsLong(t: PaperTrade, k: KlinePoint): void {
+   const favHigh = pctChange(t.entryPrice, k.high);
+   if (!t.beActive && favHigh >= V2_PARAMS.beTriggerPct) {
+-    const bePrice = t.entryPrice * (1 + feePct / 100); // سربه‌سر پس از کارمزد — برنده تبدیل به بازنده نمی‌شود
++    const bePrice = t.entryPrice * (1 + roundTripCostPct() / 100); // سربه‌سر پس از هزینه کل (کارمزد+لغزش) — برنده تبدیل به بازنده نمی‌شود
+     if (bePrice > t.slPrice) {
+       const fromSl = t.slPrice; // لاگ payload لحظهٔ تصمیم (گیت ۰۰۳/SHORT-15) — منطق دست‌نخورده
+       t.slPrice = bePrice;
+@@ -137,7 +138,7 @@
+ function updateV2StopsShort(t: PaperTrade, k: KlinePoint): void {
+   const favLow = sidePnl("SHORT", t.entryPrice, k.low);
+   if (!t.beActive && favLow >= V2_PARAMS.beTriggerPct) {
+-    const bePrice = t.entryPrice * (1 - feePct / 100);
++    const bePrice = t.entryPrice * (1 - roundTripCostPct() / 100);
+     if (bePrice < t.slPrice) {
+       const fromSl = t.slPrice; // لاگ payload لحظهٔ تصمیم — ریشهٔ ۱۵ مغایرت SHORT اکنون ثبت می‌شود
+       t.slPrice = bePrice;
+diff -ruN a/src/lib/paper/pnl.ts b/src/lib/paper/pnl.ts
+--- a/src/lib/paper/pnl.ts	2026-11-04 22:04:50.257796108 +0330
++++ b/src/lib/paper/pnl.ts	2026-11-04 22:04:50.263804560 +0330
+@@ -19,9 +19,19 @@
+   return side === "LONG" ? ((exit - entry) / entry) * 100 : ((entry - exit) / entry) * 100;
+ }
+ 
+-/** بازده خالص = ناخالص − کارمزد رفت‌وبرگشت (فقط یک بار) */
++/** هزینه کل رفت‌وبرگشت (٪) = کارمزد + لغزش دو سمت (ورود و خروج). با slippagePctPerSide=0 دقیقاً برابر کارمزد قبلی است. */
++export function roundTripCostPct(): number {
++  return PAPER_PARAMS.feePct + 2 * PAPER_PARAMS.slippagePctPerSide;
++}
++
++/** بازده خالص با یک هزینه مشخص (٪) — برای بازمحاسبهٔ معاملاتی که هزینه‌شان در لحظهٔ بسته‌شدن ثبت شده */
++export function netPctWithCost(side: PnlSide, entry: number, exit: number, costPct: number): number {
++  return grossPct(side, entry, exit) - costPct;
++}
++
++/** بازده خالص = ناخالص − هزینه رفت‌وبرگشت جاری (فقط یک بار) */
+ export function netPct(side: PnlSide, entry: number, exit: number): number {
+-  return grossPct(side, entry, exit) - PAPER_PARAMS.feePct;
++  return netPctWithCost(side, entry, exit, roundTripCostPct());
+ }
+ 
+ /** آیا این بازده عملاً سربه‌سر است؟ (نه برد، نه باخت) */
+diff -ruN a/src/lib/paper/stats.ts b/src/lib/paper/stats.ts
+--- a/src/lib/paper/stats.ts	2026-11-04 22:04:50.257841370 +0330
++++ b/src/lib/paper/stats.ts	2026-11-04 22:04:50.263841761 +0330
+@@ -11,7 +11,7 @@
+ 
+ import type { PaperStats, PaperTrade, StatBreakdownRow, PnlReconciliation } from "./types";
+ import { PAPER_PARAMS } from "./types";
+-import { netPct, grossPct, isBreakeven, BREAKEVEN_EPS } from "./pnl";
++import { netPct, netPctWithCost, grossPct, isBreakeven, BREAKEVEN_EPS } from "./pnl";
+ 
+ // کارمزد اعمال‌شده در همین آمار — از همان منبع موتور خوانده می‌شود تا همیشه یکی باشد
+ const PAPER_FEE_SNAPSHOT: number = PAPER_PARAMS.feePct;
+@@ -19,7 +19,8 @@
+ /** بازده معتبر یک معامله بسته‌شده از قیمت خام؛ اگر قیمت‌ها معتبر نیستند null */
+ function recomputedNet(t: PaperTrade): number | null {
+   if (t.exitPrice === null || t.exitPrice === undefined || !Number.isFinite(t.entryPrice)) return null;
+-  const net = netPct(t.side, t.entryPrice, t.exitPrice);
++  // هزینهٔ ثبت‌شده در لحظهٔ بسته‌شدن؛ معاملات قدیمی (بدون فیلد) با کارمزد ۰.۱٪ همان‌طور که بودند بازمحاسبه می‌شوند
++  const net = netPctWithCost(t.side, t.entryPrice, t.exitPrice, t.costPctApplied ?? PAPER_PARAMS.feePct);
+   return Number.isFinite(net) ? net : null;
+ }
+ 
+diff -ruN a/src/lib/paper/types.ts b/src/lib/paper/types.ts
+--- a/src/lib/paper/types.ts	2026-11-04 22:04:50.257758326 +0330
++++ b/src/lib/paper/types.ts	2026-11-04 22:04:50.263767530 +0330
+@@ -35,6 +35,7 @@
+   exitTime: number | null;
+   exitReason: PaperExitReason | null;
+   realizedPnlPct: number | null; // بازده بسته‌شده پس از کسر کارمزد فرضی
++  costPctApplied?: number; // هزینه کل رفت‌وبرگشت (کارمزد+لغزش) که لحظهٔ بسته‌شدن اعمال شد؛ نبودنش = معامله قدیمی با کارمزد ۰.۱٪
+   createdAt: number; // زمان ثبت در سامانه
+   // --- فیلدهای نسخه ۲ (mari-paper-v2) — معاملات قدیمی نسخه ۱ این فیلدها را ندارند و به‌صورت FIXED خوانده می‌شوند ---
+   slBasis?: "FIXED" | "ATR"; // پایه حد ضرر: ثابت نسخه ۱ یا دینامیک ATR نسخه ۲
+@@ -74,6 +75,7 @@
+   tpPct: 2.0, // حد سود پایه ۲٪ — در نسخه ۲ فقط برای معاملات v1
+   slPct: 1.0, // حد ضرر پایه ۱٪ (نسبت R/R برابر ۲) — در نسخه ۲ کف حد ضرر ATR
+   feePct: 0.1, // کارمزد فرضی رفت‌وبرگشت (٪) — بخش ۳۹.۱۱: هزینه‌های فرضی لحاظ شود
++  slippagePctPerSide: 0, // لغزش فرضی هر سمت (٪) — پیش‌فرض ۰ = رفتار فعلی؛ برای معاملات تازه می‌توان مثلاً ۰.۰۵ گذاشت (هزینه کل = کارمزد + ۲×لغزش)
+   maxHoldMs: 24 * 3_600_000, // حداکثر نگهداری ۲۴ ساعت
+   cooldownMs: 6 * 3_600_000, // فاصله حداقل پس از بسته‌شدن معامله نماد
+   interval: "1h" as const,
