@@ -1,0 +1,107 @@
+{
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-04T22:48:56+00:00",
+ "period": {
+  "from": "2018-06-01T00:00:00+00:00",
+  "to": "2026-11-04T00:00:00+00:00"
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines interval=1d (public, read-only)",
+ "universe": {
+  "requested_top": 30,
+  "used": 1,
+  "active_in_period": 1,
+  "failed": []
+ },
+ "known_biases": [
+  "SURVIVORSHIP (قوی): نمادها با حجم امروز انتخاب شدند؛ ارزهای مرده غایب‌اند — به نفع نتیجه.",
+  "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+  "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+  "MULTIPLE_TESTS: تا این اجرا ۴ فرضیه آزموده شده."
+ ],
+ "results": {
+  "H-MARI-T-006": {
+   "hypothesis": {
+    "id": "H-MARI-T-006",
+    "statement": "فقط بیت‌کوین: هر روز اگر بسته بالای میانگین ۱۵۰روزه است نگه‌دار، وگرنه کاملاً نقد.",
+    "falsified_if": "همان قاعدهٔ M-003 (بازده کل > ۰، کران پایین CI95 هفتگی > ۰، افت کمتر از نگه‌داری BTC)",
+    "origin": "ادبیات دنبال‌کردن روند ساده؛ بدون سوگیری بقا؛ ثبت‌شده پیش از دیدن نتیجه"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 150,
+    "max_hold": 1,
+    "min_age_days": 0,
+    "rebalance_weekday": -1,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 0,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.0,
+    "vol_window": 30,
+    "only_symbols": [
+     "BTCUSDT"
+    ],
+    "require_momentum": false
+   },
+   "days": 3078,
+   "rebalances": 3078,
+   "avg_weekly_turnover": 0.021,
+   "strategy": {
+    "total_return_pct": 2260.46,
+    "cagr_pct": 45.5,
+    "max_drawdown_pct": 45.05,
+    "sharpe": 1.09,
+    "weekly_bootstrap": {
+     "mean_pct": 0.908,
+     "ci95_low": 0.341,
+     "ci95_high": 1.524
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 0.54,
+   "time_in_cash_pct": 46.4,
+   "last_picks": {
+    "t": 1793664000000,
+    "held": [
+     "BTCUSDT"
+    ]
+   },
+   "delisted_exits": 0,
+   "delisted_exit_value_frac_sum": 0.0,
+   "symbols_ever_held": 1,
+   "by_year_pct": {
+    "2018": -8.21,
+    "2019": 106.37,
+    "2020": 186.65,
+    "2021": 33.9,
+    "2022": -7.24,
+    "2023": 91.34,
+    "2024": 85.13,
+    "2025": -11.14,
+    "2026": 3.82
+   },
+   "verdict": "SUPPORTED_IN_TEST_RANGE"
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 3338,
+   "sha": "c4bedacfe2c49605",
+   "first": 1505347200000,
+   "issues": []
+  }
+ }
+}
