@@ -1,0 +1,11 @@
+--- a/tests/test-paper-stats.ts	2026-11-04 22:28:29.349050788 +0330
++++ b/tests/test-paper-stats.ts	2026-11-04 22:28:29.366257700 +0330
+@@ -136,7 +136,7 @@
+ const eng = fs.readFileSync(new URL("../src/lib/paper/engine.ts", import.meta.url), "utf8");
+ check("sidePnl از grossPct استفاده می‌کند (مبنای ورود)", eng.includes("return grossPct(side, entry, price);"));
+ check("فرمول قدیمی مخرج-خروج حذف شده", !eng.includes("pctChange(price, entry)"));
+-check("closeTrade از netPct استفاده می‌کند", eng.includes("t.realizedPnlPct = netPct(t.side, t.entryPrice, price);"));
++check("closeTrade از netPct (یا پس از SLIP-01: netPctWithCost با هزینهٔ ثبت‌شده) استفاده می‌کند", eng.includes("t.realizedPnlPct = netPct(t.side, t.entryPrice, price);") || eng.includes("t.realizedPnlPct = netPctWithCost(t.side, t.entryPrice, price, t.costPctApplied);"));
+ check("کسر دوباره کارمزد حذف شده", !eng.includes("raw - feePct"));
+ check("MFE فروش با sidePnl فروش (جهت درست)", eng.includes('sidePnl("SHORT", t.entryPrice, k.low)'));
+ check("فیوز فقط ضرر واقعی را می‌شمارد", eng.includes("(t.realizedPnlPct as number) < -BREAKEVEN_EPS"));

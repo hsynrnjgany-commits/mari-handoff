@@ -12,10 +12,14 @@
 ```
 patch -p1 --dry-run < patches/SLIP-01/slip01.patch   # اول فقط آزمایش
 patch -p1 < patches/SLIP-01/slip01.patch             # اگر آزمایش بدون خطا بود
+patch -p1 < patches/SLIP-01/slip01_oldtest.patch     # فقط یک ادعای ایستای قدیمی در tests/test-paper-stats.ts را با پچ هماهنگ می‌کند
 cp patches/SLIP-01/test_slippage_cost.ts tests/test_slippage_cost.ts
-npx esbuild tests/test_slippage_cost.ts --bundle --platform=node --format=esm --outfile=/tmp/t_slip.mjs && node /tmp/t_slip.mjs data/paper-trades.json
+npx esbuild tests/test_slippage_cost.ts --bundle --platform=node --format=esm --outfile=/tmp/t_slip.mjs && node /tmp/t_slip.mjs data/paper-trades.json src/lib/paper/engine.ts
 ```
 انتظار: `نتیجه: 21/21 PASS`. اگر `esbuild` نصب نبود: `npm i -D esbuild`.
+دستور آخر باید از **ریشهٔ پروژه** اجرا شود (مسیر `engine.ts` نسبت به پوشهٔ جاری خوانده می‌شود).
+
+توضیح `slip01_oldtest.patch`: تست قدیمی `test-paper-stats.ts` یک ادعای ایستا داشت که متن دقیق خط `t.realizedPnlPct = netPct(...)` را در `engine.ts` می‌جست. پچ SLIP-01 همین خط را عمداً به `netPctWithCost(...)` تبدیل می‌کند (با لغزش ۰ ریاضی یکسان است)، پس آن ادعا شکست می‌خورد. این پچ فقط همان یک ادعا را به‌روز می‌کند و چیز دیگری را عوض نمی‌کند.
 اگر `--dry-run` خطا داد، فقط همان خطا را گزارش کن و چیزی را دستی بازنویسی نکن.
 
 بعد از آن، تست‌های موجود `t1` تا `t7` و `test-paper-stats.ts` را هم اجرا کن و نتیجه را گزارش بده.

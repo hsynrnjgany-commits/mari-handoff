@@ -1,5 +1,5 @@
 // SLIP-01 — آزمون پچ «لغزش و هزینهٔ قابل تنظیم + ثبت هزینه در هر معامله». فقط‌خواندنی؛ فایل داده‌ای نمی‌نویسد.
-// اجرا (از ریشهٔ پروژه): npx esbuild tests/test_slippage_cost.ts --bundle --platform=node --format=esm --outfile=/tmp/t.mjs && node /tmp/t.mjs data/paper-trades.json
+// اجرا (از ریشهٔ پروژه): npx esbuild tests/test_slippage_cost.ts --bundle --platform=node --format=esm --outfile=/tmp/t.mjs && node /tmp/t.mjs data/paper-trades.json src/lib/paper/engine.ts
 import { readFileSync } from "node:fs";
 import { computeStats } from "../src/lib/paper/stats";
 import { grossPct, netPct, roundTripCostPct, isBreakeven } from "../src/lib/paper/pnl";
@@ -56,7 +56,8 @@ check("معامله بدون فیلد ⇒ همان ۰.۱٪ قدیمی حتی و�
 (PAPER_PARAMS as any).slippagePctPerSide = 0;
 
 // ۵) بررسی ایستای engine.ts (چون server-only است، باندل نمی‌شود)
-const eng = readFileSync(new URL("../src/lib/paper/engine.ts", import.meta.url), "utf8");
+// مسیر engine.ts نسبت به پوشهٔ جاری (ریشهٔ پروژه) خوانده می‌شود؛ بعد از باندل، import.meta.url به جای دیگری اشاره می‌کند
+const eng = readFileSync(process.argv[3] ?? "src/lib/paper/engine.ts", "utf8");
 check("engine: هزینه در لحظهٔ بستن ثبت می‌شود", eng.includes("t.costPctApplied = roundTripCostPct()"));
 check("engine: بازده بسته‌شده با هزینهٔ ثبت‌شده", eng.includes("netPctWithCost(t.side, t.entryPrice, price, t.costPctApplied)"));
 check("engine: قیمت BE با هزینه کل (دو سمت)", (eng.match(/roundTripCostPct\(\) \/ 100/g) || []).length === 2);
