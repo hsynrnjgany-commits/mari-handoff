@@ -25,7 +25,7 @@ concurrency:
 jobs:
   cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -54,7 +54,7 @@ jobs:
           MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
           MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
           MARI_TELEGRAM_CHANNEL_ID: ${{ secrets.MARI_TELEGRAM_CHANNEL_ID }}
-        run: python -m mari_bot once --state ../state-wt
+        run: python -m mari_bot once --state ../state-wt --top 1000 --rotate 0
 
       - name: Save state
         if: always()

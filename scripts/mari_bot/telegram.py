@@ -156,7 +156,7 @@ def fmt_trades(bot) -> str:
 
 def fmt_hunt(bot, top: int = 8) -> str:
     snap = bot.snapshot
-    lines = ["🔭 <b>گشت سایه‌وار بازار</b> (فقط مشاهده — در دفتر ثبت نمی‌شود)"]
+    lines = [f"🔭 <b>گشت سایه‌وار بازار</b> — {fa(len(bot.snapshot))} ارز بررسی شد (فقط مشاهده)"]
     if not snap:
         lines.append("هنوز اسکنی انجام نشده.")
         return _end(lines)
@@ -172,6 +172,7 @@ def fmt_hunt(bot, top: int = 8) -> str:
         lines.append(f"• {sym}: {STATES_FA[v['state']]} (امتیاز {fa(v['score'], 1)}، RSI {fa(v['rsi'], 0)}){tag}")
     lines.append("")
     lines.append("«سیگنال مشاهده‌شده» با «معامله» یکی نیست؛ ورود فقط با موتور خودکار و دروازهٔ ریسک.")
+    lines.append("یادآوری: شکار آلت‌کوین در آزمون منصفانهٔ ۸ساله ضررده بود؛ این فهرست فقط برای آگاهی است.")
     return _end(lines)
 
 
@@ -394,6 +395,7 @@ class Telegram:
         day = now.strftime("%Y-%m-%d")
         if now.hour >= hour and self.store.get("last_daily") != day:
             if self.broadcast("☀️ <b>گزارش روزانه</b>\n\n" + fmt_report(bot)) > 0:
+                self.broadcast("📡 <b>رادار روزانهٔ بازار</b>\n\n" + fmt_hunt(bot))
                 self.store["last_daily"] = day
                 self.save()
                 return True
