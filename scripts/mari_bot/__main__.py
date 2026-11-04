@@ -82,6 +82,15 @@ def cmd_report(a):
     print(fmt_trades(bot).replace("<b>", "").replace("</b>", ""))
 
 
+def cmd_research(a):
+    from .research import run_research
+    r = run_research(months=a.months, top=a.top, out_dir=a.out)
+    f = r["full_period"]
+    print(json.dumps({"verdict": r["verdict"], "trades": f["trades"], "net_return_pct": f["net_return_pct"],
+                      "profit_factor": f["profit_factor"], "bootstrap": f["bootstrap"],
+                      "baseline": r["baseline"], "symbols": r["universe"]["used"]}, ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -106,6 +115,11 @@ def main(argv=None):
     r = sub.add_parser("report")
     r.add_argument("--state", default=DEFAULT_STATE)
     r.set_defaults(fn=cmd_report)
+    rs = sub.add_parser("research", help="آزمون خارج از نمونه روی تاریخچهٔ طولانی (نیازمند اینترنت)")
+    rs.add_argument("--months", type=int, default=6)
+    rs.add_argument("--top", type=int, default=60)
+    rs.add_argument("--out", default="research_out")
+    rs.set_defaults(fn=cmd_research)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

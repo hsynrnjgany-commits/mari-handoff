@@ -288,6 +288,26 @@ class TestTelegramOwnerMode(unittest.TestCase):
             D.http_get_json("/api/v3/klines", base="https://evil.example")
 
 
+class TestResearch(unittest.TestCase):
+    def test_offline_research_pipeline(self):
+        from mari_bot import research as R
+        t_end = 1_700_000_000_000 + 1500 * H
+        data = {"BTCUSDT": synth(1500, 0.0005), "SOLUSDT": synth(1500, 0.001, seed=4),
+                "ETHUSDT": synth(1500, -0.0005, seed=9)}
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(R, "pick_universe", return_value=list(data)), \
+                mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b: data[s]), \
+                mock.patch.object(R.time, "time", return_value=t_end / 1000):
+            rep = R.run_research(months=1, top=3, out_dir=d)
+            self.assertIn(rep["verdict"], ("FALSIFIED", "INCONCLUSIVE", "SUPPORTED_IN_TEST_RANGE"))
+            self.assertEqual(len(rep["cost_sensitivity"]), 5)
+            self.assertTrue(rep["folds"])
+            self.assertTrue(os.path.exists(os.path.join(d, "report_fa.md")))
+            # هزینهٔ بیشتر نباید بازده را بهتر کند
+            nets = [v["net_return_pct"] for v in rep["cost_sensitivity"].values()]
+            self.assertEqual(nets, sorted(nets, reverse=True))
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
