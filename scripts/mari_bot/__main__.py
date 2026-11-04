@@ -111,6 +111,13 @@ def cmd_momentum(a):
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_classics(a):
+    from .research import run_classics_research
+    r = run_classics_research(start=a.start, out_dir=a.out)
+    print(json.dumps({k: {kk: v.get(kk) for kk in ("verdict", "total_return_pct", "max_drawdown_pct", "sharpe")}
+                      if k != "D-010" else v for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -150,6 +157,10 @@ def main(argv=None):
     mo.add_argument("--start", default="", help="شروع YYYY-MM-DD (خالی = اکنون منهای years)")
     mo.add_argument("--end", default="", help="پایان YYYY-MM-DD (خالی = اکنون)")
     mo.set_defaults(fn=cmd_momentum)
+    cl = sub.add_parser("classics", help="روش‌های کلاسیک بزرگان + خرید پله‌ای (نیازمند اینترنت)")
+    cl.add_argument("--start", default="2018-06-01")
+    cl.add_argument("--out", default="research_out")
+    cl.set_defaults(fn=cmd_classics)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

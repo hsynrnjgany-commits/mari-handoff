@@ -493,6 +493,39 @@ class TestChannel(unittest.TestCase):
                 self.assertEqual(c.call_args[0][1]["chat_id"], "@mari_test")
 
 
+class TestClassics(unittest.TestCase):
+    def _d(self, n, drift, seed):
+        D_ = 86_400_000
+        bars = synth(n, drift, 0.02, seed=seed)
+        for i, b in enumerate(bars):
+            b["t"] = 1_600_000_000_000 // D_ * D_ + i * D_
+        return bars
+
+    def test_classics_run_and_dca(self):
+        from mari_bot.classics import dca, run_classics
+        d = {"BTCUSDT": self._d(700, 0.002, 1), "ETHUSDT": self._d(700, 0.001, 2)}
+        a, b = d["BTCUSDT"][260]["t"], d["BTCUSDT"][-1]["t"]
+        r = run_classics(d, a, b)
+        for k in ("H-MARI-C-007", "H-MARI-C-008", "H-MARI-C-009"):
+            self.assertIn(r[k]["verdict"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+            self.assertIn("sharpe", r[k])
+        x = dca(d, a, b, weekly_usd=10)
+        self.assertAlmostEqual(x["invested"], 10 * x["weeks"])
+        self.assertGreater(x["final_value"], 0)
+
+    def test_next_day_execution(self):
+        from mari_bot.classics import run_weights
+        d = {"BTCUSDT": self._d(30, 0.0, 3)}
+        calls = []
+
+        def fn(k, ctx):
+            calls.append(k)
+            return {"BTCUSDT": 1.0} if len(calls) == 1 else None
+        st, curve, _ = run_weights(d, ["BTCUSDT"], d["BTCUSDT"][0]["t"], d["BTCUSDT"][-1]["t"], fn)
+        self.assertEqual(curve[0], 1.0)          # روز اول هنوز اجرا نشده (اجرا فردا)
+        self.assertEqual(st["trades"], 1)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

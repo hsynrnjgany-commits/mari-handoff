@@ -329,3 +329,49 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
     with open(os.path.join(out_dir, "momentum_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_classics_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """روش‌های کلاسیک (C-007..C-009) + خرید پله‌ای (D-010) روی BTC/ETH روزانه."""
+    from .classics import CLASSIC_HYPOTHESES, FALSIFIED_IF, run_classics
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily, lineage = {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        q = quality_check(bars, interval_ms=DAY_MS)
+        daily[s] = q["clean"]
+        lineage[s] = {"bars": q["n"], "sha": bars_sha(q["clean"]), "issues": q["issues"]}
+    res = run_classics(daily, start_ms, end)
+    report = {"registered_before_results": True, "falsified_if": FALSIFIED_IF, "hypotheses": CLASSIC_HYPOTHESES,
+              "code": CODE_VERSION, "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc)
+                                               .strftime("%Y-%m-%d")},
+              "execution": "تصمیم روی بستهٔ روز t، اجرا روی بستهٔ روز t+1؛ کارمزد ۰٫۱٪ + لغزش ۰٫۰۵٪",
+              "known_biases": ["SELECTION: BTC و ETH بزرگ‌ترین ارزهای ۲۰۱۸ هم بودند، اما بقایشان پس‌نگر است.",
+                               "MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۰ می‌رسد."],
+              "results": res, "lineage": lineage}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "classics_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    b = res["BTC_BUY_HOLD"]
+    md = ["# روش‌های کلاسیک بزرگان بازار", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']} — {report['execution']}",
+          f"- شرط رد (ثبت پیشاپیش): {FALSIFIED_IF}", "",
+          "| روش | حکم | بازده کل ٪ | سالانه ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+          "|---|---|---|---|---|---|---|---|",
+          f"| نگه‌داری BTC | — | {b['total_return_pct']} | {b['cagr_pct']} | {b['max_drawdown_pct']} | {b['sharpe']} "
+          f"| {b['trades']} | {b['time_in_cash_pct']} |"]
+    for hid in CLASSIC_HYPOTHESES:
+        x = res[hid]
+        md.append(f"| {hid} | **{x['verdict']}** | {x['total_return_pct']} | {x['cagr_pct']} | {x['max_drawdown_pct']} "
+                  f"| {x['sharpe']} | {x['trades']} | {x['time_in_cash_pct']} |")
+    md += ["", "## خرید پله‌ای هفتگی (توصیفی — ۱۰ دلار در هفته)", "",
+           "| روش | هفته | سرمایه‌گذاری کل $ | ارزش نهایی $ | چند برابر | بیشترین افت ارزش ٪ |", "|---|---|---|---|---|---|"]
+    for name, x in (("DCA ساده", res["D-010"]["dca_plain"]), ("DCA + فیلتر ۱۵۰روزه", res["D-010"]["dca_trend150"])):
+        md.append(f"| {name} | {x['weeks']} | {x['invested']} | {x['final_value']} | {x['multiple']} | "
+                  f"{x['max_drawdown_of_value_pct']} |")
+    md += ["", "## سوگیری‌های شناخته‌شده", ""] + [f"- {k}" for k in report["known_biases"]]
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "classics_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
