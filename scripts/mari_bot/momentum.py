@@ -26,6 +26,15 @@ HYPOTHESIS_M003 = {
     "origin": "ادبیات مومنتوم سری‌زمانی؛ مستقل از نتایج H-001/H-002",
 }
 
+HYPOTHESIS_M004 = {
+    "id": "H-MARI-M-004",
+    "statement": "همان M-003، به‌علاوهٔ فیلتر رژیم: اگر در روز بازتوزیع، بستهٔ BTC زیر میانگین ۲۰۰روزه باشد، "
+                 "کل سبد نقد می‌شود.",
+    "falsified_if": "همان قاعدهٔ M-003: بازده کل ≤ ۰ یا کران پایین CI95 میانگین بازده هفتگی ≤ ۰ "
+                    "یا بیشترین افت ≥ افت BTC",
+    "origin": "ادبیات فیلتر روند ۲۰۰روزه + مشاهدهٔ افت بزرگ M-003؛ فقط روی دورهٔ دیده‌نشدهٔ پیش از 2021-11-05 معتبر است",
+}
+
 
 @dataclass(frozen=True)
 class MomParams:
@@ -36,6 +45,7 @@ class MomParams:
     rebalance_weekday: int = 0       # دوشنبه
     fee_side: float = 0.001
     slippage: float = 0.0005
+    btc_sma_filter: int = 0          # ۰ = خاموش (M-003). M-004: ۲۰۰
 
 
 def _sma(xs, i, n):
@@ -113,6 +123,12 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
                     cands.append((r, s))
             cands.sort(reverse=True)
             chosen = [s for _, s in cands[: p.max_hold]]
+            if p.btc_sma_filter:
+                bi = idx.get(benchmark, {}).get(t)
+                bc = closes.get(benchmark, [])
+                regime_ok = bi is not None and not (bc[bi] <= _sma(bc, bi, p.btc_sma_filter))
+                if not regime_ok or _sma(bc, bi, p.btc_sma_filter) != _sma(bc, bi, p.btc_sma_filter):
+                    chosen = []                       # BTC زیر میانگین (یا دادهٔ ناکافی): کاملاً نقد
             target = {s: equity / p.max_hold for s in chosen}   # وزن ثابت ۱/۱۰؛ جای خالی = نقد
             # اجرا روی بستهٔ همان روز (کمی خوش‌بینانه؛ در گزارش ثبت می‌شود). هزینه روی حجم جابه‌جایی.
             cur_val = {s: u * last_px.get(s, 0.0) for s, u in units.items()}

@@ -100,10 +100,13 @@ def cmd_research(a):
 
 def cmd_momentum(a):
     from .research import run_momentum_research
-    r = run_momentum_research(years=a.years, top=a.top, out_dir=a.out)
-    print(json.dumps({"verdict": r["verdict"], "strategy": r["result"]["strategy"],
-                      "btc_buy_hold": r["result"]["btc_buy_hold"], "by_year_pct": r["result"]["by_year_pct"]},
-                     ensure_ascii=False, indent=2))
+    from datetime import datetime, timezone
+
+    def ms(d):
+        return int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000) if d else None
+    r = run_momentum_research(years=a.years, top=a.top, out_dir=a.out, start_ms=ms(a.start), end_ms=ms(a.end))
+    print(json.dumps({k: {"verdict": v["verdict"], "strategy": v["strategy"], "by_year_pct": v["by_year_pct"]}
+                      for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
 def cmd_verify(a):
@@ -141,6 +144,8 @@ def main(argv=None):
     mo.add_argument("--years", type=int, default=5)
     mo.add_argument("--top", type=int, default=30)
     mo.add_argument("--out", default="research_out")
+    mo.add_argument("--start", default="", help="شروع YYYY-MM-DD (خالی = اکنون منهای years)")
+    mo.add_argument("--end", default="", help="پایان YYYY-MM-DD (خالی = اکنون)")
     mo.set_defaults(fn=cmd_momentum)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")

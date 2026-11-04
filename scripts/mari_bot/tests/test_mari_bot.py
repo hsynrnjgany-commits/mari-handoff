@@ -365,6 +365,21 @@ class TestMomentum(unittest.TestCase):
         hi = run_momentum(d, a, b, MomParams(fee_side=0.005))["strategy"]["total_return_pct"]
         self.assertGreater(lo, hi)
 
+    def test_btc_filter_goes_cash_in_bear(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        btc = self._daily(250, 0.004, 1) + []
+        tail = self._daily(200, -0.006, 1, start=btc[-1]["t"] + 86_400_000)
+        f = btc[-1]["c"] / tail[0]["o"]
+        for b in tail:
+            for k in ("o", "h", "l", "c"):
+                b[k] *= f
+        alt = self._daily(450, 0.003, 7)        # آلت صعودی، BTC نزولی در انتها
+        d = {"BTCUSDT": btc + tail, "AAAUSDT": alt}
+        a, b = d["BTCUSDT"][300]["t"], d["BTCUSDT"][-1]["t"]
+        on = run_momentum(d, a, b, MomParams(btc_sma_filter=200))
+        off = run_momentum(d, a, b, MomParams())
+        self.assertGreater(on["time_in_cash_pct"], off["time_in_cash_pct"])
+
     def test_monday_rebalance(self):
         from mari_bot.momentum import run_momentum
         from datetime import datetime, timezone
