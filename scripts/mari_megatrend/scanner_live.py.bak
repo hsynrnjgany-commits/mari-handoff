@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+MARI-MEGATREND — اسکنر زندهٔ بازار جهانی (توصیفی، فقط‌خواندن)
+منطق شاخص‌ها: همان تعاریف ممیزی‌شدهٔ M143 scanner.py (EMA stack + ADX) — بدون موتور تکراری.
+خروجی: طبقه‌بندی وضعیت ۸گانهٔ دستورالعمل برای هر نماد + رژیم BTC + breadth + بخش‌ها + futures (funding/OI)
+قفل: READ ONLY | PAPER ONLY | NO LIVE ORDERS — هیچ سفارشی، هیچ کلیدی، فقط endpoint عمومی.
+"""
+import json, os, sys, time, math, urllib.request, urllib.parse
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, "out"); os.makedirs(OUT, exist_ok=True)
+DATA = os.path.join(HERE, "data"); os.makedirs(DATA, exist_ok=True)
+BASE = "https://data-api.binance.vision/api/v3"
+FAPI = "https://fapi.binance.com"
+sys.path.insert(0, "/home/z/my-project/scripts/m143_profit_runner")
+import scanner as m143  # reuse audited ema/adx/universe logic
+
+TOP_N = 40
+BARS = 1500  # ~62 روز ۱ساعته
+
+def http_json(url, retries=3, timeout=25):
+    for a in range(retries):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "mari-megatrend/1.0"})
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.loads(r.read().decode())
+        except Exception:
+            time.sleep(1.5 * (a + 1))
+    return None
+
+def rsi(closes, period=14):
+    if len(closes) < period + 1: return None
+    gains, losses = [], []
+    for i in range(1, period + 1):
+        d = closes[i] - closes[i - 1]
+        gains.append(max(d, 0)); losses.append(max(-d, 0))
+    ag, al = sum(gains) / period, sum(losses) / period
+    for i in range(period + 1, len(closes)):
+        d = closes[i] - closes[i - 1]
+        ag = (ag * (period - 1) + max(d, 0)) / period
+        al = (al * (period - 1) + max(-d, 0)) / period
+    if al == 0: return 100.0
+    return 100 - 100 / (1 + ag / al)
+
+def atr_pct(bars, period=14):
+    if len(bars) < period + 1: return None
+    trs = []
+    for j in range(len(bars) - period, len(bars)):
+        h, l, pc = bars[j]["h"], bars[j]["l"], bars[j - 1]["c"]
+        trs.append(max(h - l, abs(h - pc), abs(l - pc)))
+    a = sum(trs) / period
+    return round(100 * a / bars[-1]["c"], 2) if bars[-1]["c"] else None
+
+def fetch_klines(sym, interval="1h", limit=1000, end_time=None):
+    params = {"symbol": sym, "interval": interval, "limit": limit}
+    if end_time: params["endTime"] = end_time
+    b = http_json(BASE + "/klines?" + urllib.parse.urlencode(params))
+    return [{"t": r[0], "o": float(r[1]), "h": float(r[2]), "l": float(r[3]),
+             "c": float(r[4]), "v": float(r[5]), "qv": float(r[7])} for r in b] if b else []
+
+def classify(st, btc_reg):
+    """طبقه‌بندی محافظه‌کارانهٔ ۸گانه — توصیفی، مجوز ورود/خروج نیست."""
+    if st["bars"] < 250 or st["price"] is None: return "INSUFFICIENT_DATA"
+    e20, e50, e200, adx, r = st["e20"], st["e50"], st["e200"], st["adx"], st["rsi"]
+    if None in (e20, e50, e200): return "INSUFFICIENT_DATA"
+    pos = st["pos_60d"]          # 0=کف ۶۰روزه، 1=سقف
+    volx = st["vol_x"]           # نسبت حجم 24h به میانگین 30d
+    stack_up = e20 > e50 > e200
+    stack_dn = e20 < e50 < e200
+    near_high = pos >= 0.97
+    weak = (not stack_up) and (r is not None and r < 45) and pos < 0.5
+    if stack_up and (adx or 0) >= 25 and near_high:
+        return "TREND_RUNNER" if st["rs_30d_btc"] > 10 else "TREND_CONFIRMED"
+    if stack_up and (adx or 0) >= 20 and pos >= 0.9:
+        return "BREAKOUT_WATCH" if st["dist_high_pct"] <= 3 else "TREND_CONFIRMED"
+    if stack_up and pos < 0.85 and volx and volx >= 1.5:
+        return "EARLY_ACCUMULATION"
+    if stack_dn and (st["dist_high_pct"] is not None and st["dist_high_pct"] > 25):
+        return "EXIT_WARNING" if st["unreal"] else "REJECTED"
+    if weak or stack_dn:
+        return "WEAKENING"
+    if pos >= 0.97 and (adx or 0) < 20 and (volx or 0) < 1.2:
+        return "WEAKENING"
+    return "REJECTED" if stack_dn else "INSUFFICIENT_DATA"
+
+def main():
+    t0 = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    syms = m143.universe()[:TOP_N]
+    print(f"universe={len(syms)}", flush=True)
+    # BTC first (regime)
+    btc_bars = []
+    rows = fetch_klines("BTCUSDT", limit=BARS)
+    btc_bars = rows
+    bc = [b["c"] for b in btc_bars]
+    btc = {"price": bc[-1] if bc else None,
+           "chg_7d_pct": round(100 * (bc[-1] / bc[-169] - 1), 2) if len(bc) > 169 else None,
+           "chg_30d_pct": round(100 * (bc[-1] / bc[-721] - 1), 2) if len(bc) > 721 else None,
+           "ema_stack": None, "adx": None}
+    if len(bc) > 250:
+        e20, e50, e200 = m143.ema(bc, 20), m143.ema(bc, 50), m143.ema(bc, 200)
+        btc["ema_stack"] = "UP" if (e20[-1] > e50[-1] > e200[-1]) else ("DOWN" if e20[-1] < e50[-1] < e200[-1] else "MIXED")
+        btc["adx"] = round(m143.adx_last(btc_bars, len(btc_bars) - 1) or 0, 1)
+    btc_reg = ("BULL" if btc["ema_stack"] == "UP" and (btc["adx"] or 0) >= 20
+               else "BEAR" if btc["ema_stack"] == "DOWN" else "NEUTRAL/RANGE")
+    rets = {}
+    out, states_ct = [], {}
+    for sym in syms:
+        bars = fetch_klines(sym, limit=BARS)
+        json.dump(bars[-500:], open(os.path.join(DATA, f"{sym}_1h_recent.json"), "w"))
+        if len(bars) < 250:
+            out.append({"symbol": sym, "state": "INSUFFICIENT_DATA", "bars": len(bars)})
+            continue
+        c = [b["c"] for b in bars]
+        e20, e50, e200 = m143.ema(c, 20), m143.ema(c, 50), m143.ema(c, 200)
+        hi60 = max(b["h"] for b in bars[-1441:])
+        lo60 = min(b["l"] for b in bars[-1441:])
+        qv24 = sum(b["qv"] for b in bars[-24:])
+        qv30 = sum(b["qv"] for b in bars[-721:]) / 30.0
+        r7 = 100 * (c[-1] / c[-169] - 1) if len(c) > 169 else None
+        r30 = 100 * (c[-1] / c[-721] - 1) if len(c) > 721 else None
+        st = {"symbol": sym, "bars": len(bars), "price": c[-1],
+              "e20": e20[-1], "e50": e50[-1], "e200": e200[-1],
+              "adx": m143.adx_last(bars, len(bars) - 1),
+              "rsi": rsi(c), "atr_pct": atr_pct(bars),
+              "chg_7d_pct": round(r7, 2) if r7 is not None else None,
+              "chg_30d_pct": round(r30, 2) if r30 is not None else None,
+              "rs_30d_btc": round(r30 - btc["chg_30d_pct"], 2) if (r30 is not None and btc["chg_30d_pct"] is not None) else None,
+              "dist_high_pct": round(100 * (1 - c[-1] / hi60), 2),
+              "pos_60d": round((c[-1] - lo60) / (hi60 - lo60), 3) if hi60 > lo60 else None,
+              "vol_x": round(qv24 / qv30, 2) if qv30 > 0 else None,
+              "qv24h_usd": round(qv24), "unreal": False}
+        st["state"] = classify(st, btc_reg)
+        # futures (public, descriptive) — top liquidity only
+        if len(out) < 20:
+            pi = http_json(FAPI + "/fapi/v1/premiumIndex?" + urllib.parse.urlencode({"symbol": sym}))
+            if pi and "lastFundingRate" in pi:
+                st["funding_8h_pct"] = round(float(pi["lastFundingRate"]) * 100, 4)
+            oi = http_json(FAPI + "/fapi/v1/openInterest?" + urllib.parse.urlencode({"symbol": sym}))
+            if oi and "openInterest" in oi:
+                st["open_interest_base"] = round(float(oi["openInterest"]), 0)
+            if "funding_8h_pct" not in st: st["funding_8h_pct"] = "UNAVAILABLE"
+        else:
+            st["funding_8h_pct"] = None
+        out.append(st)
+        states_ct[st["state"]] = states_ct.get(st["state"], 0) + 1
+        time.sleep(0.15)
+    # breadth
+    above50 = sum(1 for o in out if isinstance(o.get("e50"), (int, float)) and isinstance(o.get("price"), (int, float)) and o["price"] > o["e50"])
+    above200 = sum(1 for o in out if isinstance(o.get("e200"), (int, float)) and isinstance(o.get("price"), (int, float)) and o["price"] > o["e200"])
+    n_valid = sum(1 for o in out if isinstance(o.get("price"), (int, float)))
+    res = {"generated_utc": t0, "lock": "READ ONLY | PAPER ONLY | NO LIVE ORDERS — توصیفی؛ مجوز معامله نیست",
+           "btc": btc, "btc_regime": btc_reg,
+           "breadth": {"n_valid": n_valid, "above_ema50": above50, "above_ema200": above200,
+                        "above50_pct": round(100 * above50 / n_valid, 1) if n_valid else None,
+                        "above200_pct": round(100 * above200 / n_valid, 1) if n_valid else None},
+           "states_count": states_ct, "symbols": out,
+           "disclosure": ["طبقه‌بندی توصیفی است، نه سیگنال قطعی", "هیچ شاخصی به‌تنهایی مجوز ورود/خروج نیست",
+                           "funding/OI از Binance Futures عمومی — صرفاً تحلیل", "دادهٔ ناقص = INSUFFICIENT_DATA/UNAVAILABLE"]}
+    json.dump(res, open(os.path.join(OUT, "megatrend_scan.json"), "w"), ensure_ascii=False, indent=1)
+    print("BTC:", json.dumps(btc), "| regime:", btc_reg)
+    print("breadth:", json.dumps(res["breadth"]))
+    print("states:", json.dumps(states_ct))
+    for o in out:
+        if o.get("state") in ("TREND_RUNNER", "TREND_CONFIRMED", "BREAKOUT_WATCH", "EARLY_ACCUMULATION"):
+            print(f"{o['symbol']:14s} {o['state']:18s} px={o['price']} adx={o['adx']} rsi={o['rsi']} rs30={o['rs_30d_btc']} volx={o['vol_x']} dHigh={o['dist_high_pct']}%")
+
+if __name__ == "__main__":
+    main()

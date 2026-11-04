@@ -1,0 +1,76 @@
+{
+ "mission": "HUNT-02 / MEGA-TREND HUNTER",
+ "generated_utc": "2026-10-31T14:55:00Z",
+ "negative_results": [
+  {
+   "id": "N1",
+   "fact": "هیچ مدل خروجی (X_R, X_ST) هر ۳ گیت از پیش‌ثبت‌شدهٔ M153-E را نگذراند",
+   "source": "scripts/m153_fusion/out/m153_e_exits.json::verdicts"
+  },
+  {
+   "id": "N2",
+   "fact": "لبهٔ NEW-A در هزینهٔ 25→30bp می‌میرد (در 30bp: −$27.32)",
+   "source": "scripts/m144_adversarial/out/m144_verdict.json::step2_statistics.cost_grid_total_rt_pct"
+  },
+  {
+   "id": "N3",
+   "fact": "74.6% سود خالص NEW-A از 10 معاملهٔ برتر — حذف Top10 → +$62.05 (تقریباً صفر)",
+   "source": "m144_verdict.json::step2_statistics.drop_top10"
+  },
+  {
+   "id": "N4",
+   "fact": "OOS خالص M152 منفی: پایه −$124.14 (PF 0.927) · g3_cap5 −$65.81 (PF 0.853)",
+   "source": "scripts/m152_g3_validation/out/m152_g3.json::oos"
+  },
+  {
+   "id": "N5",
+   "fact": "خروج پله‌ای (Partial+Runner) بدتر از ATR Trail: FDR-تأیید F5 (mean −0.19%)",
+   "source": "scripts/m153_fusion/out/m153_h_meta.json::tests[F5]"
+  },
+  {
+   "id": "N6",
+   "fact": "هیچ ادعای سود مطلق پس از BH-FDR(0.10) زنده نمی‌ماند (F2,F4,F6,F7,F8 رد)",
+   "source": "m153_h_meta.json::interpretation"
+  },
+  {
+   "id": "N7",
+   "fact": "زنده: Open Interest UNAVAILABLE (endpoint پاسخ نداد)",
+   "source": "scripts/mari_megatrend/out/hunt02_live_20261031T144757Z.json::unavailable_feeds"
+  },
+  {
+   "id": "N8",
+   "fact": "زنده: Sector rotation UNAVAILABLE — دیتاست سکتور MISSING",
+   "source": "همان فایل"
+  },
+  {
+   "id": "N9",
+   "fact": "زنده: همهٔ 118 رویداد روند در رژیم BTC RISK_ON رخ داده‌اند؛ OFF=0 → مقایسهٔ بین‌رژیمی رویدادها ناممکن",
+   "source": "growth_calibration.by_btc_regime"
+  },
+  {
+   "id": "N10",
+   "fact": "زنده: دارایی‌های پگ‌شده (RLUSD, U) به‌اشتباه TREND CONFIRMED شدند — محدودیت طبقه‌بند روی دارایی‌های پگ مستند شد",
+   "source": "rows"
+  },
+  {
+   "id": "N11",
+   "fact": "X_ATR: 22 رکورد MFE معیوب از 657 (مقادیر غیرمنطقی) — میانگین فقط روی 635 رکورد سالم",
+   "source": "scripts/mari_megatrend/out/m153e_v0_mfe_mae.json"
+  },
+  {
+   "id": "N12",
+   "fact": "سطح +300% و +500%: تعداد hit کم (3 و 1-3) → CI وایلسون پهن — ادعای دقت ممنوع",
+   "source": "growth_calibration.levels"
+  },
+  {
+   "id": "N13",
+   "fact": "H65-13: صفر آلفای OOS اثبات‌شده در تاریخچهٔ پروژه (مرجع مأموریت HUNT-01 scope.uncovered)",
+   "source": "scripts/mari_hunt01/store/mission.json"
+  },
+  {
+   "id": "N14",
+   "fact": "M153_FG: در اسکن 72h، صفر رویداد ≥300% در کل یونیورس ~490k نوار",
+   "source": "scripts/m153_fusion/out/m153_fg_capture.json"
+  }
+ ]
+}
