@@ -20,7 +20,7 @@ LOCK_LINE = "همه‌چیز تمرینی است — بدون سفارش واق�
 
 STABLE_BASES = {
     "USDT", "USDC", "FDUSD", "TUSD", "DAI", "BUSD", "USDP", "USDD", "PYUSD", "USD1", "RLUSD",
-    "RWUSD", "BFUSD", "USDE", "EUR", "EURI", "GUSD", "U", "PAXG", "XAUT",  # طلا هم قیمت مستقل کریپتویی ندارد
+    "RWUSD", "BFUSD", "USDE", "EUR", "EURI", "GUSD", "U", "XUSD", "USDS", "FRAX", "LUSD", "PAXG", "XAUT",  # طلا هم قیمت مستقل کریپتویی ندارد
 }
 # «UP» عمداً نیست: نام‌های واقعی مثل SYRUP یا JUP را به‌اشتباه حذف می‌کرد.
 LEVERAGED_SUFFIXES = ("DOWN", "BULL", "BEAR", "3L", "3S", "5L", "5S", "2L", "2S")
