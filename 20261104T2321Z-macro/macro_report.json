@@ -1,0 +1,118 @@
+{
+ "registered_before_results": true,
+ "hypotheses": {
+  "H-MARI-X-011": "BTC فقط وقتی شاخص دلار (DTWEXBGS) زیر میانگین ۱۰۰روزه است؛ وگرنه نقد. تأخیر ۷ روز.",
+  "H-MARI-X-012": "BTC فقط وقتی نقدینگی خالص فدرال بالای میانگین ۹۰روزه است؛ وگرنه نقد. تأخیر ۷ روز.",
+  "H-MARI-X-013": "BTC فقط وقتی بازده ۱۰سالهٔ خزانه زیر میانگین ۱۰۰روزه است؛ وگرنه نقد. تأخیر ۱ روز.",
+  "H-MARI-X-014": "BTC بالای SMA150 و نقدینگی خالص بالای میانگین ۹۰روزه؛ وگرنه نقد. باید شارپ T-006 را هم بزند."
+ },
+ "publication_lags_days": {
+  "DGS10": 1,
+  "DTWEXBGS": 7,
+  "NETLIQ": 7
+ },
+ "source": "https://fred.stlouisfed.org/graph/fredgraph.csv (official, public)",
+ "fred_last_obs": {
+  "DGS10": "2026-11-03",
+  "DTWEXBGS": "2026-10-30",
+  "WALCL": "2026-10-28",
+  "WTREGEN": "2026-10-28",
+  "RRPONTSYD": "2026-11-04"
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-04"
+ },
+ "known_biases": [
+  "تاریخچهٔ FRED ممکن است بازنگری‌شده باشد (نه دقیقاً عدد منتشرشدهٔ همان روز).",
+  "MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۴ می‌رسد."
+ ],
+ "results": {
+  "BTC_BUY_HOLD": {
+   "total_return_pct": 912.27,
+   "cagr_pct": 31.6,
+   "max_drawdown_pct": 76.63,
+   "sharpe": 0.76,
+   "weekly_bootstrap": {
+    "mean_pct": 0.885,
+    "ci95_low": 0.142,
+    "ci95_high": 1.691
+   },
+   "trades": 1,
+   "time_in_cash_pct": 0.0
+  },
+  "T-006_REFERENCE": {
+   "total_return_pct": 2023.75,
+   "cagr_pct": 43.69,
+   "max_drawdown_pct": 45.05,
+   "sharpe": 1.06,
+   "weekly_bootstrap": {
+    "mean_pct": 0.888,
+    "ci95_low": 0.315,
+    "ci95_high": 1.519
+   },
+   "trades": 65,
+   "time_in_cash_pct": 46.4
+  },
+  "H-MARI-X-011": {
+   "statement": "BTC فقط وقتی شاخص دلار (DTWEXBGS) زیر میانگین ۱۰۰روزه است؛ وگرنه نقد. تأخیر ۷ روز.",
+   "verdict": "SUPPORTED_IN_TEST_RANGE",
+   "total_return_pct": 875.97,
+   "cagr_pct": 31.03,
+   "max_drawdown_pct": 56.2,
+   "sharpe": 0.87,
+   "weekly_bootstrap": {
+    "mean_pct": 0.67,
+    "ci95_low": 0.178,
+    "ci95_high": 1.212
+   },
+   "trades": 124,
+   "time_in_cash_pct": 54.3
+  },
+  "H-MARI-X-012": {
+   "statement": "BTC فقط وقتی نقدینگی خالص فدرال بالای میانگین ۹۰روزه است؛ وگرنه نقد. تأخیر ۷ روز.",
+   "verdict": "SUPPORTED_IN_TEST_RANGE",
+   "total_return_pct": 904.2,
+   "cagr_pct": 31.47,
+   "max_drawdown_pct": 52.48,
+   "sharpe": 0.84,
+   "weekly_bootstrap": {
+    "mean_pct": 0.704,
+    "ci95_low": 0.134,
+    "ci95_high": 1.29
+   },
+   "trades": 88,
+   "time_in_cash_pct": 50.6
+  },
+  "H-MARI-X-013": {
+   "statement": "BTC فقط وقتی بازده ۱۰سالهٔ خزانه زیر میانگین ۱۰۰روزه است؛ وگرنه نقد. تأخیر ۱ روز.",
+   "verdict": "FALSIFIED",
+   "total_return_pct": 533.47,
+   "cagr_pct": 24.48,
+   "max_drawdown_pct": 65.81,
+   "sharpe": 0.73,
+   "weekly_bootstrap": {
+    "mean_pct": 0.576,
+    "ci95_low": 0.08,
+    "ci95_high": 1.076
+   },
+   "trades": 118,
+   "time_in_cash_pct": 55.5
+  },
+  "H-MARI-X-014": {
+   "statement": "BTC بالای SMA150 و نقدینگی خالص بالای میانگین ۹۰روزه؛ وگرنه نقد. باید شارپ T-006 را هم بزند.",
+   "verdict": "FALSIFIED",
+   "total_return_pct": 919.24,
+   "cagr_pct": 31.71,
+   "max_drawdown_pct": 40.33,
+   "sharpe": 0.98,
+   "weekly_bootstrap": {
+    "mean_pct": 0.654,
+    "ci95_low": 0.191,
+    "ci95_high": 1.148
+   },
+   "trades": 80,
+   "time_in_cash_pct": 69.5
+  }
+ }
+}
