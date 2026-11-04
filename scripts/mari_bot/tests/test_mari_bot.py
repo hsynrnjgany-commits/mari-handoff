@@ -1,0 +1,288 @@
+# -*- coding: utf-8 -*-
+"""آزمون‌های ربات ماری — اجرا از پوشهٔ scripts:  python3 -m unittest discover -s mari_bot/tests -t ."""
+from __future__ import annotations
+
+import json
+import math
+import os
+import re
+import tempfile
+import unittest
+from unittest import mock
+
+from mari_bot import data as D
+from mari_bot import indicators as I
+from mari_bot.backtest import run_backtest
+from mari_bot.config import LOCK_LINE, BotConfig, CostParams, ExitParams, RiskParams, tradable_symbol
+from mari_bot.ledger import Ledger, verify_chain
+from mari_bot.position import Position, manage
+from mari_bot.risk import RiskGate
+from mari_bot.telegram import fa, fmt_event, fmt_hunt, fmt_report, fmt_trades
+from mari_bot.trend import SymbolSeries, classify
+
+PKG = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOCAL = os.path.join(os.path.dirname(PKG), "mari_megatrend", "data")
+H = 3_600_000
+
+
+def synth(n=400, drift=0.002, vol=0.004, start=100.0, t0=1_700_000_000_000, seed=1):
+    import random
+    rnd = random.Random(seed)
+    bars, px = [], start
+    for i in range(n):
+        o = px
+        c = o * (1 + drift + rnd.uniform(-vol, vol))
+        h = max(o, c) * (1 + rnd.uniform(0, vol))
+        l = min(o, c) * (1 - rnd.uniform(0, vol))
+        v = 1000 + rnd.uniform(0, 200) + (400 if i % 25 == 0 else 0)
+        bars.append({"t": t0 + i * H, "o": o, "h": h, "l": l, "c": c, "v": v, "qv": v * c})
+        px = c
+    return bars
+
+
+class TestLocks(unittest.TestCase):
+    def test_no_order_paths_in_package(self):
+        bad = re.compile(r"(spot/order|/order\b|openOrders|X-BB-APIKEY|signature=|hmac|api_secret|newOrder)", re.I)
+        for root, _, files in os.walk(PKG):
+            if "tests" in root:
+                continue
+            for f in files:
+                if f.endswith(".py"):
+                    with open(os.path.join(root, f), encoding="utf-8") as fh:
+                        self.assertIsNone(bad.search(fh.read()), f"مسیر سفارش در {f}")
+
+    def test_http_rejects_non_quote_paths(self):
+        with self.assertRaises(D.DataError):
+            D.http_get_json("/api/v1/spot/order", {"symbol": "BTCUSDT"})
+
+    def test_symbol_filter(self):
+        self.assertTrue(tradable_symbol("BTCUSDT"))
+        self.assertTrue(tradable_symbol("SYRUPUSDT"))
+        self.assertFalse(tradable_symbol("USDCUSDT"))
+        self.assertFalse(tradable_symbol("BTC3LUSDT"))
+        self.assertFalse(tradable_symbol("牛来USDT"))
+
+
+class TestIndicators(unittest.TestCase):
+    def test_ema_constant(self):
+        e = I.ema([5.0] * 30, 10)
+        self.assertTrue(math.isnan(e[8]))
+        self.assertAlmostEqual(e[-1], 5.0)
+
+    def test_atr_constant_range(self):
+        bars = [{"o": 10, "h": 11, "l": 9, "c": 10} for _ in range(30)]
+        self.assertAlmostEqual(I.atr(bars, 14)[-1], 2.0)
+
+    def test_rsi_bounds(self):
+        r = I.rsi([float(i) for i in range(50)], 14)
+        self.assertEqual(r[-1], 100.0)
+
+
+class TestTrend(unittest.TestCase):
+    def test_no_lookahead(self):
+        bars = synth(400, drift=0.001)
+        full = SymbolSeries("X", bars)
+        for t in (200, 280, 350):
+            cut = SymbolSeries("X", bars[: t + 1])
+            a, b = classify(full, t), classify(cut, t)
+            self.assertEqual(a.state, b.state)
+            self.assertAlmostEqual(a.score, b.score, places=6)
+
+    def test_states(self):
+        self.assertIn(classify(SymbolSeries("U", synth(400, 0.003)), 399).state, ("A", "B"))
+        self.assertIn(classify(SymbolSeries("D", synth(400, -0.003)), 399).state, ("E", "F"))
+        self.assertEqual(classify(SymbolSeries("S", synth(100)), 99).state, "H")
+        crash = synth(400, 0.001)
+        for k in range(4):
+            b = crash[-4 + k]
+            f = 0.97 ** (k + 1)
+            for key in ("o", "h", "l", "c"):
+                b[key] *= f
+        self.assertEqual(classify(SymbolSeries("C", crash), 399).state, "G")
+
+
+def _pos(entry=100.0, stop=95.0):
+    p = Position("X", 0, entry, 10.0, stop, entry - stop, "B", "test")
+    return p
+
+
+class TestPosition(unittest.TestCase):
+    ex, cost = ExitParams(), CostParams(fee_side=0.0, slippage=0.0)
+
+    def bar(self, o, h, l, c, t=H):
+        return {"t": t, "o": o, "h": h, "l": l, "c": c}
+
+    def test_stop_full_exit(self):
+        p = _pos()
+        f = manage(p, self.bar(99, 99, 94, 96), "B", 1.0, self.ex, self.cost)
+        self.assertEqual(p.qty, 0)
+        self.assertEqual(f[0].price, 95.0)
+        self.assertEqual(f[0].reason, "STOP_LOSS")
+
+    def test_gap_fill_at_open(self):
+        p = _pos()
+        f = manage(p, self.bar(90, 91, 89, 90), "B", 1.0, self.ex, self.cost)
+        self.assertEqual(f[0].price, 90)
+
+    def test_uptrend_holds_and_trails(self):
+        p = _pos()
+        manage(p, self.bar(100, 110, 100, 109), "A", 1.0, self.ex, self.cost)
+        self.assertEqual(p.qty, 10.0)                  # روند قوی: هیچ فروشی
+        self.assertAlmostEqual(p.stop, 110 - 3.0)      # حد ضرر متحرک ۳ATR از اوج
+        manage(p, self.bar(109, 109, 108, 108.5, 2 * H), "A", 1.0, self.ex, self.cost)
+        self.assertAlmostEqual(p.stop, 107.0)          # فقط بالا می‌رود
+
+    def test_staged_exit(self):
+        p = _pos()
+        manage(p, self.bar(100, 101, 99.5, 100.5), "E", 1.0, self.ex, self.cost)
+        self.assertAlmostEqual(p.qty, 5.0)             # مرحلهٔ ۳: نیمی فروخته شد
+        self.assertEqual(p.stage, 3)
+        manage(p, self.bar(100.5, 101, 99.6, 100, 2 * H), "E", 1.0, self.ex, self.cost)
+        self.assertAlmostEqual(p.qty, 5.0)             # تکرار نمی‌شود
+        manage(p, self.bar(100, 100, 99.7, 99.8, 3 * H), "G", 1.0, self.ex, self.cost)
+        self.assertEqual(p.qty, 0)
+        self.assertEqual(p.max_stage, 5)
+
+    def test_profit_scaling_not_in_strong_trend(self):
+        p = _pos()
+        manage(p, self.bar(100, 116, 100, 115), "A", 2.0, self.ex, self.cost)
+        self.assertEqual(p.qty, 10.0)                  # ۳٫۲R ولی روند A: برداشت نمی‌شود
+        manage(p, self.bar(115, 116, 115, 115.5, 2 * H), "B", 2.0, self.ex, self.cost)
+        self.assertAlmostEqual(p.qty, 7.5)
+
+
+class TestRisk(unittest.TestCase):
+    def test_gate(self):
+        g = RiskGate(RiskParams())
+        ok = dict(open_symbols=set(), btc_state="B", data_ok=True, median_qv=1e6)
+        self.assertEqual(g.check_entry("SOLUSDT", 0, **ok), [])
+        self.assertIn("MAX_POSITIONS", g.check_entry("SOLUSDT", 0, **{**ok, "open_symbols": set("abcde")}))
+        self.assertIn("BTC_REGIME_G", g.check_entry("SOLUSDT", 0, **{**ok, "btc_state": "G"}))
+        self.assertIn("LOW_LIQUIDITY", g.check_entry("SOLUSDT", 0, **{**ok, "median_qv": 10}))
+        g.on_close("SOLUSDT", 0, -1)
+        self.assertIn("COOLDOWN", g.check_entry("SOLUSDT", 3 * H, **ok))
+        self.assertEqual(g.check_entry("SOLUSDT", 6 * H, **ok), [])
+        g.on_close("A", 0, -1)
+        self.assertTrue(g.on_close("B", 0, -1))        # سومین ضرر پیاپی → فیوز
+        self.assertIn("LOSS_FUSE_ACTIVE", g.check_entry("SOLUSDT", 10 * H, **ok))
+        self.assertNotIn("LOSS_FUSE_ACTIVE", g.check_entry("SOLUSDT", 25 * H, **ok))
+
+    def test_size_respects_caps(self):
+        g = RiskGate(RiskParams())
+        q = g.size(100, 99, 1000, 0.001)               # ریسک ۱٪ → ۱۰ واحد، اما سقف ۲۰٪ → ۲ واحد
+        self.assertAlmostEqual(q, 2.0)
+
+
+class TestLedger(unittest.TestCase):
+    def test_chain_and_tamper(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "l.jsonl")
+            led = Ledger(p, "R", "cfg")
+            for i in range(5):
+                led.write("X", ts=i, v=i)
+            self.assertTrue(verify_chain(p)["ok"])
+            Ledger(p, "R2", "cfg").write("Y", ts=9)     # ادامهٔ زنجیره پس از راه‌اندازی دوباره
+            self.assertTrue(verify_chain(p)["ok"])
+            with open(p) as fh:
+                lines = fh.read().splitlines()
+            rec = json.loads(lines[2])
+            rec["v"] = 999
+            lines[2] = json.dumps(rec)
+            with open(p, "w") as fh:
+                fh.write("\n".join(lines) + "\n")
+            self.assertFalse(verify_chain(p)["ok"])
+
+
+class TestQuality(unittest.TestCase):
+    def test_detects_issues(self):
+        bars = synth(50)
+        bad = bars[:10] + [bars[9]] + bars[12:]               # تکرار + شکاف
+        bad.append({**bars[-1], "t": bars[-1]["t"] + H, "h": 1, "l": 2})  # کندل ناممکن
+        q = D.quality_check(bad)
+        self.assertEqual(q["dupes"], 1)
+        self.assertEqual(q["gaps"], 2)
+        self.assertEqual(q["bad"], 1)
+
+    def test_parse_toobit_rows(self):
+        rows = [[1000, "1", "2", "0.5", "1.5", "10", 1999, "15", 3]]
+        b = D.parse_toobit_klines(rows)[0]
+        self.assertEqual((b["t"], b["c"], b["qv"]), (1000, 1.5, 15.0))
+
+    def test_drop_unclosed(self):
+        bars = synth(3, t0=0)
+        self.assertEqual(len(D.drop_unclosed(bars, now_ms=2 * H + 10)), 2)
+
+
+@unittest.skipUnless(os.path.isdir(LOCAL), "دادهٔ محلی موجود نیست")
+class TestBacktest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.raw = D.load_local_dir(LOCAL)
+        cls.r = run_backtest(cls.raw)
+
+    def test_deterministic(self):
+        r2 = run_backtest(self.raw)
+        self.assertEqual(self.r["metrics"]["end_equity"], r2["metrics"]["end_equity"])
+        self.assertEqual(len(self.r["trades"]), len(r2["trades"]))
+
+    def test_cash_accounting(self):
+        bot, start = self.r["bot"], BotConfig().risk.start_equity
+        expected = (start + sum(t["pnl_usdt"] for t in bot.trades)
+                    + sum(p.realized() - p.entry_px * p.qty for p in bot.positions.values()))
+        self.assertAlmostEqual(bot.gate.s.cash, expected, delta=0.05)
+
+    def test_risk_limits_never_breached(self):
+        bot = self.r["bot"]
+        open_count, worst = 0, 0
+        for e in bot.ledger.events:
+            if e["event"] == "ENTRY":
+                open_count += 1
+                self.assertLessEqual(e["notional"], e["equity"] * 0.2 + 0.02)
+                self.assertLessEqual(e["risk_usdt"], e["equity"] * 0.01 + 0.02)
+            elif e["event"] == "CLOSED":
+                open_count -= 1
+            worst = max(worst, open_count)
+        self.assertLessEqual(worst, 5)
+
+    def test_no_stable_entries(self):
+        self.assertTrue(all(tradable_symbol(t["symbol"]) for t in self.r["trades"]))
+
+
+class TestTelegramFormat(unittest.TestCase):
+    def test_messages(self):
+        r = run_backtest({"BTCUSDT": synth(400, 0.002), "ETHUSDT": synth(400, 0.003, seed=3)})
+        bot = r["bot"]
+        for msg in (fmt_report(bot), fmt_trades(bot), fmt_hunt(bot)):
+            self.assertTrue(msg.rstrip().endswith(LOCK_LINE))
+            self.assertNotRegex(msg, r"[0-9]")         # اعداد فارسی
+        for e in bot.ledger.events:
+            m = fmt_event(e)
+            if m:
+                self.assertIn(LOCK_LINE, m)
+        self.assertEqual(fa(1234.5), "۱،۲۳۴٫۵۰")
+
+
+class TestLiveBoot(unittest.TestCase):
+    def test_first_boot_does_not_replay_history(self):
+        from mari_bot import live
+        bars = {"BTCUSDT": synth(400, 0.002), "SOLUSDT": synth(400, 0.004, seed=5)}
+        now = bars["BTCUSDT"][-1]["t"] + 2 * H
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.object(live, "fetch_universe", return_value=["SOLUSDT"]), \
+                mock.patch.object(live, "fetch_quote_volumes", return_value={}), \
+                mock.patch.object(live, "fetch_klines", side_effect=lambda s, *a: bars[s]), \
+                mock.patch.object(live.time, "sleep"), \
+                mock.patch.object(live.time, "time", return_value=now / 1000), \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "", "TELEGRAM_BOT_TOKEN": ""}):
+            r = live.LiveRunner(d)
+            out = r.cycle()
+            self.assertTrue(out["ok"])
+            self.assertEqual(len(r.bot.equity_curve), 1)        # فقط آخرین کندل بسته پردازش شد
+            self.assertEqual(r.bot.trades, [])
+            self.assertTrue(os.path.exists(os.path.join(d, "state.json")))
+            r2 = live.LiveRunner(d)                              # بازیابی وضعیت
+            self.assertEqual(r2.bot.last_ts, r.bot.last_ts)
+
+
+if __name__ == "__main__":
+    unittest.main()
