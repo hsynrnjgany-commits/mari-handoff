@@ -428,6 +428,16 @@ class TestMomentum(unittest.TestCase):
         self.assertGreater(r["rebalances"], 200)        # تصمیم روزانه
         self.assertGreater(r["strategy"]["total_return_pct"], 0)
 
+    def test_signal_lag_changes_decisions(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        d = {"BTCUSDT": self._daily(400, 0.0, 9)}
+        kw = dict(only_symbols=("BTCUSDT",), max_hold=1, sma=50, require_momentum=False,
+                  rebalance_weekday=-1, min_age_days=0)
+        a, b = d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"]
+        r0 = run_momentum(d, a, b, MomParams(**kw))
+        r1 = run_momentum(d, a, b, MomParams(signal_lag=1, **kw))
+        self.assertNotEqual(r0["strategy"]["total_return_pct"], r1["strategy"]["total_return_pct"])
+
     def test_monday_rebalance(self):
         from mari_bot.momentum import run_momentum
         from datetime import datetime, timezone

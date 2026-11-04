@@ -235,7 +235,8 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
                           variants: tuple = ("H-MARI-M-003", "H-MARI-M-004")) -> dict:
     """فرضیه‌های مومنتوم روزانه روی یک دادهٔ مشترک."""
     from .momentum import (HYPOTHESIS_M003, HYPOTHESIS_M003_PIT, HYPOTHESIS_M004, HYPOTHESIS_M005,
-                           HYPOTHESIS_T006, MomParams, run_momentum)
+                           HYPOTHESIS_T006, HYPOTHESIS_T006_ROBUST, MomParams, run_momentum)
+    t6 = dict(only_symbols=("BTCUSDT",), max_hold=1, require_momentum=False, rebalance_weekday=-1, min_age_days=0)
     hyp = {"H-MARI-M-003": (HYPOTHESIS_M003, MomParams()),
            "H-MARI-M-004": (HYPOTHESIS_M004, MomParams(btc_sma_filter=200)),
            "H-MARI-M-003-PIT": (HYPOTHESIS_M003_PIT, MomParams(pit_top=30)),
@@ -244,12 +245,18 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
            "H-MARI-M-005-PIT": (HYPOTHESIS_M005, MomParams(pit_top=30, vol_target=0.40)),
            "H-MARI-T-006": (HYPOTHESIS_T006, MomParams(only_symbols=("BTCUSDT",), max_hold=1, sma=150,
                                                        require_momentum=False, rebalance_weekday=-1,
-                                                       min_age_days=0))}
+                                                       min_age_days=0)),
+           "T006-SMA100": (HYPOTHESIS_T006_ROBUST, MomParams(sma=100, **t6)),
+           "T006-SMA200": (HYPOTHESIS_T006_ROBUST, MomParams(sma=200, **t6)),
+           "T006-LAG1": (HYPOTHESIS_T006_ROBUST, MomParams(sma=150, signal_lag=1, **t6)),
+           "T006-FEE2X": (HYPOTHESIS_T006_ROBUST, MomParams(sma=150, fee_side=0.002, slippage=0.001, **t6)),
+           "T006-LAG1-FEE2X-SMA200": (HYPOTHESIS_T006_ROBUST,
+                                      MomParams(sma=200, signal_lag=1, fee_side=0.002, slippage=0.001, **t6))}
     end = (end_ms or int(time.time() * 1000)) // DAY_MS * DAY_MS
     start = (start_ms // DAY_MS * DAY_MS) if start_ms else end - years * 365 * DAY_MS
     warm = 260 * DAY_MS
     pit = any("PIT" in v for v in variants)
-    btc_only = all(v == "H-MARI-T-006" for v in variants)
+    btc_only = all(v.startswith(("H-MARI-T-006", "T006")) for v in variants)
     syms = ["BTCUSDT"] if btc_only else (pick_universe_all() if pit else pick_universe(top))
     daily, failed, lineage = {}, [], {}
     for s in syms:
@@ -288,6 +295,9 @@ def run_momentum_research(years: int = 5, top: int = 30, out_dir: str = "researc
         ],
         "results": results, "lineage": lineage,
     }
+    if btc_only:
+        report["known_biases"][0] = ("SELECTION: فقط BTC — بزرگ‌ترین ارز در ۲۰۱۸ هم بود (انتخاب پیشاپیش ممکن)، "
+                                     "اما بقای BTC تا امروز خودش یک واقعیت پس‌نگر است.")
     if pit:
         report["known_biases"][0] = ("SURVIVORSHIP (کاهش‌یافته): جهان هم‌زمان از همهٔ جفت‌های فهرست‌شده/حذف‌شدهٔ "
                                      "بایننس؛ نمادهایی که پیش از ثبت در exchangeInfo پاک شده‌اند هنوز غایب‌اند.")

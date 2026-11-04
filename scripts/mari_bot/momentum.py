@@ -53,6 +53,7 @@ class MomParams:
     vol_window: int = 30
     only_symbols: tuple = ()         # T-006: ("BTCUSDT",)
     require_momentum: bool = True    # T-006: فقط شرط میانگین متحرک
+    signal_lag: int = 0              # ۱ = تصمیم با دادهٔ دیروز، اجرا با قیمت امروز (آزمون استحکام)
 
 
 def _sma(xs, i, n):
@@ -148,8 +149,11 @@ def run_momentum(daily: dict[str, list[dict]], start_ms: int, end_ms: int, p: Mo
                     continue
                 if p.only_symbols and s not in p.only_symbols:
                     continue
-                i = m.get(t)
-                if i is None or i < max(p.lookback, p.sma) or t - first[s] < p.min_age_days * DAY_MS:
+                i0 = m.get(t)
+                if i0 is None:
+                    continue
+                i = i0 - p.signal_lag
+                if i < max(p.lookback, p.sma) or t - first[s] < p.min_age_days * DAY_MS:
                     continue
                 c = closes[s]
                 r = c[i] / c[i - p.lookback] - 1
@@ -258,4 +262,12 @@ HYPOTHESIS_T006 = {
     "statement": "فقط بیت‌کوین: هر روز اگر بسته بالای میانگین ۱۵۰روزه است نگه‌دار، وگرنه کاملاً نقد.",
     "falsified_if": "همان قاعدهٔ M-003 (بازده کل > ۰، کران پایین CI95 هفتگی > ۰، افت کمتر از نگه‌داری BTC)",
     "origin": "ادبیات دنبال‌کردن روند ساده؛ بدون سوگیری بقا؛ ثبت‌شده پیش از دیدن نتیجه",
+}
+
+HYPOTHESIS_T006_ROBUST = {
+    "id": "H-MARI-T-006-ROBUST",
+    "statement": "آزمون استحکام T-006 (فرضیهٔ تازه نیست): همسایه‌های پارامتر (میانگین ۱۰۰ و ۲۰۰)، اجرای یک روز دیرتر، "
+                 "و کارمزد دوبرابر. معیار ثبت‌شده: همهٔ نسخه‌ها باید شارپ بالاتر و افت کمتر از نگه‌داری BTC داشته باشند.",
+    "falsified_if": "هر نسخه‌ای که شارپ ≤ شارپ BTC یا بیشترین افت ≥ افت BTC داشته باشد → T-006 شکننده است",
+    "origin": "ثبت‌شده پس از قبولی T-006 و پیش از اجرای این نسخه‌ها",
 }
