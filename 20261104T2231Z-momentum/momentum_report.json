@@ -1,0 +1,4488 @@
+{
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-04T22:48:20+00:00",
+ "period": {
+  "from": "2018-06-01T00:00:00+00:00",
+  "to": "2026-11-04T00:00:00+00:00"
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines interval=1d (public, read-only)",
+ "universe": {
+  "requested_top": 30,
+  "used": 726,
+  "active_in_period": 692,
+  "failed": [],
+  "listed_or_delisted_considered": 726
+ },
+ "known_biases": [
+  "SURVIVORSHIP (کاهش‌یافته): جهان هم‌زمان از همهٔ جفت‌های فهرست‌شده/حذف‌شدهٔ بایننس؛ نمادهایی که پیش از ثبت در exchangeInfo پاک شده‌اند هنوز غایب‌اند.",
+  "SAME_CLOSE_EXECUTION: تصمیم و اجرا با قیمت بستهٔ همان روز — کمی خوش‌بینانه.",
+  "VENUE: تاریخچه از بایننس؛ اجرای احتمالی آینده در تووبیت.",
+  "MULTIPLE_TESTS: تا این اجرا ۴ فرضیه آزموده شده."
+ ],
+ "results": {
+  "H-MARI-M-005-PIT": {
+   "hypothesis": {
+    "id": "H-MARI-M-005-PIT",
+    "statement": "همان M-003-PIT، به‌علاوهٔ هدف‌گیری نوسان: مواجههٔ سبد طوری کوچک می‌شود که نوسان سالانهٔ تخمینی (۳۰ روز) از ۴۰٪ بیشتر نشود.",
+    "falsified_if": "همان قاعدهٔ M-003",
+    "origin": "ادبیات volatility targeting؛ ثبت‌شده پیش از دیدن نتیجهٔ M-003-PIT"
+   },
+   "params": {
+    "lookback": 28,
+    "sma": 50,
+    "max_hold": 10,
+    "min_age_days": 60,
+    "rebalance_weekday": 0,
+    "fee_side": 0.001,
+    "slippage": 0.0005,
+    "btc_sma_filter": 0,
+    "pit_top": 30,
+    "pit_window": 30,
+    "delist_haircut": 0.0,
+    "vol_target": 0.4,
+    "vol_window": 30,
+    "only_symbols": [],
+    "require_momentum": true
+   },
+   "days": 3078,
+   "rebalances": 440,
+   "avg_weekly_turnover": 0.312,
+   "strategy": {
+    "total_return_pct": -10.17,
+    "cagr_pct": -1.26,
+    "max_drawdown_pct": 84.3,
+    "sharpe": 0.13,
+    "weekly_bootstrap": {
+     "mean_pct": 0.128,
+     "ci95_low": -0.289,
+     "ci95_high": 0.574
+    }
+   },
+   "btc_buy_hold": {
+    "total_return_pct": 929.83,
+    "cagr_pct": 31.87,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "weekly_bootstrap": {
+     "mean_pct": 0.888,
+     "ci95_low": 0.144,
+     "ci95_high": 1.691
+    }
+   },
+   "avg_names_held": 6.85,
+   "time_in_cash_pct": 5.7,
+   "last_picks": {
+    "t": 1793577600000,
+    "held": [
+     "PEPEUSDT"
+    ]
+   },
+   "delisted_exits": 2,
+   "delisted_exit_value_frac_sum": 0.12,
+   "symbols_ever_held": 245,
+   "by_year_pct": {
+    "2018": -23.14,
+    "2019": 31.06,
+    "2020": 135.46,
+    "2021": 103.78,
+    "2022": -56.57,
+    "2023": 2.82,
+    "2024": -12.28,
+    "2025": -20.78,
+    "2026": -44.79
+   },
+   "verdict": "FALSIFIED"
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 3338,
+   "sha": "c4bedacfe2c49605",
+   "first": 1505347200000,
+   "issues": []
+  },
+  "0GUSDT": {
+   "bars": 408,
+   "sha": "f33088dc3dd76b7b",
+   "first": 1758499200000,
+   "issues": []
+  },
+  "1000CATUSDT": {
+   "bars": 687,
+   "sha": "c6d6e3c343bf2dbb",
+   "first": 1734393600000,
+   "issues": []
+  },
+  "1000CHEEMSUSDT": {
+   "bars": 633,
+   "sha": "886d581ee3e0bbd9",
+   "first": 1739059200000,
+   "issues": []
+  },
+  "1000SATSUSDT": {
+   "bars": 1058,
+   "sha": "5f6b664707389dd9",
+   "first": 1702339200000,
+   "issues": []
+  },
+  "1INCHUPUSDT": {
+   "bars": 232,
+   "sha": "5986b6d4ec4fc460",
+   "first": 1618444800000,
+   "issues": []
+  },
+  "1INCHUSDT": {
+   "bars": 2140,
+   "sha": "e81cba0d31067bd6",
+   "first": 1608854400000,
+   "issues": []
+  },
+  "1MBABYDOGEUSDT": {
+   "bars": 779,
+   "sha": "a7419a8437d50238",
+   "first": 1726444800000,
+   "issues": []
+  },
+  "2ZUSDT": {
+   "bars": 398,
+   "sha": "a459d6669353a1ce",
+   "first": 1759363200000,
+   "issues": []
+  },
+  "A2ZUSDT": {
+   "bars": 246,
+   "sha": "b3d3aff74c7d210a",
+   "first": 1753833600000,
+   "issues": []
+  },
+  "AAOIBUSDT": {
+   "bars": 112,
+   "sha": "646ba2e10309a227",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "AAPLBUSDT": {
+   "bars": 98,
+   "sha": "e33012b3a6054189",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "AAVEUPUSDT": {
+   "bars": 351,
+   "sha": "0b21f3c8867338f8",
+   "first": 1606348800000,
+   "issues": []
+  },
+  "AAVEUSDT": {
+   "bars": 2211,
+   "sha": "5a93453a6f05c596",
+   "first": 1602720000000,
+   "issues": []
+  },
+  "ACAUSDT": {
+   "bars": 1481,
+   "sha": "ebbea531d331e08c",
+   "first": 1643068800000,
+   "issues": []
+  },
+  "ACEUSDT": {
+   "bars": 1052,
+   "sha": "82b3663a010bc724",
+   "first": 1702857600000,
+   "issues": []
+  },
+  "ACHUSDT": {
+   "bars": 1759,
+   "sha": "993fe3f27cfd0f50",
+   "first": 1641772800000,
+   "issues": []
+  },
+  "ACMUSDT": {
+   "bars": 2079,
+   "sha": "ce95ad5531a44dfd",
+   "first": 1614124800000,
+   "issues": []
+  },
+  "ACTUSDT": {
+   "bars": 723,
+   "sha": "28761b57696070ad",
+   "first": 1731283200000,
+   "issues": []
+  },
+  "ACXUSDT": {
+   "bars": 620,
+   "sha": "1ab1cfcb93930375",
+   "first": 1733443200000,
+   "issues": []
+  },
+  "ADAUPUSDT": {
+   "bars": 1127,
+   "sha": "edb2bbbf897c5ed7",
+   "first": 1594857600000,
+   "issues": []
+  },
+  "ADAUSDT": {
+   "bars": 3123,
+   "sha": "7529d43cd8935330",
+   "first": 1523923200000,
+   "issues": []
+  },
+  "ADBEBUSDT": {
+   "bars": 35,
+   "sha": "631d3ffd6285fac8",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "ADXUSDT": {
+   "bars": 1832,
+   "sha": "3775f38bf0cdb953",
+   "first": 1635465600000,
+   "issues": []
+  },
+  "AERGOUSDT": {
+   "bars": 694,
+   "sha": "2e2e7101161d8fc5",
+   "first": 1683244800000,
+   "issues": []
+  },
+  "AEROUSDT": {
+   "bars": 110,
+   "sha": "8836b1d234f87c8f",
+   "first": 1784246400000,
+   "issues": []
+  },
+  "AEURUSDT": {
+   "bars": 969,
+   "sha": "b0ceeff7fc87b910",
+   "first": 1701648000000,
+   "issues": [
+    "GAPS:2"
+   ]
+  },
+  "AEVOUSDT": {
+   "bars": 966,
+   "sha": "bc7e8a62c668913b",
+   "first": 1710288000000,
+   "issues": []
+  },
+  "AGIXUSDT": {
+   "bars": 501,
+   "sha": "8c2e96d2ce4ea01e",
+   "first": 1676592000000,
+   "issues": []
+  },
+  "AGLDUSDT": {
+   "bars": 1856,
+   "sha": "35b752b8cf330c4a",
+   "first": 1633392000000,
+   "issues": []
+  },
+  "AGPUBUSDT": {
+   "bars": 42,
+   "sha": "da8204bfc53fed00",
+   "first": 1790121600000,
+   "issues": []
+  },
+  "AIGENSYNUSDT": {
+   "bars": 174,
+   "sha": "dfcea1ba7a1f41c0",
+   "first": 1778716800000,
+   "issues": []
+  },
+  "AIONUSDT": {
+   "bars": 1105,
+   "sha": "6557f1f42f18373a",
+   "first": 1582070400000,
+   "issues": []
+  },
+  "AIUSDT": {
+   "bars": 1035,
+   "sha": "043b99a6aefa9e0c",
+   "first": 1704326400000,
+   "issues": []
+  },
+  "AIXBTUSDT": {
+   "bars": 663,
+   "sha": "dcfe173d70789d31",
+   "first": 1736467200000,
+   "issues": []
+  },
+  "AKROUSDT": {
+   "bars": 1515,
+   "sha": "fcd22c47f4c81ef6",
+   "first": 1604275200000,
+   "issues": []
+  },
+  "ALABBUSDT": {
+   "bars": 91,
+   "sha": "bf0b63a9585785b8",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "ALCXUSDT": {
+   "bars": 1684,
+   "sha": "67cd84dfb7e4680f",
+   "first": 1638230400000,
+   "issues": []
+  },
+  "ALGOUSDT": {
+   "bars": 2692,
+   "sha": "f9691340c2d001f7",
+   "first": 1561161600000,
+   "issues": []
+  },
+  "ALICEUSDT": {
+   "bars": 2060,
+   "sha": "5020138356c425dd",
+   "first": 1615766400000,
+   "issues": []
+  },
+  "ALLOUSDT": {
+   "bars": 358,
+   "sha": "9b0ad386d3708065",
+   "first": 1762819200000,
+   "issues": []
+  },
+  "ALPACAUSDT": {
+   "bars": 1361,
+   "sha": "6510de7e822167f2",
+   "first": 1628640000000,
+   "issues": []
+  },
+  "ALPHAUSDT": {
+   "bars": 1729,
+   "sha": "3a73c69bfefc2e94",
+   "first": 1602288000000,
+   "issues": []
+  },
+  "ALPINEUSDT": {
+   "bars": 1717,
+   "sha": "f812d051c5f98afe",
+   "first": 1645401600000,
+   "issues": []
+  },
+  "ALTUSDT": {
+   "bars": 1014,
+   "sha": "3f61751c9499d08d",
+   "first": 1706140800000,
+   "issues": []
+  },
+  "AMATBUSDT": {
+   "bars": 98,
+   "sha": "3c6d315355c1a79d",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "AMBUSDT": {
+   "bars": 725,
+   "sha": "00257f3d6719838e",
+   "first": 1677801600000,
+   "issues": []
+  },
+  "AMCBUSDT": {
+   "bars": 42,
+   "sha": "55878605d891bf1c",
+   "first": 1790121600000,
+   "issues": []
+  },
+  "AMDBUSDT": {
+   "bars": 134,
+   "sha": "e66f22819ddf8dee",
+   "first": 1782172800000,
+   "issues": []
+  },
+  "AMPUSDT": {
+   "bars": 1807,
+   "sha": "919e72df8d23193c",
+   "first": 1637625600000,
+   "issues": []
+  },
+  "AMZNBUSDT": {
+   "bars": 98,
+   "sha": "2c5c6d210ec3706d",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "ANCUSDT": {
+   "bars": 337,
+   "sha": "7d281673212635a0",
+   "first": 1643068800000,
+   "issues": []
+  },
+  "ANIMEUSDT": {
+   "bars": 650,
+   "sha": "2c941576bedf3a43",
+   "first": 1737590400000,
+   "issues": []
+  },
+  "ANKRUSDT": {
+   "bars": 2661,
+   "sha": "fed8b9d88810a165",
+   "first": 1563840000000,
+   "issues": []
+  },
+  "ANTUSDT": {
+   "bars": 1287,
+   "sha": "4b67c9d03e0c9b91",
+   "first": 1597276800000,
+   "issues": []
+  },
+  "ANYUSDT": {
+   "bars": 117,
+   "sha": "f620ebfc022cb51c",
+   "first": 1638576000000,
+   "issues": []
+  },
+  "APEUSDT": {
+   "bars": 1693,
+   "sha": "1659f407e1651e1e",
+   "first": 1647475200000,
+   "issues": []
+  },
+  "API3USDT": {
+   "bars": 1748,
+   "sha": "254fc0b9805b8594",
+   "first": 1642723200000,
+   "issues": []
+  },
+  "APPBUSDT": {
+   "bars": 7,
+   "sha": "e1ebb91cff448579",
+   "first": 1793145600000,
+   "issues": []
+  },
+  "APTUSDT": {
+   "bars": 1477,
+   "sha": "ba6e38c5a95464a7",
+   "first": 1666137600000,
+   "issues": []
+  },
+  "ARBUSDT": {
+   "bars": 1322,
+   "sha": "90206856616bfade",
+   "first": 1679529600000,
+   "issues": []
+  },
+  "ARDRUSDT": {
+   "bars": 2248,
+   "sha": "a095ec13761ce93a",
+   "first": 1589500800000,
+   "issues": []
+  },
+  "ARKMUSDT": {
+   "bars": 1205,
+   "sha": "39bbd97607d7b63e",
+   "first": 1689638400000,
+   "issues": []
+  },
+  "ARKUSDT": {
+   "bars": 1139,
+   "sha": "8c0fae884da862b0",
+   "first": 1695340800000,
+   "issues": []
+  },
+  "ARMBUSDT": {
+   "bars": 112,
+   "sha": "d129f2146c796ca1",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "ARPAUSDT": {
+   "bars": 2555,
+   "sha": "e460b5402864252a",
+   "first": 1572998400000,
+   "issues": []
+  },
+  "ARUSDT": {
+   "bars": 2000,
+   "sha": "dab416ab55b112b4",
+   "first": 1620950400000,
+   "issues": []
+  },
+  "ASMLBUSDT": {
+   "bars": 91,
+   "sha": "6af518890fef9acd",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "ASRUSDT": {
+   "bars": 2135,
+   "sha": "5daf7dc72717e7fe",
+   "first": 1609286400000,
+   "issues": []
+  },
+  "ASTERUSDT": {
+   "bars": 394,
+   "sha": "851e2c416ee58968",
+   "first": 1759708800000,
+   "issues": []
+  },
+  "ASTRUSDT": {
+   "bars": 1710,
+   "sha": "9da835b049b7940c",
+   "first": 1646006400000,
+   "issues": []
+  },
+  "ASTSBUSDT": {
+   "bars": 91,
+   "sha": "4d7c9c37e2cb3a1b",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "ASTUSDT": {
+   "bars": 680,
+   "sha": "1db8fe5876634618",
+   "first": 1684454400000,
+   "issues": []
+  },
+  "ATAUSDT": {
+   "bars": 1816,
+   "sha": "71316211d24700eb",
+   "first": 1623024000000,
+   "issues": []
+  },
+  "ATMUSDT": {
+   "bars": 2135,
+   "sha": "13281341a52471c0",
+   "first": 1609286400000,
+   "issues": []
+  },
+  "ATOMUSDT": {
+   "bars": 2746,
+   "sha": "61293ffc7c823e3f",
+   "first": 1556496000000,
+   "issues": []
+  },
+  "ATUSDT": {
+   "bars": 342,
+   "sha": "1a88b3a053ea386f",
+   "first": 1764201600000,
+   "issues": []
+  },
+  "AUCTIONUSDT": {
+   "bars": 1832,
+   "sha": "938d4f7c55660516",
+   "first": 1635465600000,
+   "issues": []
+  },
+  "AUDIOUSDT": {
+   "bars": 2203,
+   "sha": "ef91d07bd6580afb",
+   "first": 1603411200000,
+   "issues": []
+  },
+  "AUDUSDT": {
+   "bars": 1029,
+   "sha": "9ecbeaffd14ace10",
+   "first": 1596758400000,
+   "issues": []
+  },
+  "AUSDT": {
+   "bars": 525,
+   "sha": "db96753954a2d614",
+   "first": 1748390400000,
+   "issues": []
+  },
+  "AUTOUSDT": {
+   "bars": 747,
+   "sha": "662a02f04cf14214",
+   "first": 1617321600000,
+   "issues": []
+  },
+  "AVAUSDT": {
+   "bars": 2171,
+   "sha": "09bf5e00449d0325",
+   "first": 1606176000000,
+   "issues": []
+  },
+  "AVAXUSDT": {
+   "bars": 2234,
+   "sha": "0e6685939f3cd7c3",
+   "first": 1600732800000,
+   "issues": []
+  },
+  "AVGOBUSDT": {
+   "bars": 112,
+   "sha": "794df91f89cb85de",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "AVNTUSDT": {
+   "bars": 415,
+   "sha": "3302ae3cdfe0809d",
+   "first": 1757894400000,
+   "issues": []
+  },
+  "AWEUSDT": {
+   "bars": 532,
+   "sha": "ffe75f411938adac",
+   "first": 1747785600000,
+   "issues": []
+  },
+  "AXLUSDT": {
+   "bars": 978,
+   "sha": "3cd9e493bd40b53f",
+   "first": 1709251200000,
+   "issues": []
+  },
+  "AXSUSDT": {
+   "bars": 2191,
+   "sha": "3fb99336d3156099",
+   "first": 1604448000000,
+   "issues": []
+  },
+  "AXTIBUSDT": {
+   "bars": 105,
+   "sha": "0314ab34ece3787a",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "BABABUSDT": {
+   "bars": 112,
+   "sha": "fd36ccbeb23440d1",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "BABYUSDT": {
+   "bars": 573,
+   "sha": "6764e36f8cc10c03",
+   "first": 1744243200000,
+   "issues": []
+  },
+  "BADGERUSDT": {
+   "bars": 1507,
+   "sha": "83dd455649422fb2",
+   "first": 1614643200000,
+   "issues": []
+  },
+  "BAKEUSDT": {
+   "bars": 1602,
+   "sha": "d123bf2c9661f05a",
+   "first": 1619740800000,
+   "issues": []
+  },
+  "BALUSDT": {
+   "bars": 1710,
+   "sha": "327828143b17d5c0",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "BANANAS31USDT": {
+   "bars": 587,
+   "sha": "b2c4f6ef3b488b48",
+   "first": 1743033600000,
+   "issues": []
+  },
+  "BANANAUSDT": {
+   "bars": 837,
+   "sha": "9316644a947b6e73",
+   "first": 1721433600000,
+   "issues": []
+  },
+  "BANDUSDT": {
+   "bars": 2604,
+   "sha": "cae57778dad31fc3",
+   "first": 1568764800000,
+   "issues": []
+  },
+  "BANKUSDT": {
+   "bars": 356,
+   "sha": "f8186c2d9df1bce7",
+   "first": 1762992000000,
+   "issues": []
+  },
+  "BARDUSDT": {
+   "bars": 412,
+   "sha": "b7eff21128dfba6e",
+   "first": 1758153600000,
+   "issues": []
+  },
+  "BARUSDT": {
+   "bars": 2023,
+   "sha": "c2d9efa8768028f0",
+   "first": 1618963200000,
+   "issues": []
+  },
+  "BATUSDT": {
+   "bars": 2802,
+   "sha": "e627ec57ab90ed9e",
+   "first": 1551657600000,
+   "issues": []
+  },
+  "BBBUSDT": {
+   "bars": 21,
+   "sha": "3ff6d31c31e55817",
+   "first": 1791936000000,
+   "issues": []
+  },
+  "BBUSDT": {
+   "bars": 905,
+   "sha": "22200a2641614110",
+   "first": 1715558400000,
+   "issues": []
+  },
+  "BCCUSDT": {
+   "bars": 371,
+   "sha": "30b4457d14b383a1",
+   "first": 1510358400000,
+   "issues": [
+    "GAPS:4"
+   ]
+  },
+  "BCHABCUSDT": {
+   "bars": 378,
+   "sha": "343d838a2c6bbed0",
+   "first": 1542326400000,
+   "issues": []
+  },
+  "BCHSVUSDT": {
+   "bars": 158,
+   "sha": "f1bafbda073e507b",
+   "first": 1542326400000,
+   "issues": []
+  },
+  "BCHUPUSDT": {
+   "bars": 279,
+   "sha": "a7eb8eb72c7760c9",
+   "first": 1603843200000,
+   "issues": [
+    "GAPS:155"
+   ]
+  },
+  "BCHUSDT": {
+   "bars": 2533,
+   "sha": "95043fb6580ec036",
+   "first": 1574899200000,
+   "issues": []
+  },
+  "BEAMUSDT": {
+   "bars": 1224,
+   "sha": "f57653d08138511e",
+   "first": 1569024000000,
+   "issues": []
+  },
+  "BEAMXUSDT": {
+   "bars": 1086,
+   "sha": "8b6cc6d9007ffd4f",
+   "first": 1699920000000,
+   "issues": []
+  },
+  "BEARUSDT": {
+   "bars": 75,
+   "sha": "c345684383e4a9a4",
+   "first": 1579219200000,
+   "issues": []
+  },
+  "BEBUSDT": {
+   "bars": 98,
+   "sha": "839dfa166c05f3bb",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "BELUSDT": {
+   "bars": 2241,
+   "sha": "b94d8fc3994cb794",
+   "first": 1600128000000,
+   "issues": []
+  },
+  "BERAUSDT": {
+   "bars": 636,
+   "sha": "74a6cefc1199aa9c",
+   "first": 1738800000000,
+   "issues": []
+  },
+  "BETAUSDT": {
+   "bars": 1287,
+   "sha": "c4a12d7817c26849",
+   "first": 1633651200000,
+   "issues": []
+  },
+  "BETHUSDT": {
+   "bars": 223,
+   "sha": "70eab0f2a9e40ffa",
+   "first": 1677801600000,
+   "issues": []
+  },
+  "BICOUSDT": {
+   "bars": 1791,
+   "sha": "7027eafa0e17fbc6",
+   "first": 1639008000000,
+   "issues": []
+  },
+  "BIFIUSDT": {
+   "bars": 1484,
+   "sha": "613566892103035c",
+   "first": 1648771200000,
+   "issues": []
+  },
+  "BIGTIMEUSDT": {
+   "bars": 572,
+   "sha": "dade1d65f2ac8f0c",
+   "first": 1744329600000,
+   "issues": []
+  },
+  "BIOUSDT": {
+   "bars": 670,
+   "sha": "2bd10e3ac1b05ee9",
+   "first": 1735862400000,
+   "issues": []
+  },
+  "BKRWUSDT": {
+   "bars": 33,
+   "sha": "1dd2efbe0817a3a2",
+   "first": 1593993600000,
+   "issues": []
+  },
+  "BLURUSDT": {
+   "bars": 1076,
+   "sha": "69cd3e2b268953c7",
+   "first": 1700784000000,
+   "issues": []
+  },
+  "BLZUSDT": {
+   "bars": 1598,
+   "sha": "57366729d6966d5b",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "BMNRBUSDT": {
+   "bars": 91,
+   "sha": "5442a1bad2a50e3f",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "BMTUSDT": {
+   "bars": 596,
+   "sha": "c0675d559495a28c",
+   "first": 1742256000000,
+   "issues": []
+  },
+  "BNBUPUSDT": {
+   "bars": 1302,
+   "sha": "8ef30cfefb214118",
+   "first": 1596672000000,
+   "issues": []
+  },
+  "BNBUSDT": {
+   "bars": 3285,
+   "sha": "5e78948efaa6dae9",
+   "first": 1509926400000,
+   "issues": []
+  },
+  "BNCBUSDT": {
+   "bars": 51,
+   "sha": "9bb1f3100f46e382",
+   "first": 1789344000000,
+   "issues": []
+  },
+  "BNSOLUSDT": {
+   "bars": 748,
+   "sha": "4b26015a57bc9830",
+   "first": 1729123200000,
+   "issues": []
+  },
+  "BNTUSDT": {
+   "bars": 2463,
+   "sha": "353abfd10028d31c",
+   "first": 1580947200000,
+   "issues": []
+  },
+  "BNXUSDT": {
+   "bars": 1226,
+   "sha": "0b3eef881f63ed6f",
+   "first": 1635984000000,
+   "issues": [
+    "GAPS:5"
+   ]
+  },
+  "BOMEUSDT": {
+   "bars": 963,
+   "sha": "94cd399a9d6b0a49",
+   "first": 1710547200000,
+   "issues": []
+  },
+  "BONDUSDT": {
+   "bars": 1114,
+   "sha": "39fefbf02151ff96",
+   "first": 1625443200000,
+   "issues": []
+  },
+  "BONKUSDT": {
+   "bars": 1055,
+   "sha": "25b1fee8584b9ec7",
+   "first": 1702598400000,
+   "issues": []
+  },
+  "BOTBUSDT": {
+   "bars": 14,
+   "sha": "f42e2ee2d3a60e3b",
+   "first": 1792540800000,
+   "issues": []
+  },
+  "BREVUSDT": {
+   "bars": 302,
+   "sha": "27ebba92890fc4f2",
+   "first": 1767657600000,
+   "issues": []
+  },
+  "BRKBBUSDT": {
+   "bars": 14,
+   "sha": "6769e2395f537916",
+   "first": 1792540800000,
+   "issues": []
+  },
+  "BROCCOLI714USDT": {
+   "bars": 587,
+   "sha": "c9a62fd4ef1c2272",
+   "first": 1743033600000,
+   "issues": []
+  },
+  "BSPBUSDT": {
+   "bars": 7,
+   "sha": "a1fb064de7b4efdc",
+   "first": 1793145600000,
+   "issues": []
+  },
+  "BSWUSDT": {
+   "bars": 1202,
+   "sha": "41f8d9546f4da6f3",
+   "first": 1647820800000,
+   "issues": []
+  },
+  "BTCSTUSDT": {
+   "bars": 682,
+   "sha": "941d9b765c8fed94",
+   "first": 1610496000000,
+   "issues": [
+    "GAPS:3"
+   ]
+  },
+  "BTCUPUSDT": {
+   "bars": 1386,
+   "sha": "3cb59253d938fc55",
+   "first": 1589414400000,
+   "issues": []
+  },
+  "BTGUSDT": {
+   "bars": 557,
+   "sha": "d69e3219c4417263",
+   "first": 1618531200000,
+   "issues": []
+  },
+  "BTSUSDT": {
+   "bars": 1401,
+   "sha": "5da910c33e34eb75",
+   "first": 1580947200000,
+   "issues": []
+  },
+  "BTTCUSDT": {
+   "bars": 1744,
+   "sha": "511abdbe99f4e6c5",
+   "first": 1643068800000,
+   "issues": []
+  },
+  "BTTUSDT": {
+   "bars": 1083,
+   "sha": "34c93888f0cf15df",
+   "first": 1548892800000,
+   "issues": []
+  },
+  "BULLUSDT": {
+   "bars": 75,
+   "sha": "74bc5c314658500c",
+   "first": 1579219200000,
+   "issues": []
+  },
+  "BURGERUSDT": {
+   "bars": 1429,
+   "sha": "ec4ab55a10cb0c81",
+   "first": 1619740800000,
+   "issues": []
+  },
+  "BZRXUSDT": {
+   "bars": 477,
+   "sha": "45d1e207b1d8d5a4",
+   "first": 1598832000000,
+   "issues": []
+  },
+  "C98USDT": {
+   "bars": 1930,
+   "sha": "be375b8d6034cda2",
+   "first": 1626998400000,
+   "issues": []
+  },
+  "CAKEUSDT": {
+   "bars": 2084,
+   "sha": "e31bfb94fef4c6c0",
+   "first": 1613692800000,
+   "issues": []
+  },
+  "CATIUSDT": {
+   "bars": 775,
+   "sha": "c0995a5e953450dd",
+   "first": 1726790400000,
+   "issues": []
+  },
+  "CBRSBUSDT": {
+   "bars": 120,
+   "sha": "26ed63f39db657a5",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "CELOUSDT": {
+   "bars": 2129,
+   "sha": "d38e196d32b032ba",
+   "first": 1609804800000,
+   "issues": []
+  },
+  "CELRUSDT": {
+   "bars": 2781,
+   "sha": "be7870fd0924c13f",
+   "first": 1553472000000,
+   "issues": []
+  },
+  "CETUSUSDT": {
+   "bars": 728,
+   "sha": "82920836ccf22b70",
+   "first": 1730851200000,
+   "issues": []
+  },
+  "CFGUSDT": {
+   "bars": 233,
+   "sha": "342b4420fb29f23d",
+   "first": 1773619200000,
+   "issues": []
+  },
+  "CFXUSDT": {
+   "bars": 2046,
+   "sha": "df85b9d9477e7129",
+   "first": 1616976000000,
+   "issues": []
+  },
+  "CGPTUSDT": {
+   "bars": 663,
+   "sha": "8b6b4f359a514f22",
+   "first": 1736467200000,
+   "issues": []
+  },
+  "CHESSUSDT": {
+   "bars": 1576,
+   "sha": "5efcccfb22b7063f",
+   "first": 1634860800000,
+   "issues": []
+  },
+  "CHIPUSDT": {
+   "bars": 197,
+   "sha": "33b834d0b2f0203a",
+   "first": 1776729600000,
+   "issues": []
+  },
+  "CHRUSDT": {
+   "bars": 2372,
+   "sha": "aca966b132512f06",
+   "first": 1588809600000,
+   "issues": []
+  },
+  "CHZUSDT": {
+   "bars": 2616,
+   "sha": "cdd7815d85541f35",
+   "first": 1567728000000,
+   "issues": []
+  },
+  "CITYUSDT": {
+   "bars": 1820,
+   "sha": "0df3a72e16821868",
+   "first": 1636502400000,
+   "issues": []
+  },
+  "CKBUSDT": {
+   "bars": 2108,
+   "sha": "2913216b8d42a46c",
+   "first": 1611619200000,
+   "issues": []
+  },
+  "CLVUSDT": {
+   "bars": 1307,
+   "sha": "236ffa0551b2f5a2",
+   "first": 1627516800000,
+   "issues": []
+  },
+  "COCOSUSDT": {
+   "bars": 1375,
+   "sha": "c37a6f370b9bd737",
+   "first": 1566345600000,
+   "issues": [
+    "GAPS:3"
+   ]
+  },
+  "COHRBUSDT": {
+   "bars": 91,
+   "sha": "7a158226d44cfa9c",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "COINBUSDT": {
+   "bars": 120,
+   "sha": "84af8e4a671ce1a6",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "COMBOUSDT": {
+   "bars": 666,
+   "sha": "9699b5b951ad13cb",
+   "first": 1685664000000,
+   "issues": []
+  },
+  "COMPUSDT": {
+   "bars": 2323,
+   "sha": "3fbc55af80764d0b",
+   "first": 1593043200000,
+   "issues": []
+  },
+  "COOKIEUSDT": {
+   "bars": 663,
+   "sha": "c24bca4450c3f952",
+   "first": 1736467200000,
+   "issues": []
+  },
+  "COSUSDT": {
+   "bars": 2513,
+   "sha": "b9b6f25b250a01a8",
+   "first": 1564790400000,
+   "issues": []
+  },
+  "COTIUSDT": {
+   "bars": 2443,
+   "sha": "5b6ad020438e6b23",
+   "first": 1582675200000,
+   "issues": []
+  },
+  "COWUSDT": {
+   "bars": 728,
+   "sha": "291537af2bc82267",
+   "first": 1730851200000,
+   "issues": []
+  },
+  "CRCLBUSDT": {
+   "bars": 146,
+   "sha": "c9324c2c812755f3",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "CRDOBUSDT": {
+   "bars": 91,
+   "sha": "659d1177568098ef",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "CREAMUSDT": {
+   "bars": 573,
+   "sha": "8b5e0488dcadc880",
+   "first": 1695340800000,
+   "issues": []
+  },
+  "CRMBUSDT": {
+   "bars": 56,
+   "sha": "c115ad9e9d51bbc5",
+   "first": 1788912000000,
+   "issues": []
+  },
+  "CRVUSDT": {
+   "bars": 2272,
+   "sha": "d11f986bfa29b876",
+   "first": 1597449600000,
+   "issues": []
+  },
+  "CRWDBUSDT": {
+   "bars": 63,
+   "sha": "959dd49acbf24233",
+   "first": 1788307200000,
+   "issues": []
+  },
+  "CRWVBUSDT": {
+   "bars": 105,
+   "sha": "7cb1ab5d5f54d272",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "CTKUSDT": {
+   "bars": 2199,
+   "sha": "95561062bdc94d27",
+   "first": 1603756800000,
+   "issues": []
+  },
+  "CTSIUSDT": {
+   "bars": 2386,
+   "sha": "0454b6ffbca56c1b",
+   "first": 1587600000000,
+   "issues": []
+  },
+  "CTXCUSDT": {
+   "bars": 1973,
+   "sha": "70af4e44bb1314fe",
+   "first": 1574380800000,
+   "issues": []
+  },
+  "CUSDT": {
+   "bars": 474,
+   "sha": "50a291743fdce3c3",
+   "first": 1752796800000,
+   "issues": []
+  },
+  "CVCUSDT": {
+   "bars": 2473,
+   "sha": "a24c7811f6c7e8f5",
+   "first": 1566864000000,
+   "issues": [
+    "GAPS:153"
+   ]
+  },
+  "CVPUSDT": {
+   "bars": 1058,
+   "sha": "2c5e272395190d12",
+   "first": 1633305600000,
+   "issues": []
+  },
+  "CVXUSDT": {
+   "bars": 1777,
+   "sha": "a5830b9b631301da",
+   "first": 1640217600000,
+   "issues": []
+  },
+  "CYBERUSDT": {
+   "bars": 1177,
+   "sha": "68f5d85a93b8e401",
+   "first": 1692057600000,
+   "issues": []
+  },
+  "CYPHBUSDT": {
+   "bars": 42,
+   "sha": "0b2dccf9017dbbab",
+   "first": 1790121600000,
+   "issues": []
+  },
+  "DARUSDT": {
+   "bars": 1160,
+   "sha": "5f86fa3d1e4de55b",
+   "first": 1635984000000,
+   "issues": []
+  },
+  "DASHUSDT": {
+   "bars": 2778,
+   "sha": "f565aa8379aaae35",
+   "first": 1553731200000,
+   "issues": []
+  },
+  "DATAUSDT": {
+   "bars": 2139,
+   "sha": "2e715bd3294cfad3",
+   "first": 1586217600000,
+   "issues": []
+  },
+  "DCRUSDT": {
+   "bars": 2288,
+   "sha": "95ce000051a29da6",
+   "first": 1596067200000,
+   "issues": []
+  },
+  "DEGOUSDT": {
+   "bars": 1876,
+   "sha": "fe073f9e77df9bf0",
+   "first": 1615334400000,
+   "issues": []
+  },
+  "DELLBUSDT": {
+   "bars": 98,
+   "sha": "34fec75e47a0c449",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "DENTUSDT": {
+   "bars": 2437,
+   "sha": "259be710858db41b",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "DEXEUSDT": {
+   "bars": 1930,
+   "sha": "117568fbab206b64",
+   "first": 1626998400000,
+   "issues": []
+  },
+  "DFUSDT": {
+   "bars": 1604,
+   "sha": "c970cadd8c9feb13",
+   "first": 1632441600000,
+   "issues": []
+  },
+  "DGBUSDT": {
+   "bars": 2298,
+   "sha": "ebf03eededf30e4b",
+   "first": 1595203200000,
+   "issues": []
+  },
+  "DIAUSDT": {
+   "bars": 2252,
+   "sha": "6da3ebc5f38339e4",
+   "first": 1599177600000,
+   "issues": []
+  },
+  "DJTBUSDT": {
+   "bars": 70,
+   "sha": "124eee75fc979389",
+   "first": 1787702400000,
+   "issues": []
+  },
+  "DNTUSDT": {
+   "bars": 714,
+   "sha": "9f56e3cc07fdf871",
+   "first": 1604966400000,
+   "issues": []
+  },
+  "DOCKUSDT": {
+   "bars": 1792,
+   "sha": "b0fc85ebf6c556a7",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "DODOUSDT": {
+   "bars": 2084,
+   "sha": "2a00043897d46891",
+   "first": 1613692800000,
+   "issues": []
+  },
+  "DOGEUSDT": {
+   "bars": 2679,
+   "sha": "e41655f0bdf87566",
+   "first": 1562284800000,
+   "issues": []
+  },
+  "DOGSUSDT": {
+   "bars": 800,
+   "sha": "cd9baf204e3f8800",
+   "first": 1724630400000,
+   "issues": []
+  },
+  "DOLOUSDT": {
+   "bars": 434,
+   "sha": "db029e6cd3942d5a",
+   "first": 1756252800000,
+   "issues": []
+  },
+  "DOTUPUSDT": {
+   "bars": 810,
+   "sha": "b2bbef951d75f247",
+   "first": 1599782400000,
+   "issues": []
+  },
+  "DOTUSDT": {
+   "bars": 2269,
+   "sha": "ad3c88e37b78a865",
+   "first": 1597708800000,
+   "issues": []
+  },
+  "DRAMBUSDT": {
+   "bars": 120,
+   "sha": "3e830f214bf10947",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "DREPUSDT": {
+   "bars": 1537,
+   "sha": "628c321d491fd6ed",
+   "first": 1579132800000,
+   "issues": [
+    "GAPS:3"
+   ]
+  },
+  "DUSDT": {
+   "bars": 527,
+   "sha": "f44ca6ce27ce5274",
+   "first": 1736380800000,
+   "issues": []
+  },
+  "DUSKUSDT": {
+   "bars": 2662,
+   "sha": "c4cc67fef2346807",
+   "first": 1563753600000,
+   "issues": []
+  },
+  "DYDXUSDT": {
+   "bars": 1882,
+   "sha": "dfa1bdb15a9a701e",
+   "first": 1631145600000,
+   "issues": []
+  },
+  "DYMUSDT": {
+   "bars": 1002,
+   "sha": "950ffc826c8c810e",
+   "first": 1707177600000,
+   "issues": []
+  },
+  "EDENUSDT": {
+   "bars": 400,
+   "sha": "2547e830294811df",
+   "first": 1759190400000,
+   "issues": []
+  },
+  "EDUUSDT": {
+   "bars": 1286,
+   "sha": "2cf82ef66852da60",
+   "first": 1682640000000,
+   "issues": []
+  },
+  "EGLDUSDT": {
+   "bars": 2253,
+   "sha": "eeb189e1a163a825",
+   "first": 1599091200000,
+   "issues": []
+  },
+  "EIGENUSDT": {
+   "bars": 764,
+   "sha": "5212f8c3e3b40bc3",
+   "first": 1727740800000,
+   "issues": []
+  },
+  "ELFUSDT": {
+   "bars": 1317,
+   "sha": "4452b0a537b2edd5",
+   "first": 1631059200000,
+   "issues": []
+  },
+  "ENAUSDT": {
+   "bars": 946,
+   "sha": "63ece4f82792d131",
+   "first": 1712016000000,
+   "issues": []
+  },
+  "ENJUSDT": {
+   "bars": 2757,
+   "sha": "8d03d9aff35b8f28",
+   "first": 1555545600000,
+   "issues": []
+  },
+  "ENSOUSDT": {
+   "bars": 386,
+   "sha": "1e8ae69825908736",
+   "first": 1760400000000,
+   "issues": []
+  },
+  "ENSUSDT": {
+   "bars": 1820,
+   "sha": "a6859896675f3b09",
+   "first": 1636502400000,
+   "issues": []
+  },
+  "EOSUPUSDT": {
+   "bars": 470,
+   "sha": "43f1788e599f69f0",
+   "first": 1599696000000,
+   "issues": []
+  },
+  "EOSUSDT": {
+   "bars": 2556,
+   "sha": "771aa19585a8becb",
+   "first": 1527465600000,
+   "issues": []
+  },
+  "EPICUSDT": {
+   "bars": 595,
+   "sha": "9318f39c7ae0f1c0",
+   "first": 1741824000000,
+   "issues": []
+  },
+  "EPSUSDT": {
+   "bars": 403,
+   "sha": "d461315f9d4d5460",
+   "first": 1617321600000,
+   "issues": []
+  },
+  "EPXUSDT": {
+   "bars": 827,
+   "sha": "9962b6f0b919cc97",
+   "first": 1653264000000,
+   "issues": []
+  },
+  "ERAUSDT": {
+   "bars": 475,
+   "sha": "f89a1ed6b1b4e79b",
+   "first": 1752710400000,
+   "issues": []
+  },
+  "ERDUSDT": {
+   "bars": 425,
+   "sha": "d9496a53866c1157",
+   "first": 1562198400000,
+   "issues": []
+  },
+  "ERNUSDT": {
+   "bars": 1358,
+   "sha": "ea7607d60d975157",
+   "first": 1624320000000,
+   "issues": []
+  },
+  "ESPUSDT": {
+   "bars": 265,
+   "sha": "b21e421bed5183b7",
+   "first": 1770854400000,
+   "issues": []
+  },
+  "ETCUSDT": {
+   "bars": 3067,
+   "sha": "60e130bc5bd312a1",
+   "first": 1528761600000,
+   "issues": []
+  },
+  "ETHFIUSDT": {
+   "bars": 961,
+   "sha": "36d344b7c158f6fe",
+   "first": 1710720000000,
+   "issues": []
+  },
+  "ETHUPUSDT": {
+   "bars": 1326,
+   "sha": "8cd58bce2bc0caa3",
+   "first": 1594598400000,
+   "issues": []
+  },
+  "ETHUSDT": {
+   "bars": 3338,
+   "sha": "2f37d9c6953804be",
+   "first": 1505347200000,
+   "issues": []
+  },
+  "EULUSDT": {
+   "bars": 387,
+   "sha": "32def44f9db39d7d",
+   "first": 1760313600000,
+   "issues": []
+  },
+  "EWYBUSDT": {
+   "bars": 134,
+   "sha": "107b6c462c7a96c6",
+   "first": 1782172800000,
+   "issues": []
+  },
+  "FARMUSDT": {
+   "bars": 1751,
+   "sha": "f20c91835d3704d4",
+   "first": 1628640000000,
+   "issues": []
+  },
+  "FETUSDT": {
+   "bars": 2806,
+   "sha": "e9edc369c81ae53e",
+   "first": 1551312000000,
+   "issues": []
+  },
+  "FFUSDT": {
+   "bars": 401,
+   "sha": "01a6ced10f697455",
+   "first": 1759104000000,
+   "issues": []
+  },
+  "FIDAUSDT": {
+   "bars": 1861,
+   "sha": "3e943e626c802e68",
+   "first": 1632960000000,
+   "issues": []
+  },
+  "FILUPUSDT": {
+   "bars": 442,
+   "sha": "5393c6fb1ac201fa",
+   "first": 1603152000000,
+   "issues": []
+  },
+  "FILUSDT": {
+   "bars": 2211,
+   "sha": "1b4a4a1cf9bcaefd",
+   "first": 1602720000000,
+   "issues": []
+  },
+  "FIOUSDT": {
+   "bars": 2058,
+   "sha": "d353eb3af0b1c13d",
+   "first": 1599177600000,
+   "issues": []
+  },
+  "FIROUSDT": {
+   "bars": 1539,
+   "sha": "1445e6d37443be4a",
+   "first": 1611878400000,
+   "issues": []
+  },
+  "FISUSDT": {
+   "bars": 1751,
+   "sha": "e3c1621c71969adb",
+   "first": 1614729600000,
+   "issues": []
+  },
+  "FLMUSDT": {
+   "bars": 1872,
+   "sha": "70147f1efae43621",
+   "first": 1601251200000,
+   "issues": []
+  },
+  "FLNCBUSDT": {
+   "bars": 98,
+   "sha": "22ff584f5af9430a",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "FLOKIUSDT": {
+   "bars": 1279,
+   "sha": "23289aacef656b30",
+   "first": 1683244800000,
+   "issues": []
+  },
+  "FLOWUSDT": {
+   "bars": 1923,
+   "sha": "b4cbc168e7ca665b",
+   "first": 1627603200000,
+   "issues": []
+  },
+  "FLUXUSDT": {
+   "bars": 1790,
+   "sha": "1e61f07bf8eebbcc",
+   "first": 1639094400000,
+   "issues": []
+  },
+  "FOGOUSDT": {
+   "bars": 293,
+   "sha": "898889cbc5f56737",
+   "first": 1768435200000,
+   "issues": []
+  },
+  "FORMUSDT": {
+   "bars": 595,
+   "sha": "8676b99e811b3d67",
+   "first": 1742342400000,
+   "issues": []
+  },
+  "FORTHUSDT": {
+   "bars": 1805,
+   "sha": "d63db1b513a6f962",
+   "first": 1619136000000,
+   "issues": []
+  },
+  "FORUSDT": {
+   "bars": 1103,
+   "sha": "675808d81d75f54d",
+   "first": 1629417600000,
+   "issues": []
+  },
+  "FRONTUSDT": {
+   "bars": 1059,
+   "sha": "62c005b447ba660f",
+   "first": 1633305600000,
+   "issues": []
+  },
+  "FTMUSDT": {
+   "bars": 2044,
+   "sha": "4ebd54ad6151c87f",
+   "first": 1560211200000,
+   "issues": []
+  },
+  "FTTUSDT": {
+   "bars": 2201,
+   "sha": "4c2504d48d5a8e4a",
+   "first": 1576800000000,
+   "issues": [
+    "GAPS:310"
+   ]
+  },
+  "FUNUSDT": {
+   "bars": 2432,
+   "sha": "ab47691c63b209c6",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "FUSDT": {
+   "bars": 375,
+   "sha": "ef44385e5ffac43a",
+   "first": 1761350400000,
+   "issues": []
+  },
+  "FWDIBUSDT": {
+   "bars": 35,
+   "sha": "bdaa60e6f32f48db",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "FXSUSDT": {
+   "bars": 1496,
+   "sha": "497d71659c3d74fc",
+   "first": 1639094400000,
+   "issues": []
+  },
+  "GALAUSDT": {
+   "bars": 1878,
+   "sha": "708817038a717c82",
+   "first": 1631491200000,
+   "issues": []
+  },
+  "GALUSDT": {
+   "bars": 803,
+   "sha": "612a790b8fed5d67",
+   "first": 1651708800000,
+   "issues": []
+  },
+  "GASUSDT": {
+   "bars": 1328,
+   "sha": "9a6b1a9ba273579f",
+   "first": 1679011200000,
+   "issues": []
+  },
+  "GBPUSDT": {
+   "bars": 1258,
+   "sha": "2ec3d3a3f795fb3b",
+   "first": 1595203200000,
+   "issues": []
+  },
+  "GENIUSUSDT": {
+   "bars": 166,
+   "sha": "7a44e9b2161604f6",
+   "first": 1779408000000,
+   "issues": []
+  },
+  "GEVBUSDT": {
+   "bars": 7,
+   "sha": "6d0ed123dd91a72a",
+   "first": 1793145600000,
+   "issues": []
+  },
+  "GFTUSDT": {
+   "bars": 439,
+   "sha": "0cd345826ed12a20",
+   "first": 1695340800000,
+   "issues": []
+  },
+  "GHSTUSDT": {
+   "bars": 1639,
+   "sha": "354ae7bc5f7bb23e",
+   "first": 1629417600000,
+   "issues": []
+  },
+  "GIGGLEUSDT": {
+   "bars": 375,
+   "sha": "bd06cda90d32b4c4",
+   "first": 1761350400000,
+   "issues": []
+  },
+  "GLMRUSDT": {
+   "bars": 1758,
+   "sha": "5c3d41addadf63e9",
+   "first": 1641859200000,
+   "issues": []
+  },
+  "GLMUSDT": {
+   "bars": 1328,
+   "sha": "d8bc89676c98cbcc",
+   "first": 1679011200000,
+   "issues": []
+  },
+  "GLWBUSDT": {
+   "bars": 120,
+   "sha": "c84dd9487ad2999b",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "GMEBUSDT": {
+   "bars": 84,
+   "sha": "ca54f99e82ee4cea",
+   "first": 1786492800000,
+   "issues": []
+  },
+  "GMTUSDT": {
+   "bars": 1701,
+   "sha": "c928579ffb8759ee",
+   "first": 1646784000000,
+   "issues": []
+  },
+  "GMXUSDT": {
+   "bars": 1491,
+   "sha": "a0ca95c5b5c3d11d",
+   "first": 1664928000000,
+   "issues": []
+  },
+  "GNOUSDT": {
+   "bars": 1892,
+   "sha": "4f5009fe6c7259d6",
+   "first": 1630281600000,
+   "issues": []
+  },
+  "GNSUSDT": {
+   "bars": 1356,
+   "sha": "4799e2ef533b1e25",
+   "first": 1676592000000,
+   "issues": []
+  },
+  "GOOGLBUSDT": {
+   "bars": 120,
+   "sha": "1ebd1150528b7770",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "GPROBUSDT": {
+   "bars": 49,
+   "sha": "1f31c6a0e0f5f5cc",
+   "first": 1789516800000,
+   "issues": []
+  },
+  "GPSUSDT": {
+   "bars": 610,
+   "sha": "ad15d1b92256290b",
+   "first": 1741046400000,
+   "issues": []
+  },
+  "GRAMUSDT": {
+   "bars": 125,
+   "sha": "bff177adb40d9b47",
+   "first": 1782950400000,
+   "issues": []
+  },
+  "GRTUSDT": {
+   "bars": 2148,
+   "sha": "69e3024529ca0dd1",
+   "first": 1608163200000,
+   "issues": []
+  },
+  "GSBUSDT": {
+   "bars": 98,
+   "sha": "fdd7d015dd4704b4",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "GTCUSDT": {
+   "bars": 1973,
+   "sha": "1931714e39d7a4cc",
+   "first": 1623283200000,
+   "issues": []
+  },
+  "GTOUSDT": {
+   "bars": 1247,
+   "sha": "61326f2fa07d3eb5",
+   "first": 1561939200000,
+   "issues": []
+  },
+  "GUNUSDT": {
+   "bars": 583,
+   "sha": "f2c2238017124706",
+   "first": 1743379200000,
+   "issues": []
+  },
+  "GUSDT": {
+   "bars": 838,
+   "sha": "303f62197f5b82bd",
+   "first": 1721347200000,
+   "issues": []
+  },
+  "GXSUSDT": {
+   "bars": 713,
+   "sha": "fd24b89e107a845d",
+   "first": 1589328000000,
+   "issues": []
+  },
+  "HAEDALUSDT": {
+   "bars": 532,
+   "sha": "c00def6f29b98a94",
+   "first": 1747785600000,
+   "issues": []
+  },
+  "HARDUSDT": {
+   "bars": 1623,
+   "sha": "3da156e935f2196c",
+   "first": 1604620800000,
+   "issues": []
+  },
+  "HBARUSDT": {
+   "bars": 2593,
+   "sha": "aa398ca8c026699f",
+   "first": 1569715200000,
+   "issues": []
+  },
+  "HCUSDT": {
+   "bars": 413,
+   "sha": "451bec1acf3813e3",
+   "first": 1569369600000,
+   "issues": []
+  },
+  "HEIUSDT": {
+   "bars": 629,
+   "sha": "137393e9b9fd058e",
+   "first": 1739404800000,
+   "issues": []
+  },
+  "HEMIUSDT": {
+   "bars": 407,
+   "sha": "4779d4826e9e0925",
+   "first": 1758585600000,
+   "issues": []
+  },
+  "HFTUSDT": {
+   "bars": 1380,
+   "sha": "5b8e5cda9b2294e5",
+   "first": 1667779200000,
+   "issues": []
+  },
+  "HIFIUSDT": {
+   "bars": 980,
+   "sha": "7a9380243280df0d",
+   "first": 1673481600000,
+   "issues": []
+  },
+  "HIGHUSDT": {
+   "bars": 1646,
+   "sha": "ce2fc6ed70e79f8e",
+   "first": 1639699200000,
+   "issues": []
+  },
+  "HIMSBUSDT": {
+   "bars": 56,
+   "sha": "61d375a975cb5df2",
+   "first": 1788912000000,
+   "issues": []
+  },
+  "HIVEUSDT": {
+   "bars": 2382,
+   "sha": "a7353a573c13346b",
+   "first": 1587945600000,
+   "issues": []
+  },
+  "HMSTRUSDT": {
+   "bars": 769,
+   "sha": "acfc1aab8d6376d5",
+   "first": 1727308800000,
+   "issues": []
+  },
+  "HNTUSDT": {
+   "bars": 751,
+   "sha": "467a1eefd988bb59",
+   "first": 1600905600000,
+   "issues": []
+  },
+  "HOLOUSDT": {
+   "bars": 419,
+   "sha": "52c35854336633cc",
+   "first": 1757548800000,
+   "issues": []
+  },
+  "HOMEUSDT": {
+   "bars": 510,
+   "sha": "6ca75aa8d71859c3",
+   "first": 1749686400000,
+   "issues": []
+  },
+  "HOODBUSDT": {
+   "bars": 112,
+   "sha": "d392ea82300b5f39",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "HOOKUSDT": {
+   "bars": 1218,
+   "sha": "e15082643c67d7c1",
+   "first": 1669852800000,
+   "issues": []
+  },
+  "HOTUSDT": {
+   "bars": 2816,
+   "sha": "1fa6c676697fa68f",
+   "first": 1550448000000,
+   "issues": []
+  },
+  "HPEBUSDT": {
+   "bars": 35,
+   "sha": "8553a533aa35e8a8",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "HUMAUSDT": {
+   "bars": 527,
+   "sha": "ac4fd618edd6e41a",
+   "first": 1748217600000,
+   "issues": []
+  },
+  "HYPERUSDT": {
+   "bars": 561,
+   "sha": "27f21646c6fb5d13",
+   "first": 1745280000000,
+   "issues": []
+  },
+  "HYPEUSDT": {
+   "bars": 41,
+   "sha": "ef601dc2771c4647",
+   "first": 1790208000000,
+   "issues": []
+  },
+  "IBMBUSDT": {
+   "bars": 112,
+   "sha": "d7e37c5a070bd949",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "ICPUSDT": {
+   "bars": 2003,
+   "sha": "a15ca1b666429972",
+   "first": 1620691200000,
+   "issues": []
+  },
+  "ICXUSDT": {
+   "bars": 3005,
+   "sha": "20e7b24243d46b47",
+   "first": 1528848000000,
+   "issues": []
+  },
+  "IDEXUSDT": {
+   "bars": 1666,
+   "sha": "7d285300a4b3fc48",
+   "first": 1631145600000,
+   "issues": []
+  },
+  "IDUSDT": {
+   "bars": 1323,
+   "sha": "0c39d7510875e321",
+   "first": 1679443200000,
+   "issues": []
+  },
+  "ILVUSDT": {
+   "bars": 1869,
+   "sha": "cbd72ce2f3555bc8",
+   "first": 1632268800000,
+   "issues": []
+  },
+  "IMXUSDT": {
+   "bars": 1759,
+   "sha": "ef290d70141c7c61",
+   "first": 1641772800000,
+   "issues": []
+  },
+  "INITUSDT": {
+   "bars": 559,
+   "sha": "b3f3fb5a902da0fa",
+   "first": 1745452800000,
+   "issues": []
+  },
+  "INJUSDT": {
+   "bars": 2205,
+   "sha": "c4a6d1b0559e348f",
+   "first": 1603238400000,
+   "issues": []
+  },
+  "INTCBUSDT": {
+   "bars": 134,
+   "sha": "e8fc50c98add215f",
+   "first": 1782172800000,
+   "issues": []
+  },
+  "INTWBUSDT": {
+   "bars": 105,
+   "sha": "ab83f548256d4bb1",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "IOSTUSDT": {
+   "bars": 2784,
+   "sha": "8eefcaacf30360f7",
+   "first": 1553212800000,
+   "issues": []
+  },
+  "IOTAUSDT": {
+   "bars": 3079,
+   "sha": "b26575981fb3cd69",
+   "first": 1527724800000,
+   "issues": []
+  },
+  "IOTXUSDT": {
+   "bars": 2547,
+   "sha": "cd05b86079318123",
+   "first": 1573689600000,
+   "issues": []
+  },
+  "IOUSDT": {
+   "bars": 876,
+   "sha": "c06f079bf836f5b5",
+   "first": 1718064000000,
+   "issues": []
+  },
+  "IQUSDT": {
+   "bars": 1139,
+   "sha": "b134bedd73a94b23",
+   "first": 1695340800000,
+   "issues": []
+  },
+  "IRENBUSDT": {
+   "bars": 91,
+   "sha": "8f113fd9c89383f5",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "IRISUSDT": {
+   "bars": 1583,
+   "sha": "e88d2aaddefe9749",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "JASMYUSDT": {
+   "bars": 1808,
+   "sha": "6963609f35217c27",
+   "first": 1637539200000,
+   "issues": []
+  },
+  "JOEUSDT": {
+   "bars": 1772,
+   "sha": "d9094e2349db3432",
+   "first": 1640649600000,
+   "issues": []
+  },
+  "JPMBUSDT": {
+   "bars": 28,
+   "sha": "3643324dc8534bad",
+   "first": 1791331200000,
+   "issues": []
+  },
+  "JSTUSDT": {
+   "bars": 2276,
+   "sha": "11b899a1d6e5f8a7",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "JTOUSDT": {
+   "bars": 1063,
+   "sha": "8d8d2ddb3dd01155",
+   "first": 1701907200000,
+   "issues": []
+  },
+  "JUPUSDT": {
+   "bars": 1008,
+   "sha": "72a4c1075663d560",
+   "first": 1706659200000,
+   "issues": []
+  },
+  "JUVUSDT": {
+   "bars": 2144,
+   "sha": "3c0fcba6043f3871",
+   "first": 1608508800000,
+   "issues": []
+  },
+  "KAIAUSDT": {
+   "bars": 734,
+   "sha": "904a9bfe82078939",
+   "first": 1730332800000,
+   "issues": []
+  },
+  "KAITOUSDT": {
+   "bars": 622,
+   "sha": "baf4c6792c48aaa9",
+   "first": 1740009600000,
+   "issues": []
+  },
+  "KATUSDT": {
+   "bars": 231,
+   "sha": "09ad162de3b51ae1",
+   "first": 1773792000000,
+   "issues": []
+  },
+  "KAVAUSDT": {
+   "bars": 2567,
+   "sha": "4993239dd3089351",
+   "first": 1571961600000,
+   "issues": []
+  },
+  "KDAUSDT": {
+   "bars": 1343,
+   "sha": "3f7b79a1d17aa753",
+   "first": 1646956800000,
+   "issues": []
+  },
+  "KEEPUSDT": {
+   "bars": 245,
+   "sha": "0c4a9985fff09f93",
+   "first": 1623888000000,
+   "issues": []
+  },
+  "KERNELUSDT": {
+   "bars": 569,
+   "sha": "282d9d16c750b110",
+   "first": 1744588800000,
+   "issues": []
+  },
+  "KEYUSDT": {
+   "bars": 1906,
+   "sha": "045732182e81fe14",
+   "first": 1566864000000,
+   "issues": [
+    "GAPS:27"
+   ]
+  },
+  "KGSTUSDT": {
+   "bars": 315,
+   "sha": "c9f4f3d7bb782aa3",
+   "first": 1766534400000,
+   "issues": []
+  },
+  "KITEUSDT": {
+   "bars": 366,
+   "sha": "3b781b0cfb1b758c",
+   "first": 1762128000000,
+   "issues": []
+  },
+  "KLAYUSDT": {
+   "bars": 1225,
+   "sha": "101c4ec7d327a02e",
+   "first": 1624492800000,
+   "issues": []
+  },
+  "KMDUSDT": {
+   "bars": 1789,
+   "sha": "bfe543b14d3598fd",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "KMNOUSDT": {
+   "bars": 547,
+   "sha": "30cf499a34f0a61b",
+   "first": 1746489600000,
+   "issues": []
+  },
+  "KNCUSDT": {
+   "bars": 2336,
+   "sha": "497ffb762dfc2f8d",
+   "first": 1591920000000,
+   "issues": []
+  },
+  "KORUBUSDT": {
+   "bars": 105,
+   "sha": "c30f74f255809b30",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "KP3RUSDT": {
+   "bars": 1091,
+   "sha": "d7f6aba47b4509db",
+   "first": 1636675200000,
+   "issues": []
+  },
+  "KSMUSDT": {
+   "bars": 2252,
+   "sha": "25477a9ad9661445",
+   "first": 1599177600000,
+   "issues": []
+  },
+  "KSTRBUSDT": {
+   "bars": 14,
+   "sha": "41571da956f97f94",
+   "first": 1792540800000,
+   "issues": []
+  },
+  "LAUSDT": {
+   "bars": 483,
+   "sha": "6b7bb14e8769e8ce",
+   "first": 1752019200000,
+   "issues": []
+  },
+  "LAYERUSDT": {
+   "bars": 631,
+   "sha": "d23d6be22f6b62b6",
+   "first": 1739232000000,
+   "issues": []
+  },
+  "LAZIOUSDT": {
+   "bars": 1840,
+   "sha": "ed6aaf2818f8deac",
+   "first": 1634774400000,
+   "issues": []
+  },
+  "LDOUSDT": {
+   "bars": 1640,
+   "sha": "9afc3d19f1839f10",
+   "first": 1652054400000,
+   "issues": []
+  },
+  "LENDUSDT": {
+   "bars": 151,
+   "sha": "0186e8e1a0ef0102",
+   "first": 1589500800000,
+   "issues": []
+  },
+  "LEVERUSDT": {
+   "bars": 1088,
+   "sha": "4eeb8316ee15da29",
+   "first": 1657670400000,
+   "issues": []
+  },
+  "LINAUSDT": {
+   "bars": 1472,
+   "sha": "fa60a58f85b468bd",
+   "first": 1616025600000,
+   "issues": []
+  },
+  "LINEAUSDT": {
+   "bars": 420,
+   "sha": "b6df0450f4796449",
+   "first": 1757462400000,
+   "issues": []
+  },
+  "LINKUPUSDT": {
+   "bars": 995,
+   "sha": "72d0e06ed4777ea9",
+   "first": 1594857600000,
+   "issues": []
+  },
+  "LINKUSDT": {
+   "bars": 2849,
+   "sha": "1dfb5ce8948435de",
+   "first": 1547596800000,
+   "issues": []
+  },
+  "LISTAUSDT": {
+   "bars": 867,
+   "sha": "e1551c1ceccca7b0",
+   "first": 1718841600000,
+   "issues": []
+  },
+  "LITEBUSDT": {
+   "bars": 127,
+   "sha": "36b4aeaa6046e238",
+   "first": 1782777600000,
+   "issues": []
+  },
+  "LITUSDT": {
+   "bars": 1468,
+   "sha": "3a29b49ade6ac6c5",
+   "first": 1612396800000,
+   "issues": []
+  },
+  "LLYBUSDT": {
+   "bars": 28,
+   "sha": "2dfb5afef7ebca3a",
+   "first": 1791331200000,
+   "issues": []
+  },
+  "LOKAUSDT": {
+   "bars": 1286,
+   "sha": "85414cfec4f34142",
+   "first": 1642636800000,
+   "issues": []
+  },
+  "LOOMUSDT": {
+   "bars": 522,
+   "sha": "4526af49a809e868",
+   "first": 1679616000000,
+   "issues": []
+  },
+  "LPTUSDT": {
+   "bars": 1986,
+   "sha": "eeba4a3bac318834",
+   "first": 1622160000000,
+   "issues": []
+  },
+  "LQTYUSDT": {
+   "bars": 1345,
+   "sha": "7929af5293da5ed3",
+   "first": 1677542400000,
+   "issues": []
+  },
+  "LRCUSDT": {
+   "bars": 2120,
+   "sha": "8a5eee628abcb8bc",
+   "first": 1591920000000,
+   "issues": []
+  },
+  "LSKUSDT": {
+   "bars": 2463,
+   "sha": "547cb9b2ba458e0c",
+   "first": 1580947200000,
+   "issues": []
+  },
+  "LTCUPUSDT": {
+   "bars": 499,
+   "sha": "9e311ee0807f3c29",
+   "first": 1600214400000,
+   "issues": []
+  },
+  "LTCUSDT": {
+   "bars": 3248,
+   "sha": "a0ecc82f006ba262",
+   "first": 1513123200000,
+   "issues": []
+  },
+  "LTOUSDT": {
+   "bars": 1975,
+   "sha": "c630ccedb96b25e8",
+   "first": 1581033600000,
+   "issues": []
+  },
+  "LUMIAUSDT": {
+   "bars": 747,
+   "sha": "819139b700a444a9",
+   "first": 1729209600000,
+   "issues": []
+  },
+  "LUNAUSDT": {
+   "bars": 2249,
+   "sha": "b885d6450f611d40",
+   "first": 1597968000000,
+   "issues": [
+    "GAPS:17"
+   ]
+  },
+  "LUNCUSDT": {
+   "bars": 1517,
+   "sha": "40373d6076d1f247",
+   "first": 1662681600000,
+   "issues": []
+  },
+  "MAGICUSDT": {
+   "bars": 1423,
+   "sha": "d67648a7e7a0d97d",
+   "first": 1670803200000,
+   "issues": []
+  },
+  "MANAUSDT": {
+   "bars": 2281,
+   "sha": "e49bba3b43c80ff5",
+   "first": 1596672000000,
+   "issues": []
+  },
+  "MANTAUSDT": {
+   "bars": 1021,
+   "sha": "996980c570258a31",
+   "first": 1705536000000,
+   "issues": []
+  },
+  "MANTRAUSDT": {
+   "bars": 245,
+   "sha": "f1579626983f40af",
+   "first": 1772582400000,
+   "issues": []
+  },
+  "MARSCOINUSDT": {
+   "bars": 61,
+   "sha": "a4cce1b2b7035bac",
+   "first": 1788480000000,
+   "issues": []
+  },
+  "MASKUSDT": {
+   "bars": 1989,
+   "sha": "5f9ac449850d4a00",
+   "first": 1621900800000,
+   "issues": []
+  },
+  "MATICUSDT": {
+   "bars": 1965,
+   "sha": "d2b1f35b861ef68b",
+   "first": 1556236800000,
+   "issues": []
+  },
+  "MAVUSDT": {
+   "bars": 1225,
+   "sha": "07c91ddd7cdec033",
+   "first": 1687910400000,
+   "issues": []
+  },
+  "MBLUSDT": {
+   "bars": 2448,
+   "sha": "bc11335edbc7f67d",
+   "first": 1582243200000,
+   "issues": []
+  },
+  "MBOXUSDT": {
+   "bars": 1766,
+   "sha": "9a1a2f36349204ec",
+   "first": 1629331200000,
+   "issues": []
+  },
+  "MCOUSDT": {
+   "bars": 340,
+   "sha": "f33f55b70d1dc0d7",
+   "first": 1574121600000,
+   "issues": []
+  },
+  "MCUSDT": {
+   "bars": 706,
+   "sha": "02d2dd0038dda55d",
+   "first": 1638403200000,
+   "issues": []
+  },
+  "MDBBUSDT": {
+   "bars": 21,
+   "sha": "6a2d2a41bd90fc03",
+   "first": 1791936000000,
+   "issues": []
+  },
+  "MDTUSDT": {
+   "bars": 2149,
+   "sha": "ffeba0803d315656",
+   "first": 1591315200000,
+   "issues": []
+  },
+  "MDXUSDT": {
+   "bars": 1156,
+   "sha": "4ed6247a4978e8e2",
+   "first": 1621814400000,
+   "issues": []
+  },
+  "MEGAUSDT": {
+   "bars": 188,
+   "sha": "b0bec78462a55aa8",
+   "first": 1777507200000,
+   "issues": []
+  },
+  "MEMEUSDT": {
+   "bars": 1097,
+   "sha": "8e7e923e9ed663bd",
+   "first": 1698969600000,
+   "issues": []
+  },
+  "METABUSDT": {
+   "bars": 127,
+   "sha": "3a687c8c0609a37d",
+   "first": 1782777600000,
+   "issues": []
+  },
+  "METISUSDT": {
+   "bars": 968,
+   "sha": "b9a4aaafb828f722",
+   "first": 1710115200000,
+   "issues": []
+  },
+  "METUSDT": {
+   "bars": 356,
+   "sha": "6e77bd907aa2573d",
+   "first": 1762992000000,
+   "issues": []
+  },
+  "MEUSDT": {
+   "bars": 694,
+   "sha": "4aed626816ba8b67",
+   "first": 1733788800000,
+   "issues": []
+  },
+  "MFTUSDT": {
+   "bars": 1226,
+   "sha": "8abd32c37d3cb53a",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "MINAUSDT": {
+   "bars": 1912,
+   "sha": "0db83f5035126e5c",
+   "first": 1628553600000,
+   "issues": []
+  },
+  "MIRAUSDT": {
+   "bars": 404,
+   "sha": "cc9b2c6bb47a947f",
+   "first": 1758844800000,
+   "issues": []
+  },
+  "MIRUSDT": {
+   "bars": 618,
+   "sha": "c9890a8506060360",
+   "first": 1618790400000,
+   "issues": []
+  },
+  "MITHUSDT": {
+   "bars": 1344,
+   "sha": "37332cd602a33390",
+   "first": 1555632000000,
+   "issues": []
+  },
+  "MITOUSDT": {
+   "bars": 432,
+   "sha": "d45ef23e3c234333",
+   "first": 1756425600000,
+   "issues": []
+  },
+  "MKRUSDT": {
+   "bars": 1881,
+   "sha": "3ea34af2d37a5604",
+   "first": 1595462400000,
+   "issues": []
+  },
+  "MLNUSDT": {
+   "bars": 1788,
+   "sha": "3050d1d2780b9651",
+   "first": 1625443200000,
+   "issues": []
+  },
+  "MMTUSDT": {
+   "bars": 365,
+   "sha": "28a9b1a15b31c653",
+   "first": 1762214400000,
+   "issues": []
+  },
+  "MOBUSDT": {
+   "bars": 706,
+   "sha": "ae28ec12acdee390",
+   "first": 1651190400000,
+   "issues": []
+  },
+  "MORPHOUSDT": {
+   "bars": 397,
+   "sha": "e96af188ec71b4c2",
+   "first": 1759449600000,
+   "issues": []
+  },
+  "MOVEUSDT": {
+   "bars": 695,
+   "sha": "1d40692d10b77473",
+   "first": 1733702400000,
+   "issues": []
+  },
+  "MOVRUSDT": {
+   "bars": 1822,
+   "sha": "25e6f193967b76b9",
+   "first": 1636329600000,
+   "issues": []
+  },
+  "MRNABUSDT": {
+   "bars": 63,
+   "sha": "a11da8b20797bf23",
+   "first": 1788307200000,
+   "issues": []
+  },
+  "MRVLBUSDT": {
+   "bars": 112,
+   "sha": "5de27d869e7f4e2b",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "MSFTBUSDT": {
+   "bars": 127,
+   "sha": "347fde87e86a13e9",
+   "first": 1782777600000,
+   "issues": []
+  },
+  "MSTRBUSDT": {
+   "bars": 134,
+   "sha": "4b9dfdf743421832",
+   "first": 1782172800000,
+   "issues": []
+  },
+  "MTLUSDT": {
+   "bars": 2630,
+   "sha": "e7385cbd656f4e94",
+   "first": 1566518400000,
+   "issues": []
+  },
+  "MUBARAKUSDT": {
+   "bars": 587,
+   "sha": "12334b38fda26165",
+   "first": 1743033600000,
+   "issues": []
+  },
+  "MUBUSDT": {
+   "bars": 146,
+   "sha": "03d9fb2625e6ffd2",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "MULTIUSDT": {
+   "bars": 686,
+   "sha": "34554d9f37514e50",
+   "first": 1649203200000,
+   "issues": []
+  },
+  "MUUBUSDT": {
+   "bars": 105,
+   "sha": "afb290c8d12420b7",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "MVLLBUSDT": {
+   "bars": 105,
+   "sha": "3792eebe98cc0280",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "NANOUSDT": {
+   "bars": 1028,
+   "sha": "c8d8b7bfc56d4983",
+   "first": 1554249600000,
+   "issues": []
+  },
+  "NBISBUSDT": {
+   "bars": 120,
+   "sha": "5423b75dc0e2f774",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "NBSUSDT": {
+   "bars": 764,
+   "sha": "bd11960dd82ce388",
+   "first": 1600646400000,
+   "issues": []
+  },
+  "NEARUSDT": {
+   "bars": 2212,
+   "sha": "0c198738a86a525d",
+   "first": 1602633600000,
+   "issues": []
+  },
+  "NEBLUSDT": {
+   "bars": 187,
+   "sha": "7ca84c6d68b95254",
+   "first": 1665705600000,
+   "issues": []
+  },
+  "NEIROUSDT": {
+   "bars": 779,
+   "sha": "61828888b0845b6e",
+   "first": 1726444800000,
+   "issues": []
+  },
+  "NEOUSDT": {
+   "bars": 3271,
+   "sha": "70ce171b63ad5303",
+   "first": 1511136000000,
+   "issues": []
+  },
+  "NEWTUSDT": {
+   "bars": 498,
+   "sha": "e8ad141ee67ab70b",
+   "first": 1750723200000,
+   "issues": []
+  },
+  "NEXOUSDT": {
+   "bars": 1650,
+   "sha": "1229538f6d762ab6",
+   "first": 1651190400000,
+   "issues": []
+  },
+  "NFLXBUSDT": {
+   "bars": 91,
+   "sha": "2120c0a9feaaacc9",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "NFPUSDT": {
+   "bars": 927,
+   "sha": "a153b8798f475e65",
+   "first": 1703635200000,
+   "issues": []
+  },
+  "NIGHTUSDT": {
+   "bars": 238,
+   "sha": "0c9e71e3780a1f51",
+   "first": 1773187200000,
+   "issues": []
+  },
+  "NILUSDT": {
+   "bars": 590,
+   "sha": "d05d3c4a18588085",
+   "first": 1742774400000,
+   "issues": []
+  },
+  "NKNUSDT": {
+   "bars": 2318,
+   "sha": "e0993406850a1485",
+   "first": 1570752000000,
+   "issues": []
+  },
+  "NMRUSDT": {
+   "bars": 2268,
+   "sha": "f05e9df6507680b3",
+   "first": 1597795200000,
+   "issues": []
+  },
+  "NOKBUSDT": {
+   "bars": 112,
+   "sha": "d86fe5dfef1fc377",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "NOMUSDT": {
+   "bars": 399,
+   "sha": "e4892f9847a92789",
+   "first": 1759276800000,
+   "issues": []
+  },
+  "NOTUSDT": {
+   "bars": 902,
+   "sha": "cd34fd3087bde2e1",
+   "first": 1715817600000,
+   "issues": []
+  },
+  "NPXSUSDT": {
+   "bars": 602,
+   "sha": "9b36d57ef79662af",
+   "first": 1565654400000,
+   "issues": []
+  },
+  "NTRNUSDT": {
+   "bars": 905,
+   "sha": "05d8d8cf6ff960df",
+   "first": 1696896000000,
+   "issues": []
+  },
+  "NULSUSDT": {
+   "bars": 2460,
+   "sha": "3688b499c2db8582",
+   "first": 1532304000000,
+   "issues": []
+  },
+  "NUUSDT": {
+   "bars": 258,
+   "sha": "002ebadac35409f1",
+   "first": 1622764800000,
+   "issues": []
+  },
+  "NVDABUSDT": {
+   "bars": 146,
+   "sha": "df59e5ac406eebef",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "NXPCUSDT": {
+   "bars": 538,
+   "sha": "fef4e0d31b7aa519",
+   "first": 1747267200000,
+   "issues": []
+  },
+  "OAXUSDT": {
+   "bars": 628,
+   "sha": "ea14e61e36caa762",
+   "first": 1679616000000,
+   "issues": []
+  },
+  "OCEANUSDT": {
+   "bars": 1413,
+   "sha": "4a31cadef3c32194",
+   "first": 1597795200000,
+   "issues": []
+  },
+  "OGNUSDT": {
+   "bars": 2491,
+   "sha": "074eecfdb1f36669",
+   "first": 1578528000000,
+   "issues": []
+  },
+  "OGUSDT": {
+   "bars": 2135,
+   "sha": "7afa317e5415af3e",
+   "first": 1609286400000,
+   "issues": []
+  },
+  "OMGUSDT": {
+   "bars": 1903,
+   "sha": "d83e1755a5de2ff4",
+   "first": 1554249600000,
+   "issues": []
+  },
+  "OMNIUSDT": {
+   "bars": 531,
+   "sha": "67f745c1d0a553e1",
+   "first": 1713312000000,
+   "issues": []
+  },
+  "OMUSDT": {
+   "bars": 1821,
+   "sha": "08f845afd7c6ae3e",
+   "first": 1615161600000,
+   "issues": []
+  },
+  "ONDOUSDT": {
+   "bars": 572,
+   "sha": "1c1cbd711b70f437",
+   "first": 1744329600000,
+   "issues": []
+  },
+  "ONEUSDT": {
+   "bars": 2713,
+   "sha": "33fe560dd256e768",
+   "first": 1559347200000,
+   "issues": []
+  },
+  "ONGUSDT": {
+   "bars": 2818,
+   "sha": "414d6b1f245cf024",
+   "first": 1550275200000,
+   "issues": []
+  },
+  "ONTUSDT": {
+   "bars": 3071,
+   "sha": "4e0c9d13c467863a",
+   "first": 1528416000000,
+   "issues": []
+  },
+  "OOKIUSDT": {
+   "bars": 1049,
+   "sha": "31a54b9d4dd406db",
+   "first": 1640304000000,
+   "issues": []
+  },
+  "OPENUSDT": {
+   "bars": 422,
+   "sha": "14178ce46dcaf580",
+   "first": 1757289600000,
+   "issues": []
+  },
+  "OPGUSDT": {
+   "bars": 166,
+   "sha": "01acc74da4170bef",
+   "first": 1779408000000,
+   "issues": []
+  },
+  "OPNUSDT": {
+   "bars": 244,
+   "sha": "5c57ee5f3aaf19f4",
+   "first": 1772668800000,
+   "issues": []
+  },
+  "OPUSDT": {
+   "bars": 1617,
+   "sha": "5ec07c99af2feb39",
+   "first": 1654041600000,
+   "issues": []
+  },
+  "ORCAUSDT": {
+   "bars": 698,
+   "sha": "6c0385a92e3ff2b8",
+   "first": 1733443200000,
+   "issues": []
+  },
+  "ORCLBUSDT": {
+   "bars": 105,
+   "sha": "143f3d5d8278736c",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "ORDIUSDT": {
+   "bars": 1093,
+   "sha": "4ec432da7591e094",
+   "first": 1699315200000,
+   "issues": []
+  },
+  "ORNUSDT": {
+   "bars": 1477,
+   "sha": "88ca03adc7ea5654",
+   "first": 1601424000000,
+   "issues": []
+  },
+  "OSMOUSDT": {
+   "bars": 1468,
+   "sha": "4aef9bb09a79cb00",
+   "first": 1666915200000,
+   "issues": []
+  },
+  "OXTUSDT": {
+   "bars": 2041,
+   "sha": "89ea595986d9763c",
+   "first": 1600646400000,
+   "issues": []
+  },
+  "PARTIUSDT": {
+   "bars": 589,
+   "sha": "3aab2b971353585e",
+   "first": 1742860800000,
+   "issues": []
+  },
+  "PAXUSDT": {
+   "bars": 1069,
+   "sha": "76105715a29dfb41",
+   "first": 1538611200000,
+   "issues": []
+  },
+  "PDAUSDT": {
+   "bars": 428,
+   "sha": "d113b5cc274d99e9",
+   "first": 1709251200000,
+   "issues": []
+  },
+  "PDDBUSDT": {
+   "bars": 35,
+   "sha": "764b83e9c1fd9408",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "PENDLEUSDT": {
+   "bars": 1220,
+   "sha": "f9b37f9305ee330f",
+   "first": 1688342400000,
+   "issues": []
+  },
+  "PENGBUSDT": {
+   "bars": 21,
+   "sha": "e9b37ee5b7b7777c",
+   "first": 1791936000000,
+   "issues": []
+  },
+  "PENGUUSDT": {
+   "bars": 687,
+   "sha": "5198b9cebfcf5984",
+   "first": 1734393600000,
+   "issues": []
+  },
+  "PEOPLEUSDT": {
+   "bars": 1777,
+   "sha": "47a386950bf899e7",
+   "first": 1640217600000,
+   "issues": []
+  },
+  "PEPEUSDT": {
+   "bars": 1279,
+   "sha": "e93313c2fbeb6cd7",
+   "first": 1683244800000,
+   "issues": []
+  },
+  "PERLUSDT": {
+   "bars": 1565,
+   "sha": "9b7852d05fe5f647",
+   "first": 1566777600000,
+   "issues": []
+  },
+  "PERPUSDT": {
+   "bars": 1700,
+   "sha": "599c9be1633d7584",
+   "first": 1616112000000,
+   "issues": []
+  },
+  "PHAUSDT": {
+   "bars": 1958,
+   "sha": "ffced3431837ee7d",
+   "first": 1624579200000,
+   "issues": []
+  },
+  "PHBUSDT": {
+   "bars": 1287,
+   "sha": "d8d14447e32c2f62",
+   "first": 1668729600000,
+   "issues": []
+  },
+  "PIVXUSDT": {
+   "bars": 1006,
+   "sha": "d93e279d0c4a59b8",
+   "first": 1700092800000,
+   "issues": []
+  },
+  "PIXELUSDT": {
+   "bars": 989,
+   "sha": "af926dafc6a73583",
+   "first": 1708300800000,
+   "issues": []
+  },
+  "PLAUSDT": {
+   "bars": 826,
+   "sha": "a71fd0b9ffe33cf8",
+   "first": 1637625600000,
+   "issues": []
+  },
+  "PLTRBUSDT": {
+   "bars": 127,
+   "sha": "1d0a254c25f220e4",
+   "first": 1782777600000,
+   "issues": []
+  },
+  "PLUMEUSDT": {
+   "bars": 443,
+   "sha": "58464218a1a1be88",
+   "first": 1755475200000,
+   "issues": []
+  },
+  "PNTUSDT": {
+   "bars": 1382,
+   "sha": "7a4e301608810386",
+   "first": 1592784000000,
+   "issues": []
+  },
+  "PNUTUSDT": {
+   "bars": 723,
+   "sha": "e74dfcedd127a786",
+   "first": 1731283200000,
+   "issues": []
+  },
+  "POLSUSDT": {
+   "bars": 1161,
+   "sha": "5f73c0f7843d8bc4",
+   "first": 1621382400000,
+   "issues": []
+  },
+  "POLUSDT": {
+   "bars": 782,
+   "sha": "4649f390075cfab1",
+   "first": 1726185600000,
+   "issues": []
+  },
+  "POLYUSDT": {
+   "bars": 397,
+   "sha": "733f45b7ad08f9ea",
+   "first": 1631145600000,
+   "issues": []
+  },
+  "POLYXUSDT": {
+   "bars": 1479,
+   "sha": "c7bd84f145f82f4d",
+   "first": 1665964800000,
+   "issues": []
+  },
+  "PONDUSDT": {
+   "bars": 1950,
+   "sha": "dc768634f9b28860",
+   "first": 1615248000000,
+   "issues": []
+  },
+  "PORTALUSDT": {
+   "bars": 979,
+   "sha": "bb9d293c722fccf5",
+   "first": 1709164800000,
+   "issues": []
+  },
+  "PORTOUSDT": {
+   "bars": 1814,
+   "sha": "9367612bebcf8f2f",
+   "first": 1637020800000,
+   "issues": []
+  },
+  "POWRUSDT": {
+   "bars": 1813,
+   "sha": "7b60dad92e4fc3db",
+   "first": 1637107200000,
+   "issues": []
+  },
+  "PROMUSDT": {
+   "bars": 1328,
+   "sha": "594a95e615f74a9f",
+   "first": 1679011200000,
+   "issues": []
+  },
+  "PROSUSDT": {
+   "bars": 811,
+   "sha": "fb1b6cba107aba35",
+   "first": 1674777600000,
+   "issues": []
+  },
+  "PROVEUSDT": {
+   "bars": 456,
+   "sha": "a490720e4b1354d4",
+   "first": 1754352000000,
+   "issues": []
+  },
+  "PSGUSDT": {
+   "bars": 2144,
+   "sha": "67e3998badfa4505",
+   "first": 1608508800000,
+   "issues": []
+  },
+  "PUMPUSDT": {
+   "bars": 419,
+   "sha": "770d88c9f06e4846",
+   "first": 1757548800000,
+   "issues": []
+  },
+  "PUNDIXUSDT": {
+   "bars": 2035,
+   "sha": "2838c70ad02d13ba",
+   "first": 1617926400000,
+   "issues": []
+  },
+  "PYPLBUSDT": {
+   "bars": 98,
+   "sha": "3ceaeacddaaad727",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "PYRUSDT": {
+   "bars": 1726,
+   "sha": "0641e8e791aa2c14",
+   "first": 1637884800000,
+   "issues": []
+  },
+  "PYTHUSDT": {
+   "bars": 1006,
+   "sha": "c24c2c7a5b204740",
+   "first": 1706832000000,
+   "issues": []
+  },
+  "QCOMBUSDT": {
+   "bars": 120,
+   "sha": "655ad28393b28d71",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "QIUSDT": {
+   "bars": 1815,
+   "sha": "de9b48ba60ee190f",
+   "first": 1636934400000,
+   "issues": []
+  },
+  "QKCUSDT": {
+   "bars": 1328,
+   "sha": "1b00daf714ec2519",
+   "first": 1679011200000,
+   "issues": []
+  },
+  "QNTBUSDT": {
+   "bars": 105,
+   "sha": "6a36a02e3dbd6be8",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "QNTUSDT": {
+   "bars": 1924,
+   "sha": "68ad38c34595d6bc",
+   "first": 1627516800000,
+   "issues": []
+  },
+  "QQQBUSDT": {
+   "bars": 127,
+   "sha": "dbab79323b922831",
+   "first": 1782777600000,
+   "issues": []
+  },
+  "QTUMUSDT": {
+   "bars": 3152,
+   "sha": "652979ee7d3a7df4",
+   "first": 1521417600000,
+   "issues": []
+  },
+  "QUICKUSDT": {
+   "bars": 1900,
+   "sha": "f8e2dafa8e74f02d",
+   "first": 1628812800000,
+   "issues": [
+    "GAPS:3"
+   ]
+  },
+  "RADUSDT": {
+   "bars": 1854,
+   "sha": "1087ff9e1a0f8236",
+   "first": 1633564800000,
+   "issues": []
+  },
+  "RAMPUSDT": {
+   "bars": 470,
+   "sha": "2b3a0b45fb101bcb",
+   "first": 1616371200000,
+   "issues": []
+  },
+  "RAREUSDT": {
+   "bars": 1850,
+   "sha": "a84daa92efade415",
+   "first": 1633910400000,
+   "issues": []
+  },
+  "RAYUSDT": {
+   "bars": 1912,
+   "sha": "427050414df6405c",
+   "first": 1628553600000,
+   "issues": []
+  },
+  "RDDTBUSDT": {
+   "bars": 49,
+   "sha": "06015434cf25bd70",
+   "first": 1789516800000,
+   "issues": []
+  },
+  "RDNTUSDT": {
+   "bars": 1099,
+   "sha": "03a634d0c16ab5d9",
+   "first": 1680134400000,
+   "issues": []
+  },
+  "REDUSDT": {
+   "bars": 614,
+   "sha": "32b5ce7e024186ad",
+   "first": 1740700800000,
+   "issues": []
+  },
+  "REEFUSDT": {
+   "bars": 1337,
+   "sha": "61ee3ac6ee07d868",
+   "first": 1609200000000,
+   "issues": []
+  },
+  "REIUSDT": {
+   "bars": 1324,
+   "sha": "e8b9617d522de8c8",
+   "first": 1651622400000,
+   "issues": []
+  },
+  "RENDERUSDT": {
+   "bars": 831,
+   "sha": "930bac356307722f",
+   "first": 1721952000000,
+   "issues": []
+  },
+  "RENUSDT": {
+   "bars": 1904,
+   "sha": "c3f4f2462049c16b",
+   "first": 1569369600000,
+   "issues": []
+  },
+  "REPUSDT": {
+   "bars": 924,
+   "sha": "c68bd3287623cdf7",
+   "first": 1591920000000,
+   "issues": []
+  },
+  "REQUSDT": {
+   "bars": 1902,
+   "sha": "72e0aea316422ea9",
+   "first": 1629417600000,
+   "issues": []
+  },
+  "RESOLVUSDT": {
+   "bars": 511,
+   "sha": "8cd2ced9969f52ec",
+   "first": 1749600000000,
+   "issues": []
+  },
+  "REUSDT": {
+   "bars": 139,
+   "sha": "c325fd6399cb691b",
+   "first": 1781740800000,
+   "issues": []
+  },
+  "REZUSDT": {
+   "bars": 918,
+   "sha": "ee1081fba524ade7",
+   "first": 1714435200000,
+   "issues": []
+  },
+  "RGTUSDT": {
+   "bars": 130,
+   "sha": "df447d8ecd48f703",
+   "first": 1636070400000,
+   "issues": []
+  },
+  "RIFUSDT": {
+   "bars": 2127,
+   "sha": "40573622a6eea4a5",
+   "first": 1609977600000,
+   "issues": []
+  },
+  "RKLBBUSDT": {
+   "bars": 112,
+   "sha": "3b442f49a861b32d",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "RLCUSDT": {
+   "bars": 2547,
+   "sha": "675f6d1d33414630",
+   "first": 1573689600000,
+   "issues": []
+  },
+  "RNDRUSDT": {
+   "bars": 969,
+   "sha": "a67089b586a097c3",
+   "first": 1637971200000,
+   "issues": []
+  },
+  "ROBOUSDT": {
+   "bars": 245,
+   "sha": "fa1a40e28436a976",
+   "first": 1772582400000,
+   "issues": []
+  },
+  "RONINUSDT": {
+   "bars": 1003,
+   "sha": "a3c82020b656cd40",
+   "first": 1707091200000,
+   "issues": []
+  },
+  "ROSEUSDT": {
+   "bars": 2176,
+   "sha": "d5784d02c0d80a3b",
+   "first": 1605744000000,
+   "issues": []
+  },
+  "RPLUSDT": {
+   "bars": 1386,
+   "sha": "1c4a22da9661f7b5",
+   "first": 1674000000000,
+   "issues": []
+  },
+  "RSRUSDT": {
+   "bars": 2260,
+   "sha": "9392f63163c1709e",
+   "first": 1598486400000,
+   "issues": []
+  },
+  "RUNEUSDT": {
+   "bars": 2252,
+   "sha": "95b43edd2c5953bb",
+   "first": 1599177600000,
+   "issues": []
+  },
+  "RVNUSDT": {
+   "bars": 2597,
+   "sha": "84d6b4f6ee6d9482",
+   "first": 1569369600000,
+   "issues": []
+  },
+  "SAGAUSDT": {
+   "bars": 939,
+   "sha": "d1735bfaf01c9667",
+   "first": 1712620800000,
+   "issues": []
+  },
+  "SAHARAUSDT": {
+   "bars": 496,
+   "sha": "b307056c5780e454",
+   "first": 1750896000000,
+   "issues": []
+  },
+  "SANDUSDT": {
+   "bars": 2273,
+   "sha": "13075c9b7711db07",
+   "first": 1597363200000,
+   "issues": []
+  },
+  "SANTOSUSDT": {
+   "bars": 1799,
+   "sha": "acb931829f11b6c2",
+   "first": 1638316800000,
+   "issues": []
+  },
+  "SAPIENUSDT": {
+   "bars": 363,
+   "sha": "8b42016aaabb4700",
+   "first": 1762387200000,
+   "issues": []
+  },
+  "SCRTUSDT": {
+   "bars": 1687,
+   "sha": "8728ee110cae2fc9",
+   "first": 1642723200000,
+   "issues": []
+  },
+  "SCRUSDT": {
+   "bars": 754,
+   "sha": "bbe1ff5702b23720",
+   "first": 1728604800000,
+   "issues": []
+  },
+  "SCUSDT": {
+   "bars": 2312,
+   "sha": "ea03d5bdc88bd069",
+   "first": 1593993600000,
+   "issues": []
+  },
+  "SECZBUSDT": {
+   "bars": 28,
+   "sha": "194fd587cae5d41d",
+   "first": 1791331200000,
+   "issues": []
+  },
+  "SEIUSDT": {
+   "bars": 1177,
+   "sha": "0e7ebba3f1fb6570",
+   "first": 1692057600000,
+   "issues": []
+  },
+  "SENTUSDT": {
+   "bars": 286,
+   "sha": "e045b55ca1994995",
+   "first": 1769040000000,
+   "issues": []
+  },
+  "SFPUSDT": {
+   "bars": 2095,
+   "sha": "34a1a59b2c1a9c62",
+   "first": 1612742400000,
+   "issues": []
+  },
+  "SHAZBUSDT": {
+   "bars": 35,
+   "sha": "88c3008b357c1b36",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "SHELLUSDT": {
+   "bars": 615,
+   "sha": "77cfb80f5b89f30d",
+   "first": 1740614400000,
+   "issues": []
+  },
+  "SHIBUSDT": {
+   "bars": 2004,
+   "sha": "539b55ba60a2d9c2",
+   "first": 1620604800000,
+   "issues": []
+  },
+  "SIGNUSDT": {
+   "bars": 555,
+   "sha": "74bf809f3fd7f2ef",
+   "first": 1745798400000,
+   "issues": []
+  },
+  "SKDDBUSDT": {
+   "bars": 7,
+   "sha": "b79f261b1e1ba947",
+   "first": 1793145600000,
+   "issues": []
+  },
+  "SKHYBUSDT": {
+   "bars": 114,
+   "sha": "5278dcd691e42c95",
+   "first": 1783900800000,
+   "issues": []
+  },
+  "SKLUSDT": {
+   "bars": 2164,
+   "sha": "e9c4e587c2599fdf",
+   "first": 1606780800000,
+   "issues": []
+  },
+  "SKUUBUSDT": {
+   "bars": 7,
+   "sha": "0b2eca4573cf62b2",
+   "first": 1793145600000,
+   "issues": []
+  },
+  "SKYUSDT": {
+   "bars": 413,
+   "sha": "8db6dcba711e8e1e",
+   "first": 1758067200000,
+   "issues": []
+  },
+  "SLFUSDT": {
+   "bars": 384,
+   "sha": "83e4511b48f573f7",
+   "first": 1724976000000,
+   "issues": []
+  },
+  "SLPUSDT": {
+   "bars": 2014,
+   "sha": "c1b14221e9e1613c",
+   "first": 1619740800000,
+   "issues": []
+  },
+  "SMCIBUSDT": {
+   "bars": 91,
+   "sha": "f290bf14da4f971b",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "SMHBUSDT": {
+   "bars": 98,
+   "sha": "a7f0e6d36fc7bf5a",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "SNDKBUSDT": {
+   "bars": 146,
+   "sha": "e041f36390f2b9cd",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "SNTUSDT": {
+   "bars": 699,
+   "sha": "44156928a4abf98a",
+   "first": 1684454400000,
+   "issues": []
+  },
+  "SNXUSDT": {
+   "bars": 2309,
+   "sha": "385f5e4cfed293e8",
+   "first": 1594252800000,
+   "issues": []
+  },
+  "SNXXBUSDT": {
+   "bars": 105,
+   "sha": "7c037c3d0c13a273",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "SOLUSDT": {
+   "bars": 2276,
+   "sha": "fd8f717f51380c30",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "SOLVUSDT": {
+   "bars": 656,
+   "sha": "e545a1e8bf1e4f91",
+   "first": 1737072000000,
+   "issues": []
+  },
+  "SOMIUSDT": {
+   "bars": 428,
+   "sha": "e44d2075b55c4e8d",
+   "first": 1756771200000,
+   "issues": []
+  },
+  "SOPHUSDT": {
+   "bars": 525,
+   "sha": "126fd30ab395d34d",
+   "first": 1748390400000,
+   "issues": []
+  },
+  "SOXLBUSDT": {
+   "bars": 120,
+   "sha": "f29e109c720b439e",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "SOXSBUSDT": {
+   "bars": 98,
+   "sha": "042ce5d39065016b",
+   "first": 1785283200000,
+   "issues": []
+  },
+  "SPCXBUSDT": {
+   "bars": 145,
+   "sha": "5e60256c09c90cf2",
+   "first": 1781222400000,
+   "issues": []
+  },
+  "SPELLUSDT": {
+   "bars": 1776,
+   "sha": "0861f3b9359592af",
+   "first": 1640304000000,
+   "issues": []
+  },
+  "SPKUSDT": {
+   "bars": 505,
+   "sha": "110ca0b603dc7e9e",
+   "first": 1750118400000,
+   "issues": []
+  },
+  "SPYBUSDT": {
+   "bars": 120,
+   "sha": "a8d6e14af079df8d",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "SQQQBUSDT": {
+   "bars": 63,
+   "sha": "c9b54f80b83e1ccb",
+   "first": 1788307200000,
+   "issues": []
+  },
+  "SRMUSDT": {
+   "bars": 840,
+   "sha": "08081c9bb105c789",
+   "first": 1597104000000,
+   "issues": []
+  },
+  "SSVUSDT": {
+   "bars": 1349,
+   "sha": "5f0ed84745948a61",
+   "first": 1677196800000,
+   "issues": []
+  },
+  "STEEMUSDT": {
+   "bars": 1657,
+   "sha": "e1c4dc04b13c6e8e",
+   "first": 1650585600000,
+   "issues": []
+  },
+  "STGUSDT": {
+   "bars": 1510,
+   "sha": "f480b8cbb0361500",
+   "first": 1660867200000,
+   "issues": []
+  },
+  "STMXUSDT": {
+   "bars": 1720,
+   "sha": "4024c01a324fed65",
+   "first": 1591833600000,
+   "issues": []
+  },
+  "STORJUSDT": {
+   "bars": 2227,
+   "sha": "5982dd5b532f20ab",
+   "first": 1596067200000,
+   "issues": []
+  },
+  "STORMUSDT": {
+   "bars": 287,
+   "sha": "ff8238c890ff82e3",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "STOUSDT": {
+   "bars": 551,
+   "sha": "d536bb21477c6c58",
+   "first": 1746144000000,
+   "issues": []
+  },
+  "STPTUSDT": {
+   "bars": 1882,
+   "sha": "ce96e45bba31133c",
+   "first": 1585094400000,
+   "issues": []
+  },
+  "STRATUSDT": {
+   "bars": 268,
+   "sha": "3b83417762eb244e",
+   "first": 1582070400000,
+   "issues": []
+  },
+  "STRAXUSDT": {
+   "bars": 2170,
+   "sha": "48ac2f5668bec81d",
+   "first": 1605657600000,
+   "issues": [
+    "GAPS:7"
+   ]
+  },
+  "STRKUSDT": {
+   "bars": 988,
+   "sha": "46b137b6fb8d7510",
+   "first": 1708387200000,
+   "issues": []
+  },
+  "STXBUSDT": {
+   "bars": 63,
+   "sha": "b3856101620804fd",
+   "first": 1788307200000,
+   "issues": []
+  },
+  "STXUSDT": {
+   "bars": 2567,
+   "sha": "efa728a578be11ca",
+   "first": 1571961600000,
+   "issues": []
+  },
+  "SUIUSDT": {
+   "bars": 1281,
+   "sha": "5b60b4957098d40a",
+   "first": 1683072000000,
+   "issues": []
+  },
+  "SUNUSDT": {
+   "bars": 2232,
+   "sha": "50880132c2590bd5",
+   "first": 1600646400000,
+   "issues": [
+    "GAPS:3"
+   ]
+  },
+  "SUPERUSDT": {
+   "bars": 2050,
+   "sha": "1717f03728752ba8",
+   "first": 1616630400000,
+   "issues": []
+  },
+  "SUSDT": {
+   "bars": 657,
+   "sha": "a40f524c98268288",
+   "first": 1736985600000,
+   "issues": []
+  },
+  "SUSDUSDT": {
+   "bars": 494,
+   "sha": "d20def2b95a2a8f2",
+   "first": 1607040000000,
+   "issues": []
+  },
+  "SUSHIUPUSDT": {
+   "bars": 370,
+   "sha": "d5a6f5938f8d1e49",
+   "first": 1607558400000,
+   "issues": []
+  },
+  "SUSHIUSDT": {
+   "bars": 2255,
+   "sha": "14ded3f37ac8e08c",
+   "first": 1598918400000,
+   "issues": []
+  },
+  "SXPUPUSDT": {
+   "bars": 407,
+   "sha": "e3717b0931bcfe00",
+   "first": 1602720000000,
+   "issues": []
+  },
+  "SXPUSDT": {
+   "bars": 2082,
+   "sha": "fad3e9d47c0e784d",
+   "first": 1595203200000,
+   "issues": []
+  },
+  "SXTUSDT": {
+   "bars": 545,
+   "sha": "3d5037ec9b6cd6c0",
+   "first": 1746662400000,
+   "issues": []
+  },
+  "SYNUSDT": {
+   "bars": 1351,
+   "sha": "5161b788a169ee54",
+   "first": 1677024000000,
+   "issues": []
+  },
+  "SYRUPUSDT": {
+   "bars": 547,
+   "sha": "cc7ad9d70a916361",
+   "first": 1746489600000,
+   "issues": []
+  },
+  "SYSUSDT": {
+   "bars": 1707,
+   "sha": "1d23ddd5ba7acb44",
+   "first": 1632441600000,
+   "issues": []
+  },
+  "TAOUSDT": {
+   "bars": 937,
+   "sha": "26472afde8df9a61",
+   "first": 1712793600000,
+   "issues": []
+  },
+  "TCTUSDT": {
+   "bars": 1008,
+   "sha": "9fca621b9d66ab1a",
+   "first": 1579564800000,
+   "issues": []
+  },
+  "TFUELUSDT": {
+   "bars": 2721,
+   "sha": "1c49c4ee10f55436",
+   "first": 1558656000000,
+   "issues": []
+  },
+  "THETAUSDT": {
+   "bars": 2765,
+   "sha": "3a94af2d458cecd8",
+   "first": 1554854400000,
+   "issues": []
+  },
+  "THEUSDT": {
+   "bars": 707,
+   "sha": "a081293924cf05f7",
+   "first": 1732665600000,
+   "issues": []
+  },
+  "TIAUSDT": {
+   "bars": 1100,
+   "sha": "8f9e78501ad5b355",
+   "first": 1698710400000,
+   "issues": []
+  },
+  "TKOUSDT": {
+   "bars": 2037,
+   "sha": "33943d8724906e08",
+   "first": 1617753600000,
+   "issues": []
+  },
+  "TLMUSDT": {
+   "bars": 2031,
+   "sha": "d530a2331dc219ad",
+   "first": 1618272000000,
+   "issues": []
+  },
+  "TMFBUSDT": {
+   "bars": 14,
+   "sha": "0538ff7dff0ff7c6",
+   "first": 1792540800000,
+   "issues": []
+  },
+  "TNSRUSDT": {
+   "bars": 940,
+   "sha": "cfe823c40d049529",
+   "first": 1712534400000,
+   "issues": []
+  },
+  "TOMOUSDT": {
+   "bars": 1550,
+   "sha": "514fd7aab3aea7f4",
+   "first": 1566604800000,
+   "issues": []
+  },
+  "TONUSDT": {
+   "bars": 692,
+   "sha": "128eab60dfda3a10",
+   "first": 1723075200000,
+   "issues": []
+  },
+  "TORNUSDT": {
+   "bars": 565,
+   "sha": "ec2d4395755cdf46",
+   "first": 1623369600000,
+   "issues": []
+  },
+  "TOWNSUSDT": {
+   "bars": 456,
+   "sha": "8652f8b3c599ca6f",
+   "first": 1754352000000,
+   "issues": []
+  },
+  "TQQQBUSDT": {
+   "bars": 105,
+   "sha": "da68fe0526e3fa6a",
+   "first": 1784678400000,
+   "issues": []
+  },
+  "TRBUSDT": {
+   "bars": 2258,
+   "sha": "edea668ff1eca762",
+   "first": 1598659200000,
+   "issues": []
+  },
+  "TREEUSDT": {
+   "bars": 463,
+   "sha": "3ae0b2d1d7f7c3cc",
+   "first": 1753747200000,
+   "issues": []
+  },
+  "TRIBEUSDT": {
+   "bars": 462,
+   "sha": "74abdf2269787d14",
+   "first": 1629763200000,
+   "issues": []
+  },
+  "TROYUSDT": {
+   "bars": 1960,
+   "sha": "c175856b3b912cbe",
+   "first": 1575504000000,
+   "issues": []
+  },
+  "TRUMPUSDT": {
+   "bars": 654,
+   "sha": "d77858db4f4e751c",
+   "first": 1737244800000,
+   "issues": []
+  },
+  "TRUUSDT": {
+   "bars": 1926,
+   "sha": "db3a438b4aa45bbf",
+   "first": 1611014400000,
+   "issues": []
+  },
+  "TRXUPUSDT": {
+   "bars": 811,
+   "sha": "981d92f856ef02dd",
+   "first": 1599696000000,
+   "issues": []
+  },
+  "TRXUSDT": {
+   "bars": 3068,
+   "sha": "48155a289f4d4777",
+   "first": 1528675200000,
+   "issues": []
+  },
+  "TSLABUSDT": {
+   "bars": 146,
+   "sha": "d4982b842f2370f8",
+   "first": 1781136000000,
+   "issues": []
+  },
+  "TSMBUSDT": {
+   "bars": 112,
+   "sha": "e90de262238d0d79",
+   "first": 1784073600000,
+   "issues": []
+  },
+  "TSTUSDT": {
+   "bars": 633,
+   "sha": "59346a69a00dfe75",
+   "first": 1739059200000,
+   "issues": []
+  },
+  "TURBOUSDT": {
+   "bars": 779,
+   "sha": "6c41e62c685841b7",
+   "first": 1726444800000,
+   "issues": []
+  },
+  "TURTLEUSDT": {
+   "bars": 378,
+   "sha": "829f5823d521b803",
+   "first": 1761091200000,
+   "issues": []
+  },
+  "TUSDT": {
+   "bars": 1713,
+   "sha": "cf4705fd0b2966ce",
+   "first": 1645747200000,
+   "issues": []
+  },
+  "TUTUSDT": {
+   "bars": 587,
+   "sha": "ba4d632bc643eac3",
+   "first": 1743033600000,
+   "issues": []
+  },
+  "TVKUSDT": {
+   "bars": 844,
+   "sha": "b0fe81b42a6bf307",
+   "first": 1628208000000,
+   "issues": []
+  },
+  "TWTUSDT": {
+   "bars": 2107,
+   "sha": "3ce06e1e53478fe3",
+   "first": 1611705600000,
+   "issues": []
+  },
+  "UFTUSDT": {
+   "bars": 762,
+   "sha": "ea3037950295cefe",
+   "first": 1679011200000,
+   "issues": []
+  },
+  "UMAUSDT": {
+   "bars": 2247,
+   "sha": "5eb41df82bb3efaa",
+   "first": 1599609600000,
+   "issues": []
+  },
+  "UNFIUSDT": {
+   "bars": 1449,
+   "sha": "1ef972cba6657a7d",
+   "first": 1605744000000,
+   "issues": []
+  },
+  "UNIUPUSDT": {
+   "bars": 450,
+   "sha": "c6139122ce6b7009",
+   "first": 1601424000000,
+   "issues": []
+  },
+  "UNIUSDT": {
+   "bars": 2239,
+   "sha": "8ee5bf7db5943d3b",
+   "first": 1600300800000,
+   "issues": []
+  },
+  "USARBUSDT": {
+   "bars": 91,
+   "sha": "b0e2926b8ca7902d",
+   "first": 1785888000000,
+   "issues": []
+  },
+  "USDEBUSDT": {
+   "bars": 28,
+   "sha": "04356a95ec35abef",
+   "first": 1791331200000,
+   "issues": []
+  },
+  "USDSBUSDT": {
+   "bars": 96,
+   "sha": "4f2432214ea4de69",
+   "first": 1561334400000,
+   "issues": []
+  },
+  "USDSOLDUSDT": {
+   "bars": 497,
+   "sha": "ebf7d1e918553c0d",
+   "first": 1550102400000,
+   "issues": []
+  },
+  "USTCUSDT": {
+   "bars": 1335,
+   "sha": "0932f31e4d2de65b",
+   "first": 1678406400000,
+   "issues": []
+  },
+  "USTUSDT": {
+   "bars": 141,
+   "sha": "f3e3434955524594",
+   "first": 1640304000000,
+   "issues": []
+  },
+  "USUALUSDT": {
+   "bars": 715,
+   "sha": "2442ba4045a41f5c",
+   "first": 1731974400000,
+   "issues": []
+  },
+  "UTKUSDT": {
+   "bars": 2021,
+   "sha": "9ec71f3494e004c8",
+   "first": 1601596800000,
+   "issues": []
+  },
+  "UVXYBUSDT": {
+   "bars": 21,
+   "sha": "3e9cd34eb76bb186",
+   "first": 1791936000000,
+   "issues": []
+  },
+  "VANAUSDT": {
+   "bars": 688,
+   "sha": "8de727bfbde34edf",
+   "first": 1734307200000,
+   "issues": []
+  },
+  "VANRYUSDT": {
+   "bars": 991,
+   "sha": "5c1c274aea6a9c0f",
+   "first": 1701388800000,
+   "issues": []
+  },
+  "VELODROMEUSDT": {
+   "bars": 691,
+   "sha": "07c95da8d9ab6ce2",
+   "first": 1734048000000,
+   "issues": []
+  },
+  "VENUSDT": {
+   "bars": 33,
+   "sha": "6e7fea6051807909",
+   "first": 1529625600000,
+   "issues": [
+    "GAPS:87"
+   ]
+  },
+  "VETUSDT": {
+   "bars": 3024,
+   "sha": "250e0fa222dbe7cc",
+   "first": 1532476800000,
+   "issues": []
+  },
+  "VGXUSDT": {
+   "bars": 1009,
+   "sha": "655c54386222b134",
+   "first": 1637539200000,
+   "issues": []
+  },
+  "VIBUSDT": {
+   "bars": 799,
+   "sha": "5b013d755769ab97",
+   "first": 1677196800000,
+   "issues": []
+  },
+  "VICUSDT": {
+   "bars": 998,
+   "sha": "c9f818f723970e8f",
+   "first": 1700784000000,
+   "issues": []
+  },
+  "VIDTUSDT": {
+   "bars": 1308,
+   "sha": "c129991b8de59e21",
+   "first": 1631145600000,
+   "issues": [
+    "GAPS:8"
+   ]
+  },
+  "VIRTUALUSDT": {
+   "bars": 572,
+   "sha": "a6f27547009e53fe",
+   "first": 1744329600000,
+   "issues": []
+  },
+  "VITEUSDT": {
+   "bars": 1901,
+   "sha": "09ec8c370b590d97",
+   "first": 1576195200000,
+   "issues": []
+  },
+  "VOXELUSDT": {
+   "bars": 1465,
+   "sha": "527bbf3de9385c78",
+   "first": 1639440000000,
+   "issues": []
+  },
+  "VSTBUSDT": {
+   "bars": 14,
+   "sha": "95dabd360fe61f43",
+   "first": 1792540800000,
+   "issues": []
+  },
+  "VTHOUSDT": {
+   "bars": 2301,
+   "sha": "db1873f9b125d47f",
+   "first": 1594944000000,
+   "issues": []
+  },
+  "WALUSDT": {
+   "bars": 390,
+   "sha": "bb3a3889d9b68d7f",
+   "first": 1760054400000,
+   "issues": []
+  },
+  "WANUSDT": {
+   "bars": 2432,
+   "sha": "54b6b428cef8257a",
+   "first": 1566864000000,
+   "issues": []
+  },
+  "WAVESUSDT": {
+   "bars": 1978,
+   "sha": "dafeeceff81fa5ea",
+   "first": 1547769600000,
+   "issues": []
+  },
+  "WAXPUSDT": {
+   "bars": 1899,
+   "sha": "3107ca2360ad12ec",
+   "first": 1629676800000,
+   "issues": []
+  },
+  "WBETHUSDT": {
+   "bars": 1204,
+   "sha": "a558d0695fe96a2d",
+   "first": 1689724800000,
+   "issues": []
+  },
+  "WBTCUSDT": {
+   "bars": 1286,
+   "sha": "1531d0bb5b2529f9",
+   "first": 1682640000000,
+   "issues": []
+  },
+  "WCTUSDT": {
+   "bars": 568,
+   "sha": "4ac770ac8d8a18a1",
+   "first": 1744675200000,
+   "issues": []
+  },
+  "WDCBUSDT": {
+   "bars": 120,
+   "sha": "ac83c5fbca3fa4ae",
+   "first": 1783382400000,
+   "issues": []
+  },
+  "WENBUSDT": {
+   "bars": 35,
+   "sha": "5b4324d62b847ec7",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "WIFUSDT": {
+   "bars": 974,
+   "sha": "ba38c921d8601144",
+   "first": 1709596800000,
+   "issues": []
+  },
+  "WINGUSDT": {
+   "bars": 1690,
+   "sha": "3d3ac0bf59827e94",
+   "first": 1600214400000,
+   "issues": []
+  },
+  "WINUSDT": {
+   "bars": 2652,
+   "sha": "c2c0b16cd2e22ec6",
+   "first": 1564617600000,
+   "issues": []
+  },
+  "WLDUSDT": {
+   "bars": 1199,
+   "sha": "72f77f57d95fe70d",
+   "first": 1690156800000,
+   "issues": []
+  },
+  "WLFIUSDT": {
+   "bars": 429,
+   "sha": "55d2c16287eefc9d",
+   "first": 1756684800000,
+   "issues": []
+  },
+  "WNXMUSDT": {
+   "bars": 1390,
+   "sha": "3c08c4a62ca75773",
+   "first": 1598572800000,
+   "issues": []
+  },
+  "WOOUSDT": {
+   "bars": 1730,
+   "sha": "12ecfa163984dc7d",
+   "first": 1644278400000,
+   "issues": []
+  },
+  "WRXUSDT": {
+   "bars": 1786,
+   "sha": "243a53e354a3fc71",
+   "first": 1580860800000,
+   "issues": []
+  },
+  "WTCUSDT": {
+   "bars": 1340,
+   "sha": "b2c1d336cd769aad",
+   "first": 1586217600000,
+   "issues": []
+  },
+  "WUSDT": {
+   "bars": 945,
+   "sha": "bf9608e9ee2da82d",
+   "first": 1712102400000,
+   "issues": []
+  },
+  "XAIUSDT": {
+   "bars": 1030,
+   "sha": "6dee9ec779b2e639",
+   "first": 1704758400000,
+   "issues": []
+  },
+  "XECUSDT": {
+   "bars": 1888,
+   "sha": "783e030b7a14b5af",
+   "first": 1630627200000,
+   "issues": []
+  },
+  "XEMUSDT": {
+   "bars": 1302,
+   "sha": "672c941677c47682",
+   "first": 1606176000000,
+   "issues": []
+  },
+  "XLMUPUSDT": {
+   "bars": 369,
+   "sha": "9d18d265d4db9554",
+   "first": 1607644800000,
+   "issues": []
+  },
+  "XLMUSDT": {
+   "bars": 3079,
+   "sha": "a484092e6bcddd4f",
+   "first": 1527724800000,
+   "issues": []
+  },
+  "XMRUSDT": {
+   "bars": 1804,
+   "sha": "2e4d0a2580a643fa",
+   "first": 1552608000000,
+   "issues": []
+  },
+  "XNOUSDT": {
+   "bars": 1741,
+   "sha": "4fdda695a2a8f234",
+   "first": 1643328000000,
+   "issues": []
+  },
+  "XPLUSDT": {
+   "bars": 405,
+   "sha": "1226ece486acc5f6",
+   "first": 1758758400000,
+   "issues": []
+  },
+  "XRPUPUSDT": {
+   "bars": 974,
+   "sha": "42d8dd57c89eef28",
+   "first": 1599782400000,
+   "issues": []
+  },
+  "XRPUSDT": {
+   "bars": 3106,
+   "sha": "7ffea319b3de525d",
+   "first": 1525392000000,
+   "issues": []
+  },
+  "XTZUPUSDT": {
+   "bars": 539,
+   "sha": "1d7ffde0d547528a",
+   "first": 1596758400000,
+   "issues": []
+  },
+  "XTZUSDT": {
+   "bars": 2598,
+   "sha": "80955d9d58d623cf",
+   "first": 1569283200000,
+   "issues": []
+  },
+  "XVGUSDT": {
+   "bars": 1977,
+   "sha": "1c5e889acbc7d7d6",
+   "first": 1622937600000,
+   "issues": []
+  },
+  "XVSUSDT": {
+   "bars": 2220,
+   "sha": "887c33291f2cb80a",
+   "first": 1601942400000,
+   "issues": []
+  },
+  "XZCUSDT": {
+   "bars": 294,
+   "sha": "b7e62eb59edeca73",
+   "first": 1586217600000,
+   "issues": []
+  },
+  "YBUSDT": {
+   "bars": 385,
+   "sha": "3442d4f26eaf53c2",
+   "first": 1760486400000,
+   "issues": []
+  },
+  "YFIIUSDT": {
+   "bars": 1086,
+   "sha": "046fd7f1a10b2f73",
+   "first": 1598918400000,
+   "issues": []
+  },
+  "YFIUPUSDT": {
+   "bars": 408,
+   "sha": "cfb0789e77655ba8",
+   "first": 1603238400000,
+   "issues": []
+  },
+  "YFIUSDT": {
+   "bars": 2277,
+   "sha": "199776549066fc6f",
+   "first": 1597017600000,
+   "issues": []
+  },
+  "YGGUSDT": {
+   "bars": 1867,
+   "sha": "d2e1cfc15ff94a2f",
+   "first": 1632441600000,
+   "issues": []
+  },
+  "ZAMAUSDT": {
+   "bars": 275,
+   "sha": "fb89b9d13668c55e",
+   "first": 1769990400000,
+   "issues": []
+  },
+  "ZBTUSDT": {
+   "bars": 383,
+   "sha": "1b99b0d679994a10",
+   "first": 1760659200000,
+   "issues": []
+  },
+  "ZECUSDT": {
+   "bars": 2785,
+   "sha": "0c37d9a60595a204",
+   "first": 1553126400000,
+   "issues": []
+  },
+  "ZENUSDT": {
+   "bars": 2312,
+   "sha": "2d2991e71c2bd1fe",
+   "first": 1593993600000,
+   "issues": []
+  },
+  "ZILUSDT": {
+   "bars": 2815,
+   "sha": "fbf6a6e9952930ca",
+   "first": 1550534400000,
+   "issues": []
+  },
+  "ZKCUSDT": {
+   "bars": 415,
+   "sha": "dad34fb549f51f94",
+   "first": 1757894400000,
+   "issues": []
+  },
+  "ZKPUSDT": {
+   "bars": 301,
+   "sha": "f4e0d4953955d180",
+   "first": 1767744000000,
+   "issues": []
+  },
+  "ZKUSDT": {
+   "bars": 870,
+   "sha": "ef3629a43dc9bf12",
+   "first": 1718582400000,
+   "issues": []
+  },
+  "ZMBUSDT": {
+   "bars": 35,
+   "sha": "6c574ee415064157",
+   "first": 1790726400000,
+   "issues": []
+  },
+  "ZROUSDT": {
+   "bars": 867,
+   "sha": "7f8f021eb6dcd2ed",
+   "first": 1718841600000,
+   "issues": []
+  },
+  "ZRXUSDT": {
+   "bars": 2806,
+   "sha": "629df365414166e6",
+   "first": 1551312000000,
+   "issues": []
+  }
+ }
+}
