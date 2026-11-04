@@ -526,6 +526,36 @@ class TestClassics(unittest.TestCase):
         self.assertEqual(st["trades"], 1)
 
 
+class TestDailyAndHealth(unittest.TestCase):
+    def test_daily_simple_and_dca(self):
+        from mari_bot.telegram import fmt_daily_simple, fmt_dca
+        bot = run_backtest({"BTCUSDT": synth(300)})["bot"]
+        bot.btc_summary = {"position": "CASH", "equity": 990.0, "return_pct": -1.0, "btc_hold_return_pct": -3.0,
+                           "close": 70000.0, "sma150": 72000.0, "switches": 2}
+        m = fmt_daily_simple(bot, monday=True)
+        self.assertIn("خرید پله‌ای", m)
+        self.assertIn(LOCK_LINE, m)
+        self.assertNotIn("خرید پله‌ای", fmt_daily_simple(bot, monday=False))
+        self.assertIn("نقد", "\n".join(fmt_dca(bot.btc_summary)))
+
+    def test_health_alert_after_three_failures(self):
+        from mari_bot import live
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "", "TELEGRAM_BOT_TOKEN": ""}):
+            r = live.LiveRunner(d)
+            sent = []
+            with mock.patch.object(r.tg, "broadcast", side_effect=lambda t: sent.append(t) or 1):
+                for _ in range(2):
+                    r._health(False, "x")
+                self.assertEqual(sent, [])
+                r._health(False, "x")
+                self.assertEqual(len(sent), 1)
+                r._health(False, "x")
+                self.assertEqual(len(sent), 1)           # تکرار نمی‌شود
+                r._health(True, None)
+                self.assertEqual(len(sent), 2)           # پیام بهبود
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

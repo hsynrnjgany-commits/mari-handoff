@@ -99,6 +99,57 @@ def fmt_btc_event(ev: dict, summ: dict | None = None) -> str:
     return _end(lines)
 
 
+def fmt_dca(b: dict | None) -> list[str]:
+    if not b or not b.get("position"):
+        return ["💰 یادآور خرید پله‌ای: دادهٔ روند بیت‌کوین هنوز آماده نیست."]
+    if b["position"] == "BTC":
+        act = "بیت‌کوین بالای میانگین ۱۵۰روزه است → طبق قانون، مبلغ ثابت این هفته‌ات را می‌شد بیت‌کوین خرید."
+    else:
+        act = ("بیت‌کوین زیر میانگین ۱۵۰روزه است → طبق قانون، مبلغ این هفته را نقد کنار بگذار "
+               "(و دارایی بیت‌کوین قبلی هم طبق قانون نقد می‌شد).")
+    return ["💰 <b>یادآور خرید پله‌ای هفتگی</b>", act,
+            "این فقط یادآوری قانون آزموده‌شده است، نه دستور خرید. فقط با پولی که از دست دادنش زندگی‌ات را تغییر نمی‌دهد."]
+
+
+def fmt_health(ok: bool, streak: int, why: str | None) -> str:
+    if ok:
+        return _end(["✅ <b>ربات ماری دوباره سالم است</b>", "دریافت داده و پردازش به حالت عادی برگشت."])
+    return _end(["🚨 <b>هشدار سلامت ربات ماری</b>",
+                 f"{fa(streak)} چرخهٔ پیاپی ناموفق بود — علت: {why or 'نامشخص'}.",
+                 "اگر تا چند ساعت دیگر پیام «دوباره سالم است» نیامد، زبانهٔ Actions گیت‌هاب را ببین یا به Claude بگو."])
+
+
+def fmt_daily_simple(bot, monday: bool = False) -> str:
+    """گزارش روزانهٔ ساده: فقط آنچه مهم است."""
+    b = getattr(bot, "btc_summary", None)
+    lines = ["☀️ <b>خلاصهٔ روزانهٔ ماری</b>", ""]
+    if b and b.get("position"):
+        pos = "🟢 نگه‌داری" if b["position"] == "BTC" else "⚪ نقد"
+        lines += ["₿ <b>روند بیت‌کوین (روش قبول‌شده)</b>",
+                  f"وضعیت: {pos} — قیمت {fa(b['close'], 0)} — میانگین ۱۵۰روزه {fa(b['sma150'], 0)}",
+                  f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ "
+                  f"(نگه‌داری سادهٔ BTC: {fa(b['btc_hold_return_pct'], sign=True)}٪)", ""]
+    snap = bot.snapshot or {}
+    if snap:
+        counts = {}
+        for v in snap.values():
+            counts[v["state"]] = counts.get(v["state"], 0) + 1
+        up = counts.get("A", 0) + counts.get("B", 0)
+        lines += ["📡 <b>رادار بازار</b>",
+                  f"{fa(len(snap))} ارز بررسی شد — روند صعودی: {fa(up)} — نزولی یا سقوط: "
+                  f"{fa(counts.get('E', 0) + counts.get('F', 0) + counts.get('G', 0))}"]
+        best = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])[:5]
+        if best:
+            lines.append("قوی‌ترین‌ها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+        lines.append("(فقط برای آگاهی — شکار آلت‌کوین در آزمون ۸ساله ضررده بود)")
+        lines.append("")
+    eq = bot.equity()
+    lines.append(f"🤖 ربات شکار تمرینی: {fa(eq)} تتر — موقعیت باز {fa(len(bot.positions))}")
+    if monday:
+        lines += [""] + fmt_dca(b)
+    return _end(lines)
+
+
 CHANNEL_DISCLAIMER = ("این کانال آموزشی است، نه توصیهٔ مالی. هیچ سودی تضمین نمی‌شود و ممکن است ضرر کنید. "
                       "فقط با پولی کار کنید که از دست دادنش زندگی‌تان را تغییر نمی‌دهد. "
                       "ما هرگز پول کسی را مدیریت نمی‌کنیم و هیچ سیگنال پولی نمی‌فروشیم.")
@@ -202,6 +253,8 @@ HELP = _end([
     "/trades — موقعیت‌های باز و ۵ نتیجهٔ آخر",
     "/hunt — برترین روندهای بازار (فقط مشاهده)",
     "/btc — استراتژی روند بیت‌کوین",
+    "/dca — یادآور خرید پله‌ای",
+    "/daily — خلاصهٔ روزانه",
     "/council — شورای هوش مصنوعی",
     "/help — همین راهنما",
 ])
@@ -358,6 +411,10 @@ class Telegram:
             elif cmd == "/btc":
                 b = getattr(bot, "btc_summary", None)
                 self.send(chat, _end(_btc_lines(b)[1:] or ["هنوز داده‌ای برای روند بیت‌کوین ثبت نشده."]))
+            elif cmd == "/dca":
+                self.send(chat, _end(fmt_dca(getattr(bot, "btc_summary", None))))
+            elif cmd == "/daily":
+                self.send(chat, fmt_daily_simple(bot))
             elif cmd == "/council":
                 self.send(chat, COUNCIL)
             else:
@@ -394,8 +451,7 @@ class Telegram:
         now = datetime.now(TEHRAN)
         day = now.strftime("%Y-%m-%d")
         if now.hour >= hour and self.store.get("last_daily") != day:
-            if self.broadcast("☀️ <b>گزارش روزانه</b>\n\n" + fmt_report(bot)) > 0:
-                self.broadcast("📡 <b>رادار روزانهٔ بازار</b>\n\n" + fmt_hunt(bot))
+            if self.broadcast(fmt_daily_simple(bot, monday=now.weekday() == 0)) > 0:
                 self.store["last_daily"] = day
                 self.save()
                 return True

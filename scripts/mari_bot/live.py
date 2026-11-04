@@ -16,7 +16,7 @@ from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quo
 from .engine import MariBot
 from .ledger import Ledger
 from .btc_trend import DAY_MS, BtcTrend
-from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event
+from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event, fmt_health
 
 LEDGER_URL = "https://github.com/hsynrnjgany-commits/mari-handoff/blob/mari-bot-state/ledger.jsonl"
 from .trend import SymbolSeries
@@ -110,6 +110,7 @@ class LiveRunner:
             time.sleep(0.12)          # رعایت محدودیت نرخ
         if not series:
             self.ledger.write("CYCLE_FAILED", reason="NO_DATA", failed=len(failed))
+            self._health(False, "دادهٔ بازار دریافت نشد")
             return {"ok": False, "reason": "NO_DATA", "failed": len(failed)}
         latest = max(s.bars[-1]["t"] for s in series.values())
         if not self.bot.last_ts:
@@ -120,6 +121,7 @@ class LiveRunner:
         self.bot.process(series, quality)
         _save(self.state_path, self.bot.to_state())
         self.meta["cycles"] += 1
+        self._health(True, None)
         _save(self.meta_path, self.meta)
         btc_events = []
         try:
@@ -162,6 +164,21 @@ class LiveRunner:
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}
         self.ledger.write("CYCLE", **summary)
         return summary
+
+    def _health(self, ok: bool, why: str | None) -> None:
+        """نگهبان سلامت: بعد از ۳ چرخهٔ ناموفق پیاپی به صاحب ربات خبر می‌دهد؛ بعد از بهبود هم خبر می‌دهد."""
+        streak = self.meta.get("fail_streak", 0)
+        if ok:
+            if self.meta.get("alerted"):
+                self.tg.broadcast(fmt_health(True, streak, None))
+                self.meta["alerted"] = False
+            self.meta["fail_streak"] = 0
+        else:
+            self.meta["fail_streak"] = streak + 1
+            if self.meta["fail_streak"] >= 3 and not self.meta.get("alerted"):
+                self.tg.broadcast(fmt_health(False, self.meta["fail_streak"], why))
+                self.meta["alerted"] = True
+        _save(self.meta_path, self.meta)
 
     def loop(self, poll_s: int = 5) -> None:
         print("ربات ماری (تمرینی) شروع شد. توقف: Ctrl+C")
