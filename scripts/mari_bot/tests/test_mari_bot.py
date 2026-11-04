@@ -214,6 +214,12 @@ class TestQuality(unittest.TestCase):
         b = D.parse_toobit_klines(rows)[0]
         self.assertEqual((b["t"], b["c"], b["qv"]), (1000, 1.5, 15.0))
 
+    def test_change_map_formats(self):
+        m = D._change_map([{"s": "AUSDT", "o": "100", "c": "110"},
+                           {"symbol": "BUSDT", "priceChangePercent": "-3.5", "openPrice": "10", "lastPrice": "9.65"}])
+        self.assertAlmostEqual(m["AUSDT"], 10.0)
+        self.assertAlmostEqual(m["BUSDT"], -3.5)
+
     def test_drop_unclosed(self):
         bars = synth(3, t0=0)
         self.assertEqual(len(D.drop_unclosed(bars, now_ms=2 * H + 10)), 2)

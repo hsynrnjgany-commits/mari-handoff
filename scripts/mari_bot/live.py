@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from .config import BotConfig, assert_locks, tradable_symbol
-from .data import DataError, SourcePicker, drop_unclosed, fetch_quote_volumes, fetch_universe, quality_check
+from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quote_volumes, fetch_universe, quality_check
 from .engine import MariBot
 from .ledger import Ledger
 from .telegram import Telegram, fmt_event
@@ -125,7 +125,18 @@ class LiveRunner:
                 sent += self.tg.broadcast(msg)
         self.tg.maybe_daily(self.bot)
         self.tg.handle_updates(self.bot, wait=0)      # پاسخ به فرمان‌هایی که از چرخهٔ قبل رسیده‌اند
-        summary = {"sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+        uni = set(self.meta.get("universe") or [])
+        ch = {k: v for k, v in LAST_TICKER["changes"].items() if (not uni or k in uni) and v == v}
+        market = {"source": LAST_TICKER["source"], "pairs": len(ch),
+                  "up_24h": sum(1 for v in ch.values() if v > 0),
+                  "down_24h": sum(1 for v in ch.values() if v < 0),
+                  "up_over_5pct": sum(1 for v in ch.values() if v >= 5),
+                  "down_over_5pct": sum(1 for v in ch.values() if v <= -5)}
+        states = {}
+        for v in self.bot.snapshot.values():
+            states[v["state"]] = states.get(v["state"], 0) + 1
+        market["trend_states_scanned"] = dict(sorted(states.items()))
+        summary = {"market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}

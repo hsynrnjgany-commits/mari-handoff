@@ -143,11 +143,37 @@ def _qv_map(d) -> dict[str, float]:
     return out
 
 
+def _change_map(d) -> dict[str, float]:
+    """تغییر ۲۴ساعته (٪) — قالب تووبیت (o/c) یا بایننس (priceChangePercent/openPrice/lastPrice)."""
+    out = {}
+    for r in d if isinstance(d, list) else []:
+        s = r.get("s") or r.get("symbol")
+        if not s:
+            continue
+        pcp = r.get("priceChangePercent") or r.get("pcp")
+        o = _f(r.get("o") or r.get("openPrice"))
+        c = _f(r.get("c") or r.get("lastPrice"))
+        if pcp not in (None, ""):
+            v = _f(pcp)
+            if abs(v) < 1 and o == o and c == c and o > 0 and abs(c / o - 1) > 0.01 and abs(v - (c / o - 1)) < 1e-6:
+                v *= 100          # بعضی صرافی‌ها کسر می‌دهند نه درصد
+            out[s] = v
+        elif o == o and c == c and o > 0:
+            out[s] = (c / o - 1) * 100
+    return out
+
+
+LAST_TICKER: dict = {"changes": {}, "source": None}
+
+
 def fetch_quote_volumes() -> dict[str, float]:
     try:
-        return _qv_map(http_get_json("/quote/v1/ticker/24hr", timeout=30))
+        d = http_get_json("/quote/v1/ticker/24hr", timeout=30)
+        LAST_TICKER.update(changes=_change_map(d), source="toobit")
     except DataError:
-        return _qv_map(http_get_json("/api/v3/ticker/24hr", timeout=30, base=BINANCE_VISION))
+        d = http_get_json("/api/v3/ticker/24hr", timeout=30, base=BINANCE_VISION)
+        LAST_TICKER.update(changes=_change_map(d), source="binance_vision")
+    return _qv_map(d)
 
 
 def drop_unclosed(bars: list[dict], now_ms: int | None = None, interval_ms: int = HOUR_MS) -> list[dict]:
