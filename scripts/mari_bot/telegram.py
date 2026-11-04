@@ -68,6 +68,34 @@ def fmt_report(bot) -> str:
         lines.append(f"🧯 فیوز ضرر فعال است تا {fa_time(bot.gate.s.fuse_until_ts)}")
     if bot.btc_state:
         lines.append(f"وضعیت بیت‌کوین: {STATES_FA.get(bot.btc_state, bot.btc_state)}")
+    lines += _btc_lines(getattr(bot, "btc_summary", None))
+    return _end(lines)
+
+
+def _btc_lines(b: dict | None) -> list[str]:
+    if not b or not b.get("position"):
+        return []
+    pos = "نگه‌داری بیت‌کوین 🟢" if b["position"] == "BTC" else "نقد (بیرون از بازار) ⚪"
+    return ["", "₿ <b>استراتژی روند بیت‌کوین (T-006)</b>",
+            f"وضعیت: {pos}",
+            f"قیمت: {fa(b['close'], 0)} — میانگین ۱۵۰روزه: {fa(b['sma150'], 0)}",
+            f"سرمایهٔ فرضی: {fa(b['equity'])} تتر ({fa(b['return_pct'], sign=True)}٪) — "
+            f"نگه‌داری سادهٔ BTC در همین مدت: {fa(b['btc_hold_return_pct'], sign=True)}٪"]
+
+
+def fmt_btc_event(ev: dict, summ: dict | None = None) -> str:
+    if ev["to"] == "BTC":
+        head = "🟢 <b>روند بیت‌کوین: خرید تمرینی</b>"
+        why = "قیمت بستهٔ روزانه بالای میانگین ۱۵۰روزه رفت."
+    else:
+        head = "⚪ <b>روند بیت‌کوین: فروش تمرینی و نقد شدن</b>"
+        why = "قیمت بستهٔ روزانه زیر میانگین ۱۵۰روزه آمد."
+    if ev.get("boot"):
+        head += " (شروع پیگیری)"
+    lines = [head, f"قیمت: {fa(ev['close'], 0)} — میانگین ۱۵۰روزه: {fa(ev['sma'], 0)}", f"چرا: {why}"]
+    if summ:
+        lines += [f"سرمایهٔ فرضی این استراتژی: {fa(summ['equity'])} تتر"]
+    lines += ["این تنها روشی است که آزمون ۸سالهٔ ماری را گذرانده؛ هنوز در حال اثبات روی دادهٔ زنده است."]
     return _end(lines)
 
 
@@ -136,6 +164,7 @@ HELP = _end([
     "/report — کارنامهٔ تمرینی",
     "/trades — موقعیت‌های باز و ۵ نتیجهٔ آخر",
     "/hunt — برترین روندهای بازار (فقط مشاهده)",
+    "/btc — استراتژی روند بیت‌کوین",
     "/council — شورای هوش مصنوعی",
     "/help — همین راهنما",
 ])
@@ -245,6 +274,9 @@ class Telegram:
                 self.send(chat, fmt_trades(bot))
             elif cmd == "/hunt":
                 self.send(chat, fmt_hunt(bot))
+            elif cmd == "/btc":
+                b = getattr(bot, "btc_summary", None)
+                self.send(chat, _end(_btc_lines(b)[1:] or ["هنوز داده‌ای برای روند بیت‌کوین ثبت نشده."]))
             elif cmd == "/council":
                 self.send(chat, COUNCIL)
             else:

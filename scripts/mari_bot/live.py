@@ -15,7 +15,8 @@ from .config import BotConfig, assert_locks, tradable_symbol
 from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quote_volumes, fetch_universe, quality_check
 from .engine import MariBot
 from .ledger import Ledger
-from .telegram import Telegram, fmt_event
+from .btc_trend import DAY_MS, BtcTrend
+from .telegram import Telegram, fmt_btc_event, fmt_event
 from .trend import SymbolSeries
 
 HOUR_MS = 3_600_000
@@ -54,6 +55,8 @@ class LiveRunner:
         self.ledger = Ledger(os.path.join(state_dir, "ledger.jsonl"), run_id, self.cfg.sha())
         self.bot = MariBot(self.cfg, self.ledger, state)
         self.tg = Telegram(os.path.join(state_dir, "telegram.json"))
+        self.btc = BtcTrend(os.path.join(state_dir, "btc_trend.json"))
+        self.bot.btc_summary = self.btc.summary() if self.btc.s["position"] else None
 
     # ---------------------------------------------------------------- انتخاب نمادها
     def _universe(self) -> list[str]:
@@ -116,9 +119,21 @@ class LiveRunner:
         _save(self.state_path, self.bot.to_state())
         self.meta["cycles"] += 1
         _save(self.meta_path, self.meta)
+        btc_events = []
+        try:
+            daily = drop_unclosed(src.klines("BTCUSDT", "1d", 220), now_ms, DAY_MS)
+            if quality_check(daily, interval_ms=DAY_MS)["ok"]:
+                btc_events = self.btc.update(daily)
+            self.bot.btc_summary = self.btc.summary()
+        except DataError as e:
+            self.ledger.write("BTC_TREND_DATA_FAIL", error=str(e)[:200])
+        for ev in btc_events:
+            self.ledger.write("BTC_TREND_SWITCH", ts=ev["t"], **{k: v for k, v in ev.items() if k != "t"})
         self.tg.check()
         sent = 0
         self.tg.maybe_hello(self.bot)
+        for ev in btc_events:
+            sent += self.tg.broadcast(fmt_btc_event(ev, self.btc.summary()))
         for rec in self.bot.new_events:
             msg = fmt_event(rec)
             if msg:
@@ -136,7 +151,7 @@ class LiveRunner:
         for v in self.bot.snapshot.values():
             states[v["state"]] = states.get(v["state"], 0) + 1
         market["trend_states_scanned"] = dict(sorted(states.items()))
-        summary = {"market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+        summary = {"btc_trend": self.bot.btc_summary, "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}

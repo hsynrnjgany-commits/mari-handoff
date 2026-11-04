@@ -447,6 +447,26 @@ class TestMomentum(unittest.TestCase):
         self.assertEqual(datetime.fromtimestamp(t / 1000, timezone.utc).weekday(), 0)
 
 
+class TestBtcTrendLive(unittest.TestCase):
+    def test_boot_no_replay_and_switch(self):
+        from mari_bot.btc_trend import BtcTrend
+        from mari_bot.telegram import fmt_btc_event
+        D_ = 86_400_000
+        up = [{"t": i * D_, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1, "qv": 1}
+              for i in range(200)]
+        with tempfile.TemporaryDirectory() as d:
+            bt = BtcTrend(os.path.join(d, "b.json"))
+            ev = bt.update(up)
+            self.assertEqual(len(ev), 1)                      # فقط آخرین روز، نه بازپخش
+            self.assertTrue(ev[0]["boot"])
+            self.assertEqual(bt.s["position"], "BTC")
+            crash = up + [{"t": 200 * D_, "o": 299, "h": 299, "l": 100, "c": 120, "v": 1, "qv": 1}]
+            ev = BtcTrend(os.path.join(d, "b.json")).update(crash)
+            self.assertEqual(ev[0]["to"], "CASH")
+            self.assertIn(LOCK_LINE, fmt_btc_event(ev[0]))
+            self.assertEqual(BtcTrend(os.path.join(d, "b.json")).update(crash), [])   # تکراری نه
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
