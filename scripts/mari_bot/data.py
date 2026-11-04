@@ -17,9 +17,14 @@ import urllib.parse
 import urllib.request
 
 TOOBIT = "https://api.toobit.com"
+BINANCE_VISION = "https://data-api.binance.vision"   # منبع جایگزین عمومی (سند مادر ۳۳.۵)
 HOUR_MS = 3_600_000
 UA = {"User-Agent": "mari-paper-bot/1.0 (read-only)"}
-_ALLOWED_PATHS = ("/quote/v1/klines", "/quote/v1/ticker/24hr", "/api/v1/exchangeInfo")
+# فقط این نشانی‌های عمومی و فقط-خواندنی مجازند؛ هر چیز دیگری رد می‌شود.
+_ALLOWED = {
+    TOOBIT: ("/quote/v1/klines", "/quote/v1/ticker/24hr", "/api/v1/exchangeInfo"),
+    BINANCE_VISION: ("/api/v3/klines", "/api/v3/ticker/24hr", "/api/v3/exchangeInfo"),
+}
 
 
 class DataError(RuntimeError):
@@ -31,11 +36,12 @@ def _ctx():
     return ssl.create_default_context(cafile=ca) if ca and os.path.exists(ca) else ssl.create_default_context()
 
 
-def http_get_json(path: str, params: dict | None = None, timeout: float = 15.0, retries: int = 3):
+def http_get_json(path: str, params: dict | None = None, timeout: float = 15.0, retries: int = 3,
+                  base: str = TOOBIT):
     """GET فقط-خواندنی با بازگشت نمایی. مسیرهای غیرمجاز رد می‌شوند (حفاظ قفل PAPER ONLY)."""
-    if path not in _ALLOWED_PATHS:
-        raise DataError(f"مسیر غیرمجاز: {path}")
-    url = TOOBIT + path + ("?" + urllib.parse.urlencode(params) if params else "")
+    if path not in _ALLOWED.get(base, ()):
+        raise DataError(f"مسیر غیرمجاز: {base}{path}")
+    url = base + path + ("?" + urllib.parse.urlencode(params) if params else "")
     last = None
     for i in range(retries):
         try:
@@ -82,21 +88,66 @@ def fetch_klines(symbol: str, interval: str = "1h", limit: int = 500) -> list[di
     return parse_toobit_klines(rows)
 
 
+def fetch_klines_binance(symbol: str, interval: str = "1h", limit: int = 500) -> list[dict]:
+    rows = http_get_json("/api/v3/klines", {"symbol": symbol, "interval": interval, "limit": min(limit, 1000)},
+                         base=BINANCE_VISION, retries=2)
+    return parse_toobit_klines(rows)   # قالب ردیف‌ها یکسان است
+
+
+class SourcePicker:
+    """منبع اول تووبیت؛ اگر در دسترس نبود، Binance Vision. منبع هر نماد ثبت می‌شود (ردیابی منشأ)."""
+
+    def __init__(self):
+        self.toobit_down = False
+        self.used: dict[str, str] = {}
+
+    def klines(self, symbol: str, interval: str = "1h", limit: int = 500) -> list[dict]:
+        if not self.toobit_down:
+            try:
+                bars = fetch_klines(symbol, interval, limit)
+                if bars:
+                    self.used[symbol] = "toobit"
+                    return bars
+            except DataError as e:
+                if "HTTP_4" not in str(e):        # خطای شبکه/مسدودی: کل چرخه به منبع جایگزین برود
+                    self.toobit_down = True
+        bars = fetch_klines_binance(symbol, interval, limit)
+        self.used[symbol] = "binance_vision"
+        return bars
+
+    def counts(self) -> dict:
+        c = {}
+        for v in self.used.values():
+            c[v] = c.get(v, 0) + 1
+        return c
+
+
+def _usdt_trading(d) -> list[str]:
+    return sorted({s["symbol"] for s in (d or {}).get("symbols", [])
+                   if s.get("quoteAsset") == "USDT" and str(s.get("status", "")).upper() == "TRADING"})
+
+
 def fetch_universe() -> list[str]:
-    d = http_get_json("/api/v1/exchangeInfo", timeout=30)
-    syms = [s["symbol"] for s in d.get("symbols", [])
-            if s.get("quoteAsset") == "USDT" and str(s.get("status", "")).upper() == "TRADING"]
-    return sorted(set(syms))
+    try:
+        return _usdt_trading(http_get_json("/api/v1/exchangeInfo", timeout=30))
+    except DataError:
+        return _usdt_trading(http_get_json("/api/v3/exchangeInfo", timeout=30, base=BINANCE_VISION))
 
 
-def fetch_quote_volumes() -> dict[str, float]:
-    d = http_get_json("/quote/v1/ticker/24hr", timeout=30)
+def _qv_map(d) -> dict[str, float]:
     out = {}
     for r in d if isinstance(d, list) else []:
         s = r.get("s") or r.get("symbol")
         if s:
             out[s] = _f(r.get("qv") or r.get("quoteVolume"))
     return out
+
+
+def fetch_quote_volumes() -> dict[str, float]:
+    try:
+        return _qv_map(http_get_json("/quote/v1/ticker/24hr", timeout=30))
+    except DataError:
+        return _qv_map(http_get_json("/api/v3/ticker/24hr", timeout=30, base=BINANCE_VISION))
 
 
 def drop_unclosed(bars: list[dict], now_ms: int | None = None, interval_ms: int = HOUR_MS) -> list[dict]:

@@ -12,7 +12,7 @@ import time
 from datetime import datetime, timezone
 
 from .config import BotConfig, assert_locks, tradable_symbol
-from .data import DataError, drop_unclosed, fetch_klines, fetch_quote_volumes, fetch_universe, quality_check
+from .data import DataError, SourcePicker, drop_unclosed, fetch_quote_volumes, fetch_universe, quality_check
 from .engine import MariBot
 from .ledger import Ledger
 from .telegram import Telegram, fmt_event
@@ -91,9 +91,10 @@ class LiveRunner:
         syms = self.patrol_symbols()
         series, quality, failed = {}, {}, []
         now_ms = int(time.time() * 1000)
+        src = SourcePicker()
         for sym in syms:
             try:
-                bars = drop_unclosed(fetch_klines(sym, self.cfg.interval, self.bars), now_ms)
+                bars = drop_unclosed(src.klines(sym, self.cfg.interval, self.bars), now_ms)
             except DataError:
                 failed.append(sym)
                 continue
@@ -121,7 +122,8 @@ class LiveRunner:
             if msg:
                 sent += self.tg.broadcast(msg)
         self.tg.maybe_daily(self.bot)
-        summary = {"ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+        self.tg.handle_updates(self.bot, wait=0)      # پاسخ به فرمان‌هایی که از چرخهٔ قبل رسیده‌اند
+        summary = {"sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent}

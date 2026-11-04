@@ -4,6 +4,8 @@
 - توکن فقط از متغیر محیطی MARI_TELEGRAM_TOKEN (یا TELEGRAM_BOT_TOKEN) خوانده می‌شود و هرگز چاپ نمی‌شود.
 - هر پیام با «همه‌چیز تمرینی است — بدون سفارش واقعی» تمام می‌شود.
 - چت‌هایی که خطای 403 می‌دهند خودکار حذف می‌شوند؛ ثبت‌نام فقط با /start.
+- اگر MARI_TELEGRAM_CHAT_ID تنظیم شده باشد، ربات فقط به همان چت پیام می‌دهد و فرمان دیگران را
+  نادیده می‌گیرد (حالت شخصی — مناسب اجرای خودکار در گیت‌هاب، چون شناسهٔ چت در فایل عمومی ذخیره نمی‌شود).
 - اگر توکن نباشد، پیام‌ها فقط در خروجی چاپ می‌شوند (حالت خشک).
 """
 from __future__ import annotations
@@ -146,6 +148,8 @@ COUNCIL = _end(["🧠 شورای هوش مصنوعی هنوز وصل نیست (�
 class Telegram:
     def __init__(self, store_path: str):
         self.token = (os.environ.get("MARI_TELEGRAM_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
+        owner = (os.environ.get("MARI_TELEGRAM_CHAT_ID") or "").strip()
+        self.owner = int(owner) if owner.lstrip("-").isdigit() else None
         self.path = store_path
         self.store = {"subscribers": [], "offset": 0, "last_daily": ""}
         if os.path.exists(store_path):
@@ -154,6 +158,8 @@ class Telegram:
                     self.store.update(json.load(fh))
             except (OSError, ValueError):
                 pass
+        if self.owner is not None:
+            self.store["subscribers"] = [self.owner]
 
     @property
     def enabled(self) -> bool:
@@ -162,8 +168,11 @@ class Telegram:
     def save(self) -> None:
         os.makedirs(os.path.dirname(os.path.abspath(self.path)), exist_ok=True)
         tmp = self.path + ".tmp"
+        data = dict(self.store)
+        if self.owner is not None:
+            data["subscribers"] = []      # شناسهٔ چت شخصی هرگز در فایل ذخیره نمی‌شود
         with open(tmp, "w", encoding="utf-8") as fh:
-            json.dump(self.store, fh, ensure_ascii=False)
+            json.dump(data, fh, ensure_ascii=False)
         os.replace(tmp, self.path)
 
     def _call(self, method: str, params: dict, timeout: float = 20):
@@ -209,14 +218,16 @@ class Telegram:
             chat = (msg.get("chat") or {}).get("id")
             if not chat or not text.startswith("/"):
                 continue
+            if self.owner is not None and chat != self.owner:
+                continue                  # حالت شخصی: فرمان غریبه‌ها پاسخ داده نمی‌شود
             cmd = text.split()[0].split("@")[0].lower()
             n += 1
             if cmd == "/start":
-                if chat not in self.store["subscribers"]:
+                if self.owner is None and chat not in self.store["subscribers"]:
                     self.store["subscribers"].append(chat)
                 self.send(chat, "✅ این چت برای گزارش‌های خودکار ثبت شد.\n\n" + HELP)
             elif cmd == "/stop":
-                if chat in self.store["subscribers"]:
+                if self.owner is None and chat in self.store["subscribers"]:
                     self.store["subscribers"].remove(chat)
                 self.send(chat, _end(["دریافت گزارش خودکار لغو شد."]))
             elif cmd == "/report":

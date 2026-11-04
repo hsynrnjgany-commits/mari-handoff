@@ -262,6 +262,32 @@ class TestTelegramFormat(unittest.TestCase):
         self.assertEqual(fa(1234.5), "۱،۲۳۴٫۵۰")
 
 
+class TestTelegramOwnerMode(unittest.TestCase):
+    def test_owner_id_never_saved_and_strangers_ignored(self):
+        from mari_bot.telegram import Telegram
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "12345"}):
+            p = os.path.join(d, "tg.json")
+            tg = Telegram(p)
+            self.assertEqual(tg.store["subscribers"], [12345])
+            upd = {"ok": True, "result": [
+                {"update_id": 1, "message": {"text": "/report", "chat": {"id": 999}}},
+                {"update_id": 2, "message": {"text": "/help", "chat": {"id": 12345}}}]}
+            sent = []
+            with mock.patch.object(tg, "_call", side_effect=lambda m, prm, **k: (upd, 200) if m == "getUpdates"
+                                   else (sent.append(prm["chat_id"]) or ({"ok": True}, 200))):
+                tg.handle_updates(bot=None)
+            self.assertEqual(sent, [12345])
+            with open(p) as fh:
+                self.assertNotIn("12345", fh.read())
+
+    def test_fallback_source_paths_allowed_only_readonly(self):
+        with self.assertRaises(D.DataError):
+            D.http_get_json("/api/v3/order", base=D.BINANCE_VISION)
+        with self.assertRaises(D.DataError):
+            D.http_get_json("/api/v3/klines", base="https://evil.example")
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
@@ -270,12 +296,13 @@ class TestLiveBoot(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(live, "fetch_universe", return_value=["SOLUSDT"]), \
                 mock.patch.object(live, "fetch_quote_volumes", return_value={}), \
-                mock.patch.object(live, "fetch_klines", side_effect=lambda s, *a: bars[s]), \
+                mock.patch.object(live.SourcePicker, "klines", lambda self, s, *a: bars[s]), \
                 mock.patch.object(live.time, "sleep"), \
                 mock.patch.object(live.time, "time", return_value=now / 1000), \
                 mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "", "TELEGRAM_BOT_TOKEN": ""}):
             r = live.LiveRunner(d)
             out = r.cycle()
+            self.assertNotIn("subscribers", json.dumps(out))
             self.assertTrue(out["ok"])
             self.assertEqual(len(r.bot.equity_curve), 1)        # فقط آخرین کندل بسته پردازش شد
             self.assertEqual(r.bot.trades, [])
