@@ -116,7 +116,9 @@ class LiveRunner:
         _save(self.state_path, self.bot.to_state())
         self.meta["cycles"] += 1
         _save(self.meta_path, self.meta)
+        self.tg.check()
         sent = 0
+        self.tg.maybe_hello(self.bot)
         for rec in self.bot.new_events:
             msg = fmt_event(rec)
             if msg:
@@ -126,7 +128,7 @@ class LiveRunner:
         summary = {"sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
-                   "seconds": round(time.time() - t0, 1), "telegram_sent": sent}
+                   "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}
         self.ledger.write("CYCLE", **summary)
         return summary
 

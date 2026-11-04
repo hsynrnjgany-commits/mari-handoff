@@ -78,6 +78,7 @@ class RiskParams:
     daily_dd_halt: float = 0.03       # توقف روزانه با افت ۳٪
     min_quote_vol_usdt: float = 50_000.0  # میانهٔ حجم دلاری ۲۰ کندل
     block_btc_states: tuple = ("E", "F", "G")
+    require_btc_states: tuple = ()      # خالی = بدون شرط. H-MARI-B-002: ("A", "B")
 
 
 @dataclass(frozen=True)

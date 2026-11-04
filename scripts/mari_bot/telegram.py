@@ -151,7 +151,9 @@ class Telegram:
         owner = (os.environ.get("MARI_TELEGRAM_CHAT_ID") or "").strip()
         self.owner = int(owner) if owner.lstrip("-").isdigit() else None
         self.path = store_path
-        self.store = {"subscribers": [], "offset": 0, "last_daily": ""}
+        self.store = {"subscribers": [], "offset": 0, "last_daily": "", "hello_sent": False}
+        self.diag = {"enabled": False, "token_ok": None, "sent_ok": 0, "sent_fail": 0, "fail_codes": [],
+                     "commands": 0, "ignored_other_chats": 0}
         if os.path.exists(store_path):
             try:
                 with open(store_path, encoding="utf-8") as fh:
@@ -188,11 +190,16 @@ class Telegram:
 
     def send(self, chat_id, text: str) -> bool:
         if not self.enabled:
-            print(f"[تلگرام خاموش → {chat_id}]\n{text}\n")
+            print(f"[تلگرام خاموش]\n{text}\n")
             return False
-        _, code = self._call("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": "HTML",
-                                             "disable_web_page_preview": "true"})
-        if code == 403 and chat_id in self.store["subscribers"]:
+        res, code = self._call("sendMessage", {"chat_id": chat_id, "text": text, "parse_mode": "HTML",
+                                               "disable_web_page_preview": "true"})
+        if code == 200:
+            self.diag["sent_ok"] += 1
+        else:
+            self.diag["sent_fail"] += 1
+            self.diag["fail_codes"].append(code)    # فقط کد خطا؛ توکن و شناسه هرگز ثبت نمی‌شوند
+        if code == 403 and self.owner is None and chat_id in self.store["subscribers"]:
             self.store["subscribers"].remove(chat_id)   # چت مرده
             self.save()
         return code == 200
@@ -219,9 +226,11 @@ class Telegram:
             if not chat or not text.startswith("/"):
                 continue
             if self.owner is not None and chat != self.owner:
+                self.diag["ignored_other_chats"] += 1
                 continue                  # حالت شخصی: فرمان غریبه‌ها پاسخ داده نمی‌شود
             cmd = text.split()[0].split("@")[0].lower()
             n += 1
+            self.diag["commands"] += 1
             if cmd == "/start":
                 if self.owner is None and chat not in self.store["subscribers"]:
                     self.store["subscribers"].append(chat)
@@ -243,12 +252,37 @@ class Telegram:
         self.save()
         return n
 
+    def check(self) -> None:
+        """تشخیص سلامت اتصال (برای گزارش اجرا) — بدون چاپ توکن یا شناسه."""
+        self.diag["enabled"] = self.enabled
+        self.diag["owner_mode"] = self.owner is not None
+        if not self.enabled:
+            return
+        res, code = self._call("getMe", {})
+        self.diag["token_ok"] = bool(code == 200 and res and res.get("ok"))
+        if code != 200:
+            self.diag["getme_code"] = code
+
+    def maybe_hello(self, bot) -> bool:
+        """اولین اجرای موفق پس از وصل‌شدن تلگرام: پیام تأیید اتصال + گزارش فعلی."""
+        if not self.enabled or self.store.get("hello_sent") or not self.store["subscribers"]:
+            return False
+        if self.broadcast("✅ <b>ربات ماری به تلگرام شما وصل شد.</b>\n"
+                          "از این به بعد هر ساعت بازار را بررسی می‌کند و رویدادها را همین‌جا می‌فرستد.\n\n"
+                          + fmt_report(bot)) > 0:
+            self.store["hello_sent"] = True
+            self.save()
+            return True
+        return False
+
     def maybe_daily(self, bot, hour: int = 9) -> bool:
+        if not self.enabled:
+            return False                  # روز را «ارسال‌شده» علامت نزن وقتی تلگرام خاموش است
         now = datetime.now(TEHRAN)
         day = now.strftime("%Y-%m-%d")
         if now.hour >= hour and self.store.get("last_daily") != day:
-            self.store["last_daily"] = day
-            self.save()
-            self.broadcast("☀️ <b>گزارش روزانه</b>\n\n" + fmt_report(bot))
-            return True
+            if self.broadcast("☀️ <b>گزارش روزانه</b>\n\n" + fmt_report(bot)) > 0:
+                self.store["last_daily"] = day
+                self.save()
+                return True
         return False

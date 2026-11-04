@@ -26,14 +26,22 @@ from .trend import SymbolSeries
 
 HOUR_MS = 3_600_000
 DAY_MS = 86_400_000
-HYPOTHESIS = {
-    "id": "H-MARI-B-001",
-    "statement": "ورود در شکست سقف ۲۰ کندل در روند A/B با حجم بالا، همراه با مدیریت خروج پله‌ای "
-                 "دکترین، پس از هزینه‌های فرضی بازده مثبت دارد.",
-    "falsified_if": "بازده خالص کل ≤ ۰ یا کران پایین بازهٔ اطمینان ۹۵٪ میانگین هر معامله < ۰ "
-                    "یا ضریب سود < ۱ در هزینهٔ پایه",
-    "registered_before_results": True,
+HYPOTHESES = {
+    "H-MARI-B-001": {
+        "statement": "ورود در شکست سقف ۲۰ کندل در روند A/B با حجم بالا، همراه با مدیریت خروج پله‌ای "
+                     "دکترین، پس از هزینه‌های فرضی بازده مثبت دارد.",
+        "risk_overrides": {},
+        "status_before": "FALSIFIED on 2026-05-08..2026-11-04 (run 20261104T2009Z) — اینجا فقط گروه کنترل است",
+    },
+    "H-MARI-B-002": {
+        "statement": "همان H-001، اما ورود فقط وقتی BTC در وضعیت A یا B (صعودی) است.",
+        "risk_overrides": {"require_btc_states": ("A", "B")},
+        "status_before": "ایده از نتایج ماهانهٔ H-001 آمد؛ پیش از دیدن این دوره ثبت شد. "
+                         "فقط روی دورهٔ دست‌نخوردهٔ قبل از 2026-05-08 معتبر است.",
+    },
 }
+FALSIFIED_IF = ("بازده خالص کل ≤ ۰ یا کران پایین بازهٔ اطمینان ۹۵٪ میانگین هر معامله < ۰ "
+                "یا ضریب سود < ۱ در هزینهٔ پایه")
 
 
 def fetch_history(symbol: str, start_ms: int, end_ms: int, interval: str = "1h") -> list[dict]:
@@ -91,11 +99,46 @@ def _bh(series, sym, a, b):
     return round((xs[-1]["c"] / xs[0]["o"] - 1) * 100, 2) if len(xs) > 1 else None
 
 
-def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out") -> dict:
-    cfg = BotConfig()
+def _verdict(full):
+    ci = full.get("bootstrap") or {}
+    if full["net_return_pct"] > 0 and (full["profit_factor"] or 0) >= 1 and ci and ci["ci95_low"] > 0:
+        return "SUPPORTED_IN_TEST_RANGE"
+    if full["net_return_pct"] > 0 and (full["profit_factor"] or 0) >= 1:
+        return "INCONCLUSIVE"
+    return "FALSIFIED"
+
+
+def _evaluate(series, quality, cfg, start, end, tag):
+    full, trades = _run(series, quality, cfg, start, end, f"{tag}-FULL")
+    costs = {}
+    for fee in (0.0, 0.0005, 0.001, 0.002, 0.003):
+        c = replace(cfg, cost=CostParams(fee_side=fee, slippage=cfg.cost.slippage))
+        m, _ = _run(series, quality, c, start, end, f"{tag}-FEE{fee}")
+        costs[f"fee_side_{fee * 100:.2f}pct"] = {k: m[k] for k in ("trades", "net_return_pct", "profit_factor",
+                                                                    "win_rate_pct", "max_drawdown_pct")}
+    folds, a = [], start
+    while a < end:
+        b = min(a + 30 * DAY_MS, end)
+        m, _ = _run(series, quality, cfg, a, b, f"{tag}-FOLD{len(folds)}")
+        btc = _bh(series, "BTCUSDT", a, b)
+        regime = "BULL" if btc is not None and btc > 10 else "BEAR" if btc is not None and btc < -10 else "FLAT"
+        folds.append({"from": datetime.fromtimestamp(a / 1000, timezone.utc).strftime("%Y-%m-%d"),
+                      "to": datetime.fromtimestamp(b / 1000, timezone.utc).strftime("%Y-%m-%d"),
+                      "btc_return_pct": btc, "regime": regime,
+                      **{k: m[k] for k in ("trades", "net_return_pct", "profit_factor", "win_rate_pct",
+                                           "max_drawdown_pct")}})
+        a = b
+    return {"config_sha": cfg.sha(), "verdict": _verdict(full), "full_period": full, "cost_sensitivity": costs,
+            "folds": folds, "tail_removal_top5pct": _tail_removed(trades, 0.05, cfg.risk.start_equity)}, trades
+
+
+def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out", end_ms: int | None = None,
+                 hypotheses: list[str] | None = None) -> dict:
+    base = BotConfig()
+    hyps = hypotheses or list(HYPOTHESES)
     t_fetch = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    end = int(time.time() * 1000) // HOUR_MS * HOUR_MS
-    warm = (cfg.trend.min_bars + 40) * HOUR_MS
+    end = (end_ms or int(time.time() * 1000)) // HOUR_MS * HOUR_MS
+    warm = (base.trend.min_bars + 40) * HOUR_MS
     start = end - months * 30 * DAY_MS
     syms = pick_universe(top)
     raw, failed, lineage = {}, [], {}
@@ -112,47 +155,20 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out") 
     for s, bars in raw.items():
         q = quality_check(bars)
         quality[s] = {"ok": q["ok"], "issues": q["issues"]}
-        if q["n"] >= cfg.trend.min_bars + 2:
-            series[s] = SymbolSeries(s, q["clean"], cfg.trend)
+        if q["n"] >= base.trend.min_bars + 2:
+            series[s] = SymbolSeries(s, q["clean"], base.trend)
 
-    # ۱) کل دوره با هزینهٔ پایه
-    full, trades = _run(series, quality, cfg, start, end, "RESEARCH-FULL")
-    # ۲) حساسیت هزینه (کارمزد هر طرف؛ لغزش ثابت)
-    costs = {}
-    for fee in (0.0, 0.0005, 0.001, 0.002, 0.003):
-        c = replace(cfg, cost=CostParams(fee_side=fee, slippage=cfg.cost.slippage))
-        m, _ = _run(series, quality, c, start, end, f"RESEARCH-FEE{fee}")
-        costs[f"fee_side_{fee * 100:.2f}pct"] = {k: m[k] for k in ("trades", "net_return_pct", "profit_factor",
-                                                                    "win_rate_pct", "max_drawdown_pct")}
-    # ۳) فولدهای ۳۰روزه + رژیم BTC
-    folds = []
-    a = start
-    while a < end:
-        b = min(a + 30 * DAY_MS, end)
-        m, _ = _run(series, quality, cfg, a, b, f"RESEARCH-FOLD{len(folds)}")
-        btc = _bh(series, "BTCUSDT", a, b)
-        regime = "BULL" if btc is not None and btc > 10 else "BEAR" if btc is not None and btc < -10 else "FLAT"
-        folds.append({"from": datetime.fromtimestamp(a / 1000, timezone.utc).strftime("%Y-%m-%d"),
-                      "to": datetime.fromtimestamp(b / 1000, timezone.utc).strftime("%Y-%m-%d"),
-                      "btc_return_pct": btc, "regime": regime,
-                      **{k: m[k] for k in ("trades", "net_return_pct", "profit_factor", "win_rate_pct",
-                                           "max_drawdown_pct")}})
-        a = b
-    # ۴) پایه‌ها
+    results, all_trades = {}, {}
+    for hid in hyps:
+        h = HYPOTHESES[hid]
+        cfg = replace(base, risk=replace(base.risk, **h["risk_overrides"]))
+        res, trades = _evaluate(series, quality, cfg, start, end, hid)
+        results[hid] = {"statement": h["statement"], "status_before": h["status_before"], **res}
+        all_trades[hid] = trades
     bh_all = [r for r in (_bh(series, s, start, end) for s in series if s != "BTCUSDT") if r is not None]
-    baseline = {"btc_buy_hold_pct": _bh(series, "BTCUSDT", start, end),
-                "equal_weight_buy_hold_pct": round(sum(bh_all) / len(bh_all), 2) if bh_all else None}
-
-    base_ci = full.get("bootstrap") or {}
-    verdict = "FALSIFIED"
-    if (full["net_return_pct"] > 0 and (full["profit_factor"] or 0) >= 1
-            and base_ci and base_ci["ci95_low"] > 0):
-        verdict = "SUPPORTED_IN_TEST_RANGE"
-    elif full["net_return_pct"] > 0:
-        verdict = "INCONCLUSIVE"
     report = {
-        "hypothesis": HYPOTHESIS, "verdict": verdict,
-        "code": CODE_VERSION, "config_sha": cfg.sha(), "fetched_utc": t_fetch,
+        "falsified_if": FALSIFIED_IF, "registered_before_results": True,
+        "code": CODE_VERSION, "fetched_utc": t_fetch,
         "period": {"from": datetime.fromtimestamp(start / 1000, timezone.utc).isoformat(),
                    "to": datetime.fromtimestamp(end / 1000, timezone.utc).isoformat(), "months": months},
         "source": BINANCE_VISION + "/api/v3/klines (public, read-only)",
@@ -161,44 +177,44 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out") 
         "known_biases": [
             "SURVIVORSHIP: نمادها با حجم امروز انتخاب شدند؛ نمادهای حذف‌شده در گذشته غایب‌اند (به نفع نتیجه).",
             "VENUE: تاریخچه از بایننس است، اجرای زنده از تووبیت؛ قیمت‌ها نزدیک‌اند اما یکسان نیستند.",
-            "SINGLE_RUN: پارامترها ثابت‌اند؛ یک فرضیه، یک آزمون (بدون انتخاب بهترین از میان چند آزمایش).",
+            f"MULTIPLE_TESTS: تعداد فرضیه‌های آزموده‌شده تا این اجرا: {len(HYPOTHESES)}.",
         ],
-        "full_period": full, "cost_sensitivity": costs, "folds": folds,
-        "tail_removal_top5pct": _tail_removed(trades, 0.05, cfg.risk.start_equity),
-        "baseline": baseline, "lineage": lineage,
+        "baseline": {"btc_buy_hold_pct": _bh(series, "BTCUSDT", start, end),
+                     "equal_weight_buy_hold_pct": round(sum(bh_all) / len(bh_all), 2) if bh_all else None},
+        "results": results, "lineage": lineage,
     }
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
     with open(os.path.join(out_dir, "trades.json"), "w", encoding="utf-8") as fh:
-        json.dump(trades, fh, ensure_ascii=False)
+        json.dump(all_trades, fh, ensure_ascii=False)
     with open(os.path.join(out_dir, "report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write(render_fa(report))
     return report
 
 
 def render_fa(r: dict) -> str:
-    f = r["full_period"]
-    L = [f"# گزارش پژوهش خارج از نمونه — {r['hypothesis']['id']}", "",
-         f"- حکم: **{r['verdict']}**",
+    L = ["# گزارش پژوهش خارج از نمونه", "",
          f"- دوره: {r['period']['from'][:10]} تا {r['period']['to'][:10]} ({r['period']['months']} ماه)",
-         f"- نمادها: {r['universe']['used']} — منبع: {r['source']}",
-         f"- نسخهٔ کد: {r['code']} — شناسهٔ تنظیمات: {r['config_sha']}", "",
-         "## کل دوره (هزینهٔ پایه)", "",
-         f"- معامله: {f['trades']} — نرخ برد: {f['win_rate_pct']}٪ — ضریب سود: {f['profit_factor']}",
-         f"- بازده خالص: {f['net_return_pct']}٪ — بیشترین افت: {f['max_drawdown_pct']}٪",
-         f"- بوت‌استرپ میانگین هر معامله: {f.get('bootstrap')}",
-         f"- خرید و نگه‌داری BTC: {r['baseline']['btc_buy_hold_pct']}٪ — سبد برابر: "
-         f"{r['baseline']['equal_weight_buy_hold_pct']}٪",
-         f"- حذف ۵٪ برترین معامله‌ها: {r['tail_removal_top5pct']}", "",
-         "## حساسیت هزینه", "", "| کارمزد هر طرف | معامله | بازده ٪ | ضریب سود |", "|---|---|---|---|"]
-    for k, v in r["cost_sensitivity"].items():
-        L.append(f"| {k} | {v['trades']} | {v['net_return_pct']} | {v['profit_factor']} |")
-    L += ["", "## فولدهای ماهانه", "", "| از | تا | رژیم BTC | BTC ٪ | معامله | بازده ٪ | ضریب سود |",
-          "|---|---|---|---|---|---|---|"]
-    for x in r["folds"]:
-        L.append(f"| {x['from']} | {x['to']} | {x['regime']} | {x['btc_return_pct']} | {x['trades']} | "
-                 f"{x['net_return_pct']} | {x['profit_factor']} |")
-    L += ["", "## سوگیری‌های شناخته‌شده", ""] + [f"- {b}" for b in r["known_biases"]]
+         f"- نمادها: {r['universe']['used']} — منبع: {r['source']} — نسخهٔ کد: {r['code']}",
+         f"- شرط رد فرضیه (ثبت پیشاپیش): {r['falsified_if']}",
+         f"- پایه: خرید و نگه‌داری BTC {r['baseline']['btc_buy_hold_pct']}٪ — سبد برابر "
+         f"{r['baseline']['equal_weight_buy_hold_pct']}٪", ""]
+    for hid, x in r["results"].items():
+        f = x["full_period"]
+        L += [f"## {hid} — حکم: **{x['verdict']}**", "", x["statement"], "",
+              f"- معامله: {f['trades']} — نرخ برد: {f['win_rate_pct']}٪ — ضریب سود: {f['profit_factor']}",
+              f"- بازده خالص: {f['net_return_pct']}٪ — بیشترین افت: {f['max_drawdown_pct']}٪",
+              f"- بوت‌استرپ میانگین هر معامله: {f.get('bootstrap')}",
+              f"- حذف ۵٪ برترین معامله‌ها: {x['tail_removal_top5pct']}", "",
+              "| کارمزد هر طرف | معامله | بازده ٪ | ضریب سود |", "|---|---|---|---|"]
+        for k, v in x["cost_sensitivity"].items():
+            L.append(f"| {k} | {v['trades']} | {v['net_return_pct']} | {v['profit_factor']} |")
+        L += ["", "| از | تا | رژیم BTC | BTC ٪ | معامله | بازده ٪ | ضریب سود |", "|---|---|---|---|---|---|---|"]
+        for y in x["folds"]:
+            L.append(f"| {y['from']} | {y['to']} | {y['regime']} | {y['btc_return_pct']} | {y['trades']} | "
+                     f"{y['net_return_pct']} | {y['profit_factor']} |")
+        L.append("")
+    L += ["## سوگیری‌های شناخته‌شده", ""] + [f"- {b}" for b in r["known_biases"]]
     L += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
     return "\n".join(L) + "\n"

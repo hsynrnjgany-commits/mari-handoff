@@ -74,6 +74,8 @@ class RiskGate:
             r.append("DAILY_DRAWDOWN_HALT")
         if btc_state in self.p.block_btc_states:
             r.append(f"BTC_REGIME_{btc_state}")
+        elif self.p.require_btc_states and btc_state not in self.p.require_btc_states:
+            r.append(f"BTC_NOT_IN_{''.join(self.p.require_btc_states)}")
         if not (median_qv == median_qv) or median_qv < self.p.min_quote_vol_usdt:
             r.append("LOW_LIQUIDITY")
         return r

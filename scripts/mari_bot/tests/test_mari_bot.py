@@ -167,6 +167,12 @@ class TestRisk(unittest.TestCase):
         self.assertIn("LOSS_FUSE_ACTIVE", g.check_entry("SOLUSDT", 10 * H, **ok))
         self.assertNotIn("LOSS_FUSE_ACTIVE", g.check_entry("SOLUSDT", 25 * H, **ok))
 
+    def test_require_btc_bullish(self):
+        g = RiskGate(RiskParams(require_btc_states=("A", "B")))
+        ok = dict(open_symbols=set(), data_ok=True, median_qv=1e6)
+        self.assertEqual(g.check_entry("SOLUSDT", 0, btc_state="B", **ok), [])
+        self.assertIn("BTC_NOT_IN_AB", g.check_entry("SOLUSDT", 0, btc_state="D", **ok))
+
     def test_size_respects_caps(self):
         g = RiskGate(RiskParams())
         q = g.size(100, 99, 1000, 0.001)               # ریسک ۱٪ → ۱۰ واحد، اما سقف ۲۰٪ → ۲ واحد
@@ -281,6 +287,26 @@ class TestTelegramOwnerMode(unittest.TestCase):
             with open(p) as fh:
                 self.assertNotIn("12345", fh.read())
 
+    def test_hello_and_daily_only_when_enabled(self):
+        from mari_bot.telegram import Telegram
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "", "TELEGRAM_BOT_TOKEN": "",
+                                             "MARI_TELEGRAM_CHAT_ID": ""}):
+            tg = Telegram(os.path.join(d, "tg.json"))
+            bot = run_backtest({"BTCUSDT": synth(300)})["bot"]
+            self.assertFalse(tg.maybe_daily(bot, hour=0))
+            self.assertEqual(tg.store["last_daily"], "")       # خاموش: روز مصرف نمی‌شود
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "7"}):
+            tg = Telegram(os.path.join(d, "tg.json"))
+            with mock.patch.object(tg, "_call", return_value=(None, 400)):
+                self.assertFalse(tg.maybe_hello(bot))
+                self.assertFalse(tg.store["hello_sent"])       # ناموفق: دوباره تلاش می‌شود
+                self.assertEqual(tg.diag["fail_codes"], [400])
+            with mock.patch.object(tg, "_call", return_value=({"ok": True}, 200)):
+                self.assertTrue(tg.maybe_hello(bot))
+                self.assertFalse(tg.maybe_hello(bot))          # فقط یک بار
+
     def test_fallback_source_paths_allowed_only_readonly(self):
         with self.assertRaises(D.DataError):
             D.http_get_json("/api/v3/order", base=D.BINANCE_VISION)
@@ -299,13 +325,16 @@ class TestResearch(unittest.TestCase):
                 mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b: data[s]), \
                 mock.patch.object(R.time, "time", return_value=t_end / 1000):
             rep = R.run_research(months=1, top=3, out_dir=d)
-            self.assertIn(rep["verdict"], ("FALSIFIED", "INCONCLUSIVE", "SUPPORTED_IN_TEST_RANGE"))
-            self.assertEqual(len(rep["cost_sensitivity"]), 5)
-            self.assertTrue(rep["folds"])
+            self.assertEqual(set(rep["results"]), set(R.HYPOTHESES))
+            for x in rep["results"].values():
+                self.assertIn(x["verdict"], ("FALSIFIED", "INCONCLUSIVE", "SUPPORTED_IN_TEST_RANGE"))
+                self.assertEqual(len(x["cost_sensitivity"]), 5)
+                self.assertTrue(x["folds"])
+                nets = [v["net_return_pct"] for v in x["cost_sensitivity"].values()]
+                self.assertEqual(nets, sorted(nets, reverse=True))   # هزینهٔ بیشتر هرگز بهتر نیست
+            self.assertNotEqual(rep["results"]["H-MARI-B-001"]["config_sha"],
+                                rep["results"]["H-MARI-B-002"]["config_sha"])
             self.assertTrue(os.path.exists(os.path.join(d, "report_fa.md")))
-            # هزینهٔ بیشتر نباید بازده را بهتر کند
-            nets = [v["net_return_pct"] for v in rep["cost_sensitivity"].values()]
-            self.assertEqual(nets, sorted(nets, reverse=True))
 
 
 class TestLiveBoot(unittest.TestCase):

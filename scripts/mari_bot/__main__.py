@@ -84,11 +84,18 @@ def cmd_report(a):
 
 def cmd_research(a):
     from .research import run_research
-    r = run_research(months=a.months, top=a.top, out_dir=a.out)
-    f = r["full_period"]
-    print(json.dumps({"verdict": r["verdict"], "trades": f["trades"], "net_return_pct": f["net_return_pct"],
-                      "profit_factor": f["profit_factor"], "bootstrap": f["bootstrap"],
-                      "baseline": r["baseline"], "symbols": r["universe"]["used"]}, ensure_ascii=False, indent=2))
+    from datetime import datetime, timezone
+    end_ms = None
+    if a.end:
+        end_ms = int(datetime.strptime(a.end, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    hyps = [h.strip() for h in a.hypotheses.split(",") if h.strip()] or None
+    r = run_research(months=a.months, top=a.top, out_dir=a.out, end_ms=end_ms, hypotheses=hyps)
+    out = {"period": r["period"], "baseline": r["baseline"], "symbols": r["universe"]["used"]}
+    for hid, x in r["results"].items():
+        f = x["full_period"]
+        out[hid] = {"verdict": x["verdict"], "trades": f["trades"], "net_return_pct": f["net_return_pct"],
+                    "profit_factor": f["profit_factor"], "bootstrap": f["bootstrap"]}
+    print(json.dumps(out, ensure_ascii=False, indent=2))
 
 
 def cmd_verify(a):
@@ -119,6 +126,8 @@ def main(argv=None):
     rs.add_argument("--months", type=int, default=6)
     rs.add_argument("--top", type=int, default=60)
     rs.add_argument("--out", default="research_out")
+    rs.add_argument("--end", default="", help="پایان دوره YYYY-MM-DD (خالی = اکنون)")
+    rs.add_argument("--hypotheses", default="", help="مثلاً H-MARI-B-001,H-MARI-B-002 (خالی = همه)")
     rs.set_defaults(fn=cmd_research)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")

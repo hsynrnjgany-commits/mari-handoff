@@ -13,6 +13,12 @@ on:
       top:
         description: "تعداد نمادهای پرحجم"
         default: "60"
+      end_date:
+        description: "پایان دوره YYYY-MM-DD (خالی = اکنون)"
+        default: ""
+      hypotheses:
+        description: "فرضیه‌ها، جداشده با کاما (خالی = همه)"
+        default: ""
 
 permissions:
   contents: write
@@ -47,7 +53,8 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)"
-          python -m mari_bot research --months "${{ inputs.months }}" --top "${{ inputs.top }}" --out "$RUN_DIR"
+          python -m mari_bot research --months "${{ inputs.months }}" --top "${{ inputs.top }}" \
+            --end "${{ inputs.end_date }}" --hypotheses "${{ inputs.hypotheses }}" --out "$RUN_DIR"
       - name: Save report
         if: always()
         working-directory: out-wt
