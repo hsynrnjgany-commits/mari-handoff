@@ -793,5 +793,26 @@ class IdeasTests(unittest.TestCase):
         self.assertEqual(set(r["verdict"]), {"H-MARI-V-022", "H-MARI-G-023"})
 
 
+class Ideas2Tests(unittest.TestCase):
+    def test_weekday_planted_and_halving_windows(self):
+        from mari_bot.ideas import _ms, halving_for, run_ideas2, weekday, weekday_test
+        import random
+        rnd = random.Random(2)
+        t0, px, bars = _ms("2018-01-01"), 100.0, []
+        for i in range(3000):
+            t = t0 + i * 86_400_000
+            px *= 1 + (0.01 if weekday(t) == 4 else 0.0) + rnd.gauss(0, 0.01)
+            bars.append({"t": t, "o": px, "h": px, "l": px, "c": px, "v": 1, "qv": 1})
+        r = weekday_test(bars, (_ms("2018-06-01"), _ms("2022-12-31")), (_ms("2023-01-01"), bars[-1]["t"]))
+        self.assertEqual(r["best_day"], 4)
+        self.assertGreater(r["test_vs_all"]["ci95_low"], 0)
+        ctx = {"state": {}, "days": [_ms("2020-05-11")]}
+        self.assertEqual(halving_for("BTCUSDT")(0, ctx), {"BTCUSDT": 1.0})
+        ctx = {"state": {"in": True}, "days": [_ms("2020-05-11") + 548 * 86_400_000]}
+        self.assertEqual(halving_for("BTCUSDT")(0, ctx), {})
+        out = run_ideas2({"BTCUSDT": bars, "ETHUSDT": [dict(b) for b in bars]}, _ms("2018-06-01"), bars[-1]["t"])
+        self.assertEqual(out["verdict"]["H-MARI-W-025"], "SUPPORTED_IN_TEST_RANGE")
+
+
 if __name__ == "__main__":
     unittest.main()
