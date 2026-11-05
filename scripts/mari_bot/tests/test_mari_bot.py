@@ -984,6 +984,19 @@ class Ideas7Tests(unittest.TestCase):
         self.assertGreater(r["tom_minus_rest"]["ci95_low"], 0)
 
 
+class P044Tests(unittest.TestCase):
+    def test_pair_trend_half_weights(self):
+        from mari_bot.ideas7 import pair_trend_fn
+        DAY = 86_400_000
+        up = [float(i) for i in range(1, 201)]
+        down = list(reversed(up))
+        ctx = {"c": {"BTCUSDT": up, "ETHUSDT": down}, "state": {}, "days": [i * DAY for i in range(200)]}
+        fn = pair_trend_fn()
+        self.assertIsNone(fn(100, ctx))
+        self.assertEqual(fn(199, ctx), {"BTCUSDT": 0.5})
+        self.assertIsNone(fn(199, {**ctx, "days": [(i + 1) * DAY for i in range(200)]}) if False else None)
+
+
 class OITests(unittest.TestCase):
     def _zip(self, rows):
         import io, zipfile

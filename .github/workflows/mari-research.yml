@@ -81,6 +81,10 @@ jobs:
             python -m mari_bot ideas8 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0
           fi
+          if [ "${{ inputs.kind }}" = "p044" ]; then
+            python -m mari_bot p044 --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "ideas7" ]; then
             python -m mari_bot ideas7 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0

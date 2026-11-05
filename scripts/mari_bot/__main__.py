@@ -220,6 +220,12 @@ def cmd_oi(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_p044(a):
+    from .research import run_p044_research
+    r = run_p044_research(out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -324,6 +330,9 @@ def main(argv=None):
     i7.add_argument("--start", default="2018-06-01")
     i7.add_argument("--out", default="research_out")
     i7.set_defaults(fn=cmd_ideas7)
+    pp = sub.add_parser("p044", help="سبد روند BTC + ETH")
+    pp.add_argument("--out", default="research_out")
+    pp.set_defaults(fn=cmd_p044)
     i8 = sub.add_parser("ideas8", help="صف ایده‌ها: ترس و طمع، هالووین، حد ضرر متحرک")
     i8.add_argument("--start", default="2018-06-01")
     i8.add_argument("--out", default="research_out")

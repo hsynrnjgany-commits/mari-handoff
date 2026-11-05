@@ -106,3 +106,42 @@ def run_ideas7(daily: dict, start_ms: int, end_ms: int) -> dict:
     return {"by_asset": out,
             "verdict": {"H-MARI-E-040": "SUPPORTED_IN_TEST_RANGE" if ok_e else "FALSIFIED",
                         "H-MARI-M-041": "SUPPORTED_IN_TEST_RANGE" if ok_m else "FALSIFIED"}}
+
+
+# ---------------------------------------------------------------- P-044 (ثبت 2026-11-05T17:20Z)
+P044_PERIODS = (("2018-06-01", "2022-05-31"), ("2022-06-01", None))
+P044_HYPOTHESES = {
+    "H-MARI-P-044": "سبد روند ۵۰/۵۰ BTC و ETH (هر کدام فقط بالای SMA150 خودش): شارپ بیشتر و افت کمتر یا برابر T-006 تنهای BTC، در هر دو دوره.",
+}
+
+
+def pair_trend_fn(syms=("BTCUSDT", "ETHUSDT"), n=150):
+    half = 1.0 / len(syms)
+
+    def fn(k, ctx):
+        st = ctx["state"]
+        if k < n - 1:
+            return None
+        on = tuple(s for s in syms if ctx["c"][s][k] > _sma(ctx["c"][s], k, n))
+        monday = (ctx["days"][k] // DAY_MS + 3) % 7 == 0
+        if on != st.get("on") or (on and monday):
+            st["on"] = on
+            return {s: half for s in on}
+        return None
+    return fn
+
+
+def run_p044(daily: dict, end_ms: int) -> dict:
+    from .classics import run_weights
+
+    def ms(d):
+        return int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    out, ok = {}, True
+    for a, b in P044_PERIODS:
+        s, e = ms(a), ms(b) if b else end_ms
+        t6, _, _ = run_weights({"BTCUSDT": daily["BTCUSDT"]}, ["BTCUSDT"], s, e, t006_for("BTCUSDT"))
+        pf, _, _ = run_weights(daily, ["BTCUSDT", "ETHUSDT"], s, e, pair_trend_fn())
+        ok &= bool((pf.get("sharpe") or -9) > (t6.get("sharpe") or 9)
+                   and pf.get("max_drawdown_pct", 100) <= t6.get("max_drawdown_pct", 0))
+        out[f"{a}..{b or 'now'}"] = {"T-006_BTC": t6, "H-MARI-P-044": pf}
+    return {"by_period": out, "verdict": {"H-MARI-P-044": "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"}}

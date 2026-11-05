@@ -1090,3 +1090,31 @@ def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = 
     with open(os.path.join(out_dir, "oi_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_p044_research(out_dir: str = "research_out") -> dict:
+    """P-044: سبد روند BTC + ETH در برابر T-006 تنهای BTC، در دو دوره."""
+    from .ideas7 import P044_HYPOTHESES, run_p044
+    start_ms = int(datetime(2018, 6, 1, tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_p044(daily, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:20Z", "hypotheses": P044_HYPOTHESES,
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۴ می‌رسد."], "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "p044_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# P-044: سبد روند BTC + ETH", "",
+          f"- H-MARI-P-044: **{res['verdict']['H-MARI-P-044']}** — {P044_HYPOTHESES['H-MARI-P-044']}", "",
+          "| دوره | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for per, x in res["by_period"].items():
+        for name, st in x.items():
+            md.append(f"| {per} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | {st.get('sharpe')} | "
+                      f"{st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "p044_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
