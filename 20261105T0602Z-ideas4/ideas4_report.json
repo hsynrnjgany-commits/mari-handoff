@@ -1,0 +1,105 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T06:10Z",
+ "hypotheses": {
+  "H-MARI-M-028": "قالب روند مینروینی (SMA50>150>200، SMA200 صعودی، ≥۲۵٪ بالای کف و ≤۲۵٪ زیر سقف سالانه): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+  "H-MARI-R-029": "جام مقدس راشکی (ADX>30 صعودی، پولبک به EMA20، ورود با بستهٔ بالای سقف پولبک): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۹ می‌رسد."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-M-028": {
+     "total_return_pct": 422.14,
+     "cagr_pct": 21.65,
+     "max_drawdown_pct": 42.62,
+     "sharpe": 0.81,
+     "weekly_bootstrap": {
+      "mean_pct": 0.472,
+      "ci95_low": 0.061,
+      "ci95_high": 0.906
+     },
+     "trades": 70,
+     "time_in_cash_pct": 79.6
+    },
+    "H-MARI-R-029": {
+     "total_return_pct": 5.4,
+     "cagr_pct": 0.63,
+     "max_drawdown_pct": 11.08,
+     "sharpe": 0.13,
+     "weekly_bootstrap": {
+      "mean_pct": 0.013,
+      "ci95_low": -0.021,
+      "ci95_high": 0.046
+     },
+     "trades": 4,
+     "time_in_cash_pct": 98.9
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-M-028": {
+     "total_return_pct": 262.01,
+     "cagr_pct": 16.48,
+     "max_drawdown_pct": 63.63,
+     "sharpe": 0.6,
+     "weekly_bootstrap": {
+      "mean_pct": 0.44,
+      "ci95_low": -0.075,
+      "ci95_high": 1.001
+     },
+     "trades": 70,
+     "time_in_cash_pct": 82.7
+    },
+    "H-MARI-R-029": {
+     "total_return_pct": 15.5,
+     "cagr_pct": 1.72,
+     "max_drawdown_pct": 11.71,
+     "sharpe": 0.26,
+     "weekly_bootstrap": {
+      "mean_pct": 0.038,
+      "ci95_low": -0.05,
+      "ci95_high": 0.153
+     },
+     "trades": 6,
+     "time_in_cash_pct": 98.9
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-M-028": "FALSIFIED",
+   "H-MARI-R-029": "FALSIFIED"
+  }
+ }
+}
