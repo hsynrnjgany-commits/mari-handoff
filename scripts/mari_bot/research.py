@@ -466,7 +466,7 @@ def run_funding_research(start: str = "2020-06-01", out_dir: str = "research_out
     for s in ("BTCUSDT", "ETHUSDT"):
         bars = fetch_history(s, min(pre, start_ms - 200 * DAY_MS), end, interval="1d")
         daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
-        name, rows, tried = fetch_funding(s, pre - 10 * DAY_MS, end, need_from_ms=pre)
+        name, rows, tried = fetch_funding(s, pre - 10 * DAY_MS, end, need_from_ms=start_ms)
         funding[s], sources[s] = rows, {"used": name, "rows": len(rows), "failed_before": tried}
     res = run_funding(daily, funding, start_ms, end)
     report = {"registered_before_results": True, "registered_at": "2026-11-05T04:20Z",
@@ -474,7 +474,8 @@ def run_funding_research(start: str = "2020-06-01", out_dir: str = "research_out
               "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
               "known_biases": ["MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۸ می‌رسد.",
                                "بازده ۵روزه هم‌پوشانی دارد و روزهای شلوغ پشت‌سرهم‌اند؛ CI خوش‌بینانه است.",
-                               "فاندینگ از صرافی فیوچرز و قیمت از اسپات است."],
+                               "فاندینگ از صرافی فیوچرز و قیمت از اسپات است.",
+                               "انحراف از ثبت: بایگانی بایننس از ۲۰۲۰-۰۱ شروع می‌شود؛ صدک ۱۸۰روزه تا حدود ۲۰۲۰-۰۷ آماده نیست، پس روزهای اول دوره بدون سیگنال‌اند."],
               "results": res}
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "funding_report.json"), "w", encoding="utf-8") as fh:
