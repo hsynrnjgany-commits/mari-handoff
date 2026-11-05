@@ -1265,5 +1265,43 @@ class Ideas11Tests(unittest.TestCase):
         self.assertTrue(all(abs(r["ew"]) < 1e-9 for r in cash))   # هفتهٔ نقد: محک هم نقد است
 
 
+class Ideas12Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_downside_beta_only_uses_weak_market_weeks(self):
+        from mari_bot.ideas12 import downside_beta
+        # هفته‌های نزولی باید اندازه‌های متفاوت داشته باشند، وگرنه شیب تعریف‌نشده است
+        mkt = {k: (-0.01 * (k % 7 + 1) if k % 2 else 0.05) for k in range(1, 41)}
+        coin = {k: 2.0 * mkt[k] for k in mkt}
+        self.assertAlmostEqual(downside_beta(coin, mkt), 2.0, places=6)
+        flat_down = {k: (-0.05 if k % 2 else 0.05) for k in range(1, 41)}
+        self.assertIsNone(downside_beta({k: 2.0 * v for k, v in flat_down.items()}, flat_down))
+        # هفته‌های صعودی بازار نباید اثر بگذارند
+        noisy = dict(coin)
+        for k in mkt:
+            if mkt[k] > 0:
+                noisy[k] = 99.0
+        self.assertAlmostEqual(downside_beta(noisy, mkt), 2.0, places=6)
+        self.assertIsNone(downside_beta({1: 0.1}, {1: -0.1}))      # کمتر از ۱۰ هفتهٔ نزولی
+
+    def test_weekly_returns_look_back_only(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas12 import weekly_returns
+        c = [10.0 * (1.01 ** i) for i in range(400)]
+        bars = [{"t": i * self.DAY, "h": v, "c": v, "qv": 1.0} for i, v in enumerate(c)]
+        p = Panel({"X": bars})
+        rs = weekly_returns(p, "X", 200 * self.DAY, n_weeks=10)
+        self.assertEqual(len(rs), 10)
+        self.assertTrue(all(abs(r - (1.01 ** 7 - 1)) < 1e-9 for _, r in rs))
+
+    def test_risk_criterion_allows_lower_return_but_needs_lower_drawdown(self):
+        from mari_bot.ideas12 import _beats_risk
+        a = {"sharpe": 1.2, "max_drawdown_pct": 60.0, "total_return_pct": 100.0}
+        b = {"sharpe": 0.5, "max_drawdown_pct": 85.0, "total_return_pct": 900.0}
+        self.assertTrue(_beats_risk(a, b))                          # بازده کمتر اشکالی ندارد
+        self.assertFalse(_beats_risk({"sharpe": 1.2, "max_drawdown_pct": 90.0}, b))
+        self.assertFalse(_beats_risk({"sharpe": 0.4, "max_drawdown_pct": 10.0}, b))
+
+
 if __name__ == "__main__":
     unittest.main()

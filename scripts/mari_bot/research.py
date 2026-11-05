@@ -1141,6 +1141,61 @@ def run_ideas11_research(start: str = "2020-06-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas12_research(start: str = "2017-09-01", out_dir: str = "research_out") -> dict:
+    """ideas12: تکرار G-055 روی دورهٔ کنار گذاشته‌شده، و بتای نزولی B-056."""
+    from .ideas12 import IDEA12_HYPOTHESES, run_ideas12
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    g_start, g_end = ms(start), ms("2020-06-01")
+    b_start = ms("2020-06-01")
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, g_start - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas12(daily, g_start, g_end, b_start, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T18:00Z",
+              "hypotheses": IDEA12_HYPOTHESES,
+              "period": {"G-055": f"{start} تا 2020-06-01 (کنار گذاشته‌شده)",
+                         "B-056": f"2020-06-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۶ می‌رسد.",
+                               "G-055: دورهٔ ۲۰۱۷-۲۰۲۰ ارزهای کمتری دارد؛ جهان کوچک‌تر است.",
+                               "سنجهٔ G-055 (شارپ و افت) پیش از دیدن نتیجهٔ این دوره اعلام شد،"
+                               " اما پس از دیدن الگوی G-053 در دورهٔ دیگر انتخاب شد — همین دلیلِ"
+                               " آزمون روی دورهٔ کنار گذاشته‌شده است.",
+                               "B-056: مقاله بازده خرید-فروش گزارش می‌کند؛ اینجا فقط خرید."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas12_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas12: تکرار سرنخ دروازه روی دورهٔ تازه، و بتای نزولی", "",
+          f"- G-055: {report['period']['G-055']} — {res['weeks']['G-055']} هفته",
+          f"- B-056: {report['period']['B-056']} — {res['weeks']['B-056']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA12_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | دوره | سبد: بازده ٪ / افت ٪ / شارپ | محک: بازده ٪ / افت ٪ / شارپ |", "|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    names = {"full": "کل", "first_half": "نیمهٔ اول", "second_half": "نیمهٔ دوم"}
+    for hid, e in res["by_hypothesis"].items():
+        for k, fa in names.items():
+            md.append(f"| {hid} | {fa} | {f(e['portfolio'][k])} | {f(e['benchmark'][k])} |")
+    lb = res["by_hypothesis"]["H-MARI-B-056"].get("low_beta_quintile_info") or {}
+    md += ["", f"- اطلاعی: پنجک **پایین** بتای نزولی: {f(lb)}", "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas12_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
