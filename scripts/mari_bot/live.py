@@ -156,6 +156,9 @@ class LiveRunner:
             self.ledger.write("FUNDING_ERROR", error=f"{type(e).__name__}: {str(e)[:200]}")
         for ev in btc_events:
             self.ledger.write("BTC_TREND_SWITCH", ts=ev["t"], **{k: v for k, v in ev.items() if k != "t"})
+        self.bot.status_info = {"ok": True, "last_cycle_ms": int(time.time() * 1000), "symbols": len(series),
+                                "sources": src.counts(), "fail_streak": self.meta.get("fail_streak", 0),
+                                "cycles": self.meta.get("cycles", 0)}
         self.tg.check()
         sent = 0
         self.tg.maybe_hello(self.bot)

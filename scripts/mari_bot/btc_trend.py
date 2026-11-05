@@ -89,6 +89,10 @@ class BtcTrend:
                 self.s["position"] = want
             self.s["last_day_ts"] = b["t"]
             self.s["last_close"], self.s["last_sma"] = c, round(sma, 2)
+            eq = self.equity(c)                              # بیشترین افت سرمایهٔ تمرینی از شروع
+            self.s["peak"] = max(self.s.get("peak") or eq, eq)
+            self.s["max_dd"] = max(self.s.get("max_dd") or 0.0, 1 - eq / self.s["peak"])
+            self.s["days"] = self.s.get("days", 0) + 1
         self.save()
         return events
 
@@ -98,4 +102,5 @@ class BtcTrend:
         return {"position": self.s["position"], "equity": round(eq, 2),
                 "return_pct": round((eq / self.s["start_equity"] - 1) * 100, 2),
                 "btc_hold_return_pct": round((lc / fp - 1) * 100, 2) if fp and lc else None,
-                "close": lc, "sma150": self.s["last_sma"], "switches": len(self.s["switches"])}
+                "close": lc, "sma150": self.s["last_sma"], "switches": len(self.s["switches"]),
+                "max_dd_pct": round((self.s.get("max_dd") or 0.0) * 100, 2), "days": self.s.get("days", 0)}

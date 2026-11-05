@@ -145,6 +145,47 @@ def fmt_carry_event(ev: dict) -> str:
                  "یادآوری: مدل «پوشش کامل» فرض می‌کند؛ خطر لیکویید شدن، اختلاف قیمت و مسدودی حساب در آن نیست."])
 
 
+def fmt_scorecard(bot) -> list[str]:
+    """کارنامهٔ هفتگی روش‌های تمرینی زنده، از روز شروع پیگیری هر کدام."""
+    rows = []
+    b = getattr(bot, "btc_summary", None)
+    if b and b.get("position"):
+        rows.append(("روند بیت‌کوین ۱۵۰روزه", b["return_pct"], b.get("max_dd_pct"), b.get("days")))
+        hold = b.get("btc_hold_return_pct")
+    else:
+        hold = None
+    t = getattr(bot, "turtle_summary", None)
+    if t and t.get("position"):
+        rows.append(("لاک‌پشت‌ها 🐢", t["return_pct"], t.get("max_dd_pct"), t.get("days")))
+    for sym, x in (getattr(bot, "carry_summary", None) or {}).items():
+        rows.append((f"کری فاندینگ {sym.replace('USDT', '')} 💵", x["return_pct"], x.get("max_dd_pct"), x.get("days")))
+    if not rows:
+        return []
+    out = ["📋 <b>کارنامهٔ هفتگی روش‌های تمرینی</b> (از شروع پیگیری زنده)"]
+    for name, r, dd, days in rows:
+        out.append(f"• {name}: {fa(r, sign=True)}٪ — بیشترین افت {fa(dd)}٪ — {fa(days or 0)} روز")
+    if hold is not None:
+        out.append(f"• مرجع، نگه‌داری سادهٔ بیت‌کوین: {fa(hold, sign=True)}٪")
+    out.append("داوری جدی فقط پس از ۳ تا ۶ ماه داده؛ چند هفته کافی نیست.")
+    return out
+
+
+def fmt_status(bot, info: dict | None) -> str:
+    info = info or {}
+    healthy = info.get("ok") and not info.get("fail_streak")
+    lines = [f"🩺 <b>وضعیت ربات ماری</b>: {'✅ سالم' if healthy else '⚠️ نیازمند بررسی'}"]
+    if info.get("last_cycle_ms"):
+        lines.append(f"آخرین چرخه: {fa_time(info['last_cycle_ms'])}")
+    if info.get("symbols") is not None:
+        lines.append(f"ارزهای بررسی‌شده در آخرین چرخه: {fa(info['symbols'])} — منبع: "
+                     + "، ".join(f"{k} {fa(v)}" for k, v in (info.get("sources") or {}).items()))
+    if info.get("fail_streak"):
+        lines.append(f"چرخه‌های ناموفق پیاپی: {fa(info['fail_streak'])}")
+    lines.append(f"کل چرخه‌های انجام‌شده: {fa(info.get('cycles') or 0)}")
+    lines.append("روش‌های تمرینی زنده: روند بیت‌کوین، لاک‌پشت‌ها، کری فاندینگ — هیچ سفارش واقعی‌ای وجود ندارد.")
+    return _end(lines)
+
+
 def fmt_daily_simple(bot, monday: bool = False) -> str:
     """گزارش روزانهٔ ساده: فقط آنچه مهم است."""
     b = getattr(bot, "btc_summary", None)
@@ -191,6 +232,9 @@ def fmt_daily_simple(bot, monday: bool = False) -> str:
     lines.append(f"🤖 ربات شکار تمرینی: {fa(eq)} تتر — موقعیت باز {fa(len(bot.positions))}")
     if monday:
         lines += [""] + fmt_dca(b)
+        sc = fmt_scorecard(bot)
+        if sc:
+            lines += [""] + sc
     return _end(lines)
 
 
@@ -299,6 +343,8 @@ HELP = _end([
     "/btc — استراتژی روند بیت‌کوین",
     "/dca — یادآور خرید پله‌ای",
     "/daily — خلاصهٔ روزانه",
+    "/score — کارنامهٔ روش‌های تمرینی",
+    "/status — سلامت ربات",
     "/council — شورای هوش مصنوعی",
     "/help — همین راهنما",
 ])
@@ -457,6 +503,11 @@ class Telegram:
                 self.send(chat, _end(_btc_lines(b)[1:] or ["هنوز داده‌ای برای روند بیت‌کوین ثبت نشده."]))
             elif cmd == "/dca":
                 self.send(chat, _end(fmt_dca(getattr(bot, "btc_summary", None))))
+            elif cmd == "/status":
+                self.send(chat, fmt_status(bot, getattr(bot, "status_info", None)))
+            elif cmd == "/score":
+                sc = fmt_scorecard(bot)
+                self.send(chat, _end(sc or ["هنوز داده‌ای برای کارنامه نیست."]))
             elif cmd == "/daily":
                 self.send(chat, fmt_daily_simple(bot))
             elif cmd == "/council":

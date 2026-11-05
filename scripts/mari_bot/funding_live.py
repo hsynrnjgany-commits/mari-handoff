@@ -90,6 +90,9 @@ class FundingCarry:
                 elif a["in_pos"] and apr < EXIT_APR:
                     a["pending"] = False
             a["sources"][source] = a["sources"].get(source, 0) + 1
+            a["peak"] = max(a.get("peak") or a["equity"], a["equity"])
+            a["max_dd"] = max(a.get("max_dd") or 0.0, 1 - a["equity"] / a["peak"])
+            a["days"] = a.get("days", 0) + 1
             a["last_day"] = d
         self.save()
         return events
@@ -100,5 +103,6 @@ class FundingCarry:
             out[sym] = {"in_position": a["in_pos"], "pending": a["pending"], "equity": round(a["equity"], 2),
                         "return_pct": round((a["equity"] / self.start_equity - 1) * 100, 3),
                         "apr7_pct": a.get("last_apr"), "switches": a["switches"],
-                        "sources": a["sources"]}
+                        "sources": a["sources"], "max_dd_pct": round((a.get("max_dd") or 0.0) * 100, 2),
+                        "days": a.get("days", 0)}
         return out

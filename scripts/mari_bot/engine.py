@@ -37,6 +37,7 @@ class MariBot:
         self.btc_summary: dict | None = None      # وضعیت استراتژی تمرینی روند بیت‌کوین (T-006)
         self.turtle_summary: dict | None = None   # وضعیت روش لاک‌پشت‌ها (C-007)
         self.carry_summary: dict | None = None    # کری فاندینگ تمرینی (Y-057)
+        self.status_info: dict | None = None      # سلامت آخرین چرخه برای /status
 
     # ------------------------------------------------------------------ وضعیت
     def equity(self) -> float:

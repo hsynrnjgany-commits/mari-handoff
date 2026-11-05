@@ -663,6 +663,38 @@ class TestFundingCarryLive(unittest.TestCase):
             self.assertIn(LOCK_LINE, fmt_carry_event(evs[-1]))
 
 
+class TestScorecardStatus(unittest.TestCase):
+    def test_scorecard_and_status(self):
+        from mari_bot.telegram import fmt_scorecard, fmt_status
+        bot = run_backtest({"BTCUSDT": synth(300)})["bot"]
+        self.assertEqual(fmt_scorecard(bot), [])
+        bot.btc_summary = {"position": "BTC", "return_pct": 1.2, "btc_hold_return_pct": 2.0, "max_dd_pct": 0.5,
+                           "days": 7, "equity": 1012.0, "close": 80000.0, "sma150": 72000.0, "switches": 1}
+        bot.turtle_summary = {"position": "CASH", "return_pct": 0.0, "max_dd_pct": 0.0, "days": 7}
+        bot.carry_summary = {"BTCUSDT": {"in_position": True, "return_pct": 0.1, "max_dd_pct": 0.0, "days": 7,
+                                         "apr7_pct": 9.0}}
+        sc = "\n".join(fmt_scorecard(bot))
+        self.assertIn("لاک‌پشت", sc)
+        self.assertIn("کری فاندینگ", sc)
+        self.assertNotRegex(sc, "[0-9]")
+        st = fmt_status(bot, {"ok": True, "last_cycle_ms": 0, "symbols": 509, "sources": {"toobit": 509},
+                              "fail_streak": 0, "cycles": 12})
+        self.assertIn("سالم", st)
+        self.assertIn(LOCK_LINE, st)
+
+    def test_drawdown_tracked(self):
+        from mari_bot.btc_trend import BtcTrend
+        D_ = 86_400_000
+        up = [{"t": i * D_, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1, "qv": 1} for i in range(200)]
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "b.json")
+            BtcTrend(p).update(up)
+            dip = up + [{"t": 200 * D_, "o": 299, "h": 299, "l": 280, "c": 285, "v": 1, "qv": 1}]
+            bt = BtcTrend(p)
+            bt.update(dip)
+            self.assertGreater(bt.summary()["max_dd_pct"], 0)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live
