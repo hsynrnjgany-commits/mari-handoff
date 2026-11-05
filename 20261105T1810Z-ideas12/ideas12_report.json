@@ -1,0 +1,130 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T18:00Z",
+ "hypotheses": {
+  "H-MARI-G-055": "تکرار G-053 روی دورهٔ کنار گذاشته‌شدهٔ ۲۰۱۷-۰۹ تا ۲۰۲۰-۰۶: شارپ بیشتر و بیشترین افت کمتر از وزن برابر با همان دروازهٔ BTC، در کل دوره و در هر دو نیمه. بازده مرکب مجاز است کمتر باشد.",
+  "H-MARI-B-056": "بتای نزولی (پنجک بالای بتا به بازار وزن-برابر در هفته‌های زیر میانگین بازار، ۵۲ هفتهٔ گذشته): شارپ بیشتر و بیشترین افت کمتر از وزن برابر، در کل دوره و در هر دو نیمه."
+ },
+ "period": {
+  "G-055": "2017-09-01 تا 2020-06-01 (کنار گذاشته‌شده)",
+  "B-056": "2020-06-01 تا 2026-11-05"
+ },
+ "data": {
+  "symbols_listed_incl_delisted": 700,
+  "symbols_with_data": 700,
+  "failed": 0
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۶ می‌رسد.",
+  "G-055: دورهٔ ۲۰۱۷-۲۰۲۰ ارزهای کمتری دارد؛ جهان کوچک‌تر است.",
+  "سنجهٔ G-055 (شارپ و افت) پیش از دیدن نتیجهٔ این دوره اعلام شد، اما پس از دیدن الگوی G-053 در دورهٔ دیگر انتخاب شد — همین دلیلِ آزمون روی دورهٔ کنار گذاشته‌شده است.",
+  "B-056: مقاله بازده خرید-فروش گزارش می‌کند؛ اینجا فقط خرید."
+ ],
+ "results": {
+  "by_hypothesis": {
+   "H-MARI-G-055": {
+    "portfolio": {
+     "full": {
+      "total_return_pct": -6.2,
+      "max_drawdown_pct": 19.5,
+      "sharpe": -0.45,
+      "weeks": 17
+     },
+     "first_half": {
+      "total_return_pct": -12.4,
+      "max_drawdown_pct": 19.5,
+      "sharpe": -1.75,
+      "weeks": 8
+     },
+     "second_half": {
+      "total_return_pct": 7.1,
+      "max_drawdown_pct": 0.0,
+      "sharpe": 2.46,
+      "weeks": 9
+     }
+    },
+    "benchmark": {
+     "full": {
+      "total_return_pct": 13.3,
+      "max_drawdown_pct": 28.5,
+      "sharpe": 0.94,
+      "weeks": 17
+     },
+     "first_half": {
+      "total_return_pct": 3.4,
+      "max_drawdown_pct": 27.4,
+      "sharpe": 0.62,
+      "weeks": 8
+     },
+     "second_half": {
+      "total_return_pct": 9.6,
+      "max_drawdown_pct": 1.5,
+      "sharpe": 2.02,
+      "weeks": 9
+     }
+    },
+    "weeks": 17,
+    "verdict": "FALSIFIED",
+    "note": "period_held_out_from_ideas10_11"
+   },
+   "H-MARI-B-056": {
+    "portfolio": {
+     "full": {
+      "total_return_pct": -91.1,
+      "max_drawdown_pct": 99.5,
+      "sharpe": 0.08,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 19.4,
+      "max_drawdown_pct": 93.0,
+      "sharpe": 0.56,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -92.6,
+      "max_drawdown_pct": 97.7,
+      "sharpe": -0.46,
+      "weeks": 167
+     }
+    },
+    "benchmark": {
+     "full": {
+      "total_return_pct": 1342.1,
+      "max_drawdown_pct": 96.6,
+      "sharpe": 0.46,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 5437.4,
+      "max_drawdown_pct": 85.1,
+      "sharpe": 0.68,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -74.0,
+      "max_drawdown_pct": 92.3,
+      "sharpe": -0.18,
+      "weeks": 167
+     }
+    },
+    "weeks": 334,
+    "verdict": "FALSIFIED",
+    "low_beta_quintile_info": {
+     "total_return_pct": 122.3,
+     "max_drawdown_pct": 92.6,
+     "sharpe": 0.53,
+     "weeks": 334
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-G-055": "FALSIFIED",
+   "H-MARI-B-056": "FALSIFIED"
+  },
+  "weeks": {
+   "G-055": 142,
+   "B-056": 335
+  }
+ }
+}
