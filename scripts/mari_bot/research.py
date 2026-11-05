@@ -998,6 +998,48 @@ def run_ideas8_research(start: str = "2018-06-01", out_dir: str = "research_out"
     return report
 
 
+def run_ideas9_research(start: str = "2018-06-01", alt_start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """ideas9: استحکام T-006 (R-048)، T-006 هفتگی (W-049)، سبد ۱۱ ارزی با دروازهٔ BTC (A-047)."""
+    from .ideas import LARGE_CAPS
+    from .ideas9 import IDEA9_HYPOTHESES, run_a, run_r_w, verdicts
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    start_ms, alt_ms = ms(start), ms(alt_start)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT") + LARGE_CAPS:
+        s0 = start_ms if s in ("BTCUSDT", "ETHUSDT") else alt_ms
+        bars = fetch_history(s, s0 - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    rw = run_r_w(daily, start_ms, end)
+    a = run_a(daily, alt_ms, end)
+    res = {"by_asset": rw["by_asset"], "basket": a["basket"], "btc_t006_alt_period": a["btc_t006"],
+           "verdict": verdicts(rw, a)}
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:20Z",
+              "hypotheses": IDEA9_HYPOTHESES,
+              "period": {"from": start, "alt_from": alt_start,
+                         "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۰ می‌رسد.",
+                               "SURVIVORSHIP در A-047: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه)."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas9_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas9: استحکام روش روند، نسخهٔ هفتگی، سبد ۱۱ ارزی", "",
+          f"- دوره: {start} تا {report['period']['to']} (سبد از {alt_start})", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA9_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    rows = [(sym, name, st) for sym, x in res["by_asset"].items() for name, st in x.items()]
+    rows += [("BTC+10", "A-047 سبد", res["basket"]), ("BTCUSDT", "T-006 (از ۲۰۲۱)", res["btc_t006_alt_period"])]
+    for sym, name, st in rows:
+        md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                  f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas9_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

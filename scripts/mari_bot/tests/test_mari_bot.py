@@ -1111,5 +1111,40 @@ class Ideas8Tests(unittest.TestCase):
         self.assertGreater(r["by_asset"]["BTCUSDT"]["H-MARI-F-044"]["trades"], 0)
 
 
+class Ideas9Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_weekday_helpers(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas9 import is_monday, is_sunday
+        ms = lambda y, m, d: int(datetime(y, m, d, tzinfo=timezone.utc).timestamp() * 1000)
+        self.assertTrue(is_sunday(ms(2026, 11, 1)))
+        self.assertTrue(is_monday(ms(2026, 11, 2)))
+        self.assertFalse(is_sunday(ms(2026, 11, 5)))
+
+    def test_weekly_only_decides_on_sunday(self):
+        from mari_bot.ideas9 import is_sunday, weekly_for
+        closes = [100.0] * 160 + [200.0] * 14
+        days = [i * self.DAY for i in range(len(closes))]
+        ctx = {"c": {"X": closes}, "state": {}, "days": days}
+        fn = weekly_for("X")
+        sig = [(k, fn(k, ctx)) for k in range(len(closes))]
+        fired = [k for k, s in sig if s]
+        self.assertTrue(fired and all(is_sunday(days[k]) for k in fired))
+        self.assertGreaterEqual(fired[0], 160)
+
+    def test_gated_basket_follows_btc_only(self):
+        from mari_bot.ideas9 import gated_basket_fn
+        n = 160
+        btc = [100.0] * 150 + [50.0] * 5 + [200.0] * 5
+        alt = [10.0] * n
+        ctx = {"c": {"BTCUSDT": btc, "A": alt}, "state": {}, "days": [i * self.DAY for i in range(n)]}
+        fn = gated_basket_fn(["BTCUSDT", "A"])
+        sig = {k: fn(k, ctx) for k in range(n)}
+        self.assertEqual(sig[149], {})                  # برابر میانگین = بیرون
+        self.assertIsNone(sig[150])
+        self.assertEqual(sig[155], {"BTCUSDT": 0.5, "A": 0.5})
+
+
 if __name__ == "__main__":
     unittest.main()

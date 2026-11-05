@@ -208,6 +208,12 @@ def cmd_ideas8(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas9(a):
+    from .research import run_ideas9_research
+    r = run_ideas9_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -322,6 +328,10 @@ def main(argv=None):
     i8.add_argument("--start", default="2018-06-01")
     i8.add_argument("--out", default="research_out")
     i8.set_defaults(fn=cmd_ideas8)
+    i9 = sub.add_parser("ideas9", help="صف ایده‌ها: استحکام روند، هفتگی، سبد ۱۱ ارزی")
+    i9.add_argument("--start", default="2018-06-01")
+    i9.add_argument("--out", default="research_out")
+    i9.set_defaults(fn=cmd_ideas9)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")
