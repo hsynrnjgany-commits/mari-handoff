@@ -1,0 +1,131 @@
+{
+ "registered_before_results": true,
+ "hypotheses": {
+  "H-MARI-ICT-015": "پس از شکار کف، بازده ۵روزه بیشتر از معمول؛ پس از شکار سقف، کمتر از معمول (BTC و ETH).",
+  "H-MARI-ICT-016": "خرید پس از شکار کف، هدف سقف دیروز، ابطال زیر کف شکار، حداکثر ۵ روز (BTC و ETH)."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۶ می‌رسد.",
+  "بازده ۵روزهٔ رویدادها هم‌پوشانی دارند؛ بازهٔ اطمینان کمی خوش‌بینانه است."
+ ],
+ "results": {
+  "events": {
+   "BTCUSDT": {
+    "n_days": 3073,
+    "mean_fwd5_all_pct": 0.634,
+    "bull": {
+     "n": 710,
+     "mean_fwd5_pct": 0.102,
+     "hit_rate_pct": 50.6,
+     "vs_all": {
+      "diff_pct": -0.532,
+      "ci95_low": -1.237,
+      "ci95_high": 0.168
+     }
+    },
+    "bear": {
+     "n": 704,
+     "mean_fwd5_pct": 0.386,
+     "hit_rate_pct": 49.0,
+     "vs_all": {
+      "diff_pct": -0.249,
+      "ci95_low": -0.974,
+      "ci95_high": 0.494
+     }
+    }
+   },
+   "ETHUSDT": {
+    "n_days": 3073,
+    "mean_fwd5_all_pct": 0.67,
+    "bull": {
+     "n": 702,
+     "mean_fwd5_pct": 0.672,
+     "hit_rate_pct": 50.1,
+     "vs_all": {
+      "diff_pct": 0.002,
+      "ci95_low": -0.991,
+      "ci95_high": 0.983
+     }
+    },
+    "bear": {
+     "n": 698,
+     "mean_fwd5_pct": 0.597,
+     "hit_rate_pct": 49.1,
+     "vs_all": {
+      "diff_pct": -0.072,
+      "ci95_low": -1.032,
+      "ci95_high": 0.906
+     }
+    }
+   }
+  },
+  "strategy": {
+   "BTCUSDT": {
+    "buy_hold": {
+     "total_return_pct": 952.13,
+     "cagr_pct": 32.19,
+     "max_drawdown_pct": 76.63,
+     "sharpe": 0.77,
+     "weekly_bootstrap": {
+      "mean_pct": 0.885,
+      "ci95_low": 0.142,
+      "ci95_high": 1.691
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "ict_long": {
+     "total_return_pct": -77.43,
+     "cagr_pct": -16.18,
+     "max_drawdown_pct": 79.54,
+     "sharpe": -0.3,
+     "weekly_bootstrap": {
+      "mean_pct": -0.207,
+      "ci95_low": -0.69,
+      "ci95_high": 0.246
+     },
+     "trades": 915,
+     "time_in_cash_pct": 61.5
+    },
+    "passed": false
+   },
+   "ETHUSDT": {
+    "buy_hold": {
+     "total_return_pct": 309.74,
+     "cagr_pct": 18.2,
+     "max_drawdown_pct": 86.48,
+     "sharpe": 0.62,
+     "weekly_bootstrap": {
+      "mean_pct": 0.927,
+      "ci95_low": -0.078,
+      "ci95_high": 1.981
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "ict_long": {
+     "total_return_pct": -51.27,
+     "cagr_pct": -8.17,
+     "max_drawdown_pct": 82.06,
+     "sharpe": 0.12,
+     "weekly_bootstrap": {
+      "mean_pct": 0.064,
+      "ci95_low": -0.568,
+      "ci95_high": 0.718
+     },
+     "trades": 911,
+     "time_in_cash_pct": 61.4
+    },
+    "passed": false
+   }
+  },
+  "verdict": {
+   "H-MARI-ICT-015": "FALSIFIED",
+   "H-MARI-ICT-016": "FALSIFIED"
+  }
+ }
+}
