@@ -1058,7 +1058,7 @@ def run_ideas10_research(start: str = "2020-06-01", out_dir: str = "research_out
             if q["n"] > 0:
                 daily[s] = q["clean"]
     res = run_ideas10(daily, start_ms, end)
-    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:55Z",
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:22Z",
               "hypotheses": IDEA10_HYPOTHESES,
               "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
               "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
