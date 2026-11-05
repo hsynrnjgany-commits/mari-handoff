@@ -1,0 +1,78 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T06:30Z",
+ "hypotheses": {
+  "H-MARI-D-032": "چرخش: وقتی T-006 روشن است، ETH اگر ETH/BTC بالای SMA50 خودش، وگرنه BTC؛ خاموش = نقد. شارپ بیشتر و افت کمتر یا برابر T-006، در هر دو دورهٔ ۲۰۱۸-۲۰۲۲ و ۲۰۲۳-اکنون."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۲ می‌رسد.",
+  "نسبت ETH/BTC جانشین دامیننس است، نه خود آن."
+ ],
+ "results": {
+  "by_period": {
+   "2018-2022": {
+    "T-006": {
+     "total_return_pct": 570.54,
+     "cagr_pct": 51.42,
+     "max_drawdown_pct": 44.97,
+     "sharpe": 1.11,
+     "weekly_bootstrap": {
+      "mean_pct": 1.028,
+      "ci95_low": 0.149,
+      "ci95_high": 1.901
+     },
+     "trades": 28,
+     "time_in_cash_pct": 55.6
+    },
+    "H-MARI-D-032": {
+     "total_return_pct": 1777.65,
+     "cagr_pct": 89.54,
+     "max_drawdown_pct": 38.49,
+     "sharpe": 1.42,
+     "weekly_bootstrap": {
+      "mean_pct": 1.527,
+      "ci95_low": 0.556,
+      "ci95_high": 2.505
+     },
+     "trades": 60,
+     "time_in_cash_pct": 55.6
+    }
+   },
+   "2023-now": {
+    "T-006": {
+     "total_return_pct": 229.19,
+     "cagr_pct": 36.34,
+     "max_drawdown_pct": 27.29,
+     "sharpe": 1.04,
+     "weekly_bootstrap": {
+      "mean_pct": 0.705,
+      "ci95_low": 0.013,
+      "ci95_high": 1.416
+     },
+     "trades": 37,
+     "time_in_cash_pct": 35.4
+    },
+    "H-MARI-D-032": {
+     "total_return_pct": 103.93,
+     "cagr_pct": 20.37,
+     "max_drawdown_pct": 31.54,
+     "sharpe": 0.66,
+     "weekly_bootstrap": {
+      "mean_pct": 0.488,
+      "ci95_low": -0.269,
+      "ci95_high": 1.291
+     },
+     "trades": 101,
+     "time_in_cash_pct": 35.4
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-D-032": "FALSIFIED"
+  }
+ }
+}
