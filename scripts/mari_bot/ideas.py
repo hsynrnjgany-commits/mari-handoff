@@ -158,3 +158,86 @@ def run_ideas2(daily: dict, start_ms: int, end_ms: int) -> dict:
     return {"halving": out, "weekday": {"BTCUSDT": wb, "ETHUSDT": we},
             "verdict": {"H-MARI-H-024": "SUPPORTED_IN_TEST_RANGE" if ok_h else "FALSIFIED",
                         "H-MARI-W-025": "SUPPORTED_IN_TEST_RANGE" if ok_w else "FALSIFIED"}}
+
+
+# ---------------------------------------------------------------- ایده‌های ۵ و ۶ (ثبت 2026-11-05T06:00Z)
+WILLIAMS_K = 0.5
+BB_N, BB_K, SQUEEZE_LOOKBACK, SQUEEZE_VALID = 20, 2.0, 125, 10
+FEE, SLIP = 0.001, 0.0005
+IDEA3_HYPOTHESES = {
+    "H-MARI-L-026": "شکست نوسانی ویلیامز (باز + ۰٫۵×دامنهٔ دیروز، خروج در باز فردا): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+    "H-MARI-B-027": "فشردگی بولینگر (پهنای کمینهٔ ۱۲۵روزه، ورود با بسته بالای باند در ۱۰ روز، خروج زیر SMA20): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+}
+
+
+def williams_sim(bars: list[dict], start_ms: int, end_ms: int, k: float = WILLIAMS_K) -> dict:
+    """شبیه‌سازی روزانه: ورود درون‌روزی در سطح شکست، خروج در باز روز بعد. سرمایه کامل در هر معامله."""
+    from .momentum import _stats
+    idx = [i for i, b in enumerate(bars) if start_ms <= b["t"] <= end_ms and i >= 1]
+    eq, curve, weekly, last_w, trades = 1.0, [1.0], [], 1.0, 0     # سرمایهٔ آغازین پیش از اولین روز
+    for n, i in enumerate(idx, start=1):
+        b, p = bars[i], bars[i - 1]
+        level = b["o"] + k * (p["h"] - p["l"])
+        if b["h"] >= level and i + 1 < len(bars):
+            entry = max(b["o"], level) * (1 + SLIP)
+            exit_ = bars[i + 1]["o"] * (1 - SLIP)
+            eq *= (exit_ / entry) * (1 - FEE) ** 2
+            trades += 1
+        curve.append(eq)
+        if n % 7 == 0:
+            if last_w:
+                weekly.append(eq / last_w - 1)
+            last_w = eq
+    days = (bars[idx[-1]]["t"] - bars[idx[0]]["t"]) / DAY_MS + 1 if idx else 0
+    st = _stats(curve, days, weekly)
+    st["trades"] = trades
+    st["time_in_cash_pct"] = None
+    return st
+
+
+def _bands(c, k):
+    if k < BB_N - 1:
+        return None
+    w = c[k - BB_N + 1: k + 1]
+    m = sum(w) / BB_N
+    sd = math.sqrt(sum((x - m) ** 2 for x in w) / BB_N)
+    return m, m + BB_K * sd, (2 * BB_K * sd) / m
+
+
+def bollinger_for(sym):
+    def fn(k, ctx):
+        st, c = ctx["state"], ctx["c"][sym]
+        bw = st.setdefault("bw", [])
+        b = _bands(c, k)
+        bw.append(b[2] if b else None)
+        if b is None:
+            return None
+        hist = [x for x in bw[-SQUEEZE_LOOKBACK:] if x is not None]
+        if len(hist) >= SQUEEZE_LOOKBACK and b[2] <= min(hist):
+            st["squeeze_k"] = k
+        if st.get("in"):
+            if c[k] < b[0]:
+                st["in"] = False
+                return {}
+            return None
+        sk = st.get("squeeze_k")
+        if sk is not None and 0 <= k - sk <= SQUEEZE_VALID and c[k] > b[1]:
+            st["in"] = True
+            return {sym: 1.0}
+        return None
+    return fn
+
+
+def run_ideas3(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights
+    out, ok = {}, {"H-MARI-L-026": True, "H-MARI-B-027": True}
+    for sym in ("BTCUSDT", "ETHUSDT"):
+        d = {sym: daily[sym]}
+        t6, _, _ = run_weights(d, [sym], start_ms, end_ms, t006_for(sym))
+        lw = williams_sim(daily[sym], start_ms, end_ms)
+        bb, _, _ = run_weights(d, [sym], start_ms, end_ms, bollinger_for(sym))
+        s6, m6 = t6.get("sharpe") or 9, t6.get("max_drawdown_pct", 0)
+        for hid, st in (("H-MARI-L-026", lw), ("H-MARI-B-027", bb)):
+            ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
+        out[sym] = {"T-006": t6, "H-MARI-L-026": lw, "H-MARI-B-027": bb}
+    return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}

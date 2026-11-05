@@ -669,3 +669,37 @@ def run_ideas2_research(start: str = "2018-06-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "ideas2_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_ideas3_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۵ و ۶: شکست نوسانی ویلیامز و فشردگی بولینگر، روی BTC و ETH."""
+    from .ideas import IDEA3_HYPOTHESES, run_ideas3
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas3(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:00Z",
+              "hypotheses": IDEA3_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۷ می‌رسد.",
+                               "L-026: پر شدن دقیق در سطح شکست با دادهٔ روزانه خوش‌بینانه است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas3_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: لری ویلیامز و فشردگی بولینگر", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA3_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas3_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

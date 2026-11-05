@@ -814,5 +814,25 @@ class Ideas2Tests(unittest.TestCase):
         self.assertEqual(out["verdict"]["H-MARI-W-025"], "SUPPORTED_IN_TEST_RANGE")
 
 
+class Ideas3Tests(unittest.TestCase):
+    def test_williams_fill_and_bollinger_squeeze(self):
+        from mari_bot.ideas import FEE, SLIP, bollinger_for, run_ideas3, williams_sim
+        d0 = 1_527_811_200_000
+        bars = [{"t": d0, "o": 100, "h": 110, "l": 90, "c": 100},           # دامنهٔ دیروز ۲۰
+                {"t": d0 + 86_400_000, "o": 100, "h": 115, "l": 99, "c": 112},  # سطح ۱۱۰ لمس شد
+                {"t": d0 + 2 * 86_400_000, "o": 113, "h": 113, "l": 113, "c": 113}]
+        st = williams_sim(bars, d0, bars[2]["t"])
+        self.assertEqual(st["trades"], 1)
+        exp = (113 * (1 - SLIP)) / (110 * (1 + SLIP)) * (1 - FEE) ** 2 - 1
+        self.assertAlmostEqual(st["total_return_pct"] / 100, exp, places=3)
+        # بولینگر: ۲۰۰ روز آرام سپس جهش → ورود
+        c = [100 + (0.5 if i % 2 else -0.5) * (1 if i < 150 else 0.2) for i in range(200)] + [110]
+        ctx, w = {"c": {"X": c}, "state": {}, "days": []}, None
+        for k in range(len(c)):
+            r = bollinger_for("X")(k, ctx)
+            w = r if r is not None else w
+        self.assertEqual(w, {"X": 1.0})
+
+
 if __name__ == "__main__":
     unittest.main()
