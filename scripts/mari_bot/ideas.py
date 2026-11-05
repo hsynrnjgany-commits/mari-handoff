@@ -307,3 +307,103 @@ def run_ideas4(daily: dict, start_ms: int, end_ms: int) -> dict:
             ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
         out[sym] = {"T-006": t6, "H-MARI-M-028": mv, "H-MARI-R-029": hg}
     return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}
+
+
+# ---------------------------------------------------------------- ایده‌های ۹ و ۱۰ (ثبت 2026-11-05T06:20Z)
+IDEA5_HYPOTHESES = {
+    "H-MARI-E-030": "صفحهٔ سه‌گانهٔ الدر (EMA13 هفتگی صعودی، شاخص نیروی منفی، ورود با شکست سقف دیروز): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+    "H-MARI-K-031": "KAMA کافمن (۱۰، ۲، ۳۰): نگه‌داری بالای KAMA. شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+}
+
+
+def _ema_list(xs, n):
+    k, e, out = 2 / (n + 1), None, []
+    for x in xs:
+        e = x if e is None else x * k + e * (1 - k)
+        out.append(e)
+    return out
+
+
+def weekly_ema(c, k, n=13, weeks=60):
+    """EMA13 روی بسته‌های هر ۷ روز که به روز k ختم می‌شوند (فقط دادهٔ ≤ k)."""
+    idx = list(range(k, max(-1, k - 7 * weeks), -7))[::-1]
+    if len(idx) < n + 5:
+        return None
+    return _ema_list([c[i] for i in idx], n)[-1]
+
+
+def kama(c, er_n=10, fast=2, slow=30):
+    out = [None] * len(c)
+    fs, ss = 2 / (fast + 1), 2 / (slow + 1)
+    for i in range(len(c)):
+        if i < er_n:
+            continue
+        if out[i - 1] is None:
+            out[i] = c[i]
+            continue
+        change = abs(c[i] - c[i - er_n])
+        vol = sum(abs(c[j] - c[j - 1]) for j in range(i - er_n + 1, i + 1))
+        er = change / vol if vol > 0 else 0
+        sc = (er * (fs - ss) + ss) ** 2
+        out[i] = out[i - 1] + sc * (c[i] - out[i - 1])
+    return out
+
+
+def elder_for(sym, volumes: dict):
+    def fn(k, ctx):
+        st, c, h = ctx["state"], ctx["c"][sym], ctx["h"][sym]
+        if k < 7 * 20:
+            return None
+        w_now, w_prev = weekly_ema(c, k), weekly_ema(c, k - 7)
+        if w_now is None or w_prev is None:
+            return None
+        up = w_now > w_prev
+        if st.get("in"):
+            if not up:
+                st["in"] = False
+                return {}
+            return None
+        if "fi" not in st:
+            days = ctx["days"]
+            raw = [0.0] + [(c[i] - c[i - 1]) * volumes.get(days[i], 0.0) for i in range(1, len(c))]
+            st["fi"] = _ema_list(raw, 2)            # بازگشتی: مقدار i فقط به دادهٔ ≤ i بستگی دارد
+        if up and st["fi"][k] < 0:
+            st["pb_k"] = k
+        pk = st.get("pb_k")
+        if up and pk is not None and 0 < k - pk <= 5 and c[k] > h[k - 1]:
+            st["in"], st["pb_k"] = True, None
+            return {sym: 1.0}
+        return None
+    return fn
+
+
+def kama_for(sym):
+    def fn(k, ctx):
+        st, c = ctx["state"], ctx["c"][sym]
+        if "kama" not in st:
+            st["kama"] = kama(c)
+        km = st["kama"][k]
+        if km is None or k < 30:
+            return None
+        ok = c[k] > km
+        if ok != st.get("in"):
+            st["in"] = ok
+            return {sym: 1.0} if ok else {}
+        return None
+    return fn
+
+
+def run_ideas5(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights
+    out, ok = {}, {"H-MARI-E-030": True, "H-MARI-K-031": True}
+    for sym in ("BTCUSDT", "ETHUSDT"):
+        d = {sym: daily[sym]}
+        vol = {b["t"]: b.get("v", 0.0) for b in daily[sym]}
+        t6, _, _ = run_weights(d, [sym], start_ms, end_ms, t006_for(sym))
+        el, _, _ = run_weights(d, [sym], start_ms, end_ms, elder_for(sym, vol))
+        ka, _, _ = run_weights(d, [sym], start_ms, end_ms, kama_for(sym))
+        s6, m6 = t6.get("sharpe") or 9, t6.get("max_drawdown_pct", 0)
+        for hid, st in (("H-MARI-E-030", el), ("H-MARI-K-031", ka)):
+            ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
+        out[sym] = {"T-006": t6, "H-MARI-E-030": el, "H-MARI-K-031": ka}
+    return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}

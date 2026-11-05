@@ -736,3 +736,36 @@ def run_ideas4_research(start: str = "2018-06-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "ideas4_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_ideas5_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۹ و ۱۰: صفحهٔ سه‌گانهٔ الدر و KAMA کافمن، روی BTC و ETH."""
+    from .ideas import IDEA5_HYPOTHESES, run_ideas5
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 420 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas5(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:20Z",
+              "hypotheses": IDEA5_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۱ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas5_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: الدر و کافمن", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA5_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas5_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

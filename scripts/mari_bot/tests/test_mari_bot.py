@@ -853,5 +853,26 @@ class Ideas4Tests(unittest.TestCase):
             self.assertEqual(c1, c2)
 
 
+class Ideas5Tests(unittest.TestCase):
+    def test_elder_kama_causal_and_kama_tracks(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import elder_for, kama, kama_for, run_ideas5
+        k = kama([100.0] * 20 + [100.0 + i for i in range(1, 41)])
+        self.assertGreater(k[-1], k[25])                 # روند کامل → KAMA دنبال می‌کند
+        self.assertAlmostEqual(k[15], 100.0)              # بازار صاف → KAMA ثابت
+        d = IdeasTests()._d()
+        bars = d["BTCUSDT"]
+        a, cut = bars[400]["t"], bars[800]["t"]
+        r = run_ideas5(d, a, bars[-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-E-030", "H-MARI-K-031"})
+        d2 = [dict(x, c=x["c"] * (3 if x["t"] > cut else 1), h=x["h"] * (3 if x["t"] > cut else 1),
+                   v=x["v"] * (9 if x["t"] > cut else 1)) for x in bars]
+        vol1, vol2 = {x["t"]: x["v"] for x in bars}, {x["t"]: x["v"] for x in d2}
+        for f1, f2 in ((elder_for("BTCUSDT", vol1), elder_for("BTCUSDT", vol2)), (kama_for("BTCUSDT"), kama_for("BTCUSDT"))):
+            _, c1, _ = run_weights({"BTCUSDT": bars}, ["BTCUSDT"], a, cut, f1)
+            _, c2, _ = run_weights({"BTCUSDT": d2}, ["BTCUSDT"], a, cut, f2)
+            self.assertEqual(c1, c2)
+
+
 if __name__ == "__main__":
     unittest.main()
