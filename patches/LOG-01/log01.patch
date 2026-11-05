@@ -1,0 +1,87 @@
+diff -ruN a/src/lib/paper/engine.ts b/src/lib/paper/engine.ts
+--- a/src/lib/paper/engine.ts	2026-11-05 07:39:57.083247470 +0330
++++ b/src/lib/paper/engine.ts	2026-11-05 07:40:20.309999783 +0330
+@@ -42,7 +42,21 @@
+   return grossPct(side, entry, price);
+ }
+ 
+-function closeTrade(t: PaperTrade, price: number, timeMs: number, reason: PaperTrade["exitReason"]): void {
++function evidenceOf(t: PaperTrade, k: KlinePoint, now: number, n: number): PaperTrade["exitEvidence"] {
++  // LOG-01: فقط ثبت — هیچ تأثیری بر منطق خروج ندارد
++  return {
++    candleOpenMs: k.time * 1000,
++    o: k.open, h: k.high, l: k.low, c: k.close,
++    stopAtCheck: t.slPrice,
++    targetAtCheck: t.tpPrice,
++    beActiveAtCheck: !!t.beActive,
++    cycleNowMs: now,
++    candlesInCycle: n,
++  };
++}
++
++function closeTrade(t: PaperTrade, price: number, timeMs: number, reason: PaperTrade["exitReason"], ev?: PaperTrade["exitEvidence"]): void {
++  if (ev) t.exitEvidence = ev;
+   t.exitPrice = price;
+   t.exitTime = timeMs;
+   t.exitReason = reason;
+@@ -68,13 +82,13 @@
+       if (k.low <= t.slPrice) {
+         t.mfePct = Math.max(t.mfePct, pctChange(t.entryPrice, k.high));
+         t.maePct = Math.min(t.maePct, pctChange(t.entryPrice, k.low));
+-        closeTrade(t, t.slPrice, ct, "SL");
++        closeTrade(t, t.slPrice, ct, "SL", evidenceOf(t, k, now, candles.length));
+         return;
+       }
+       if (k.high >= t.tpPrice) {
+         t.mfePct = Math.max(t.mfePct, pctChange(t.entryPrice, k.high));
+         t.maePct = Math.min(t.maePct, pctChange(t.entryPrice, k.low));
+-        closeTrade(t, t.tpPrice, ct, "TP");
++        closeTrade(t, t.tpPrice, ct, "TP", evidenceOf(t, k, now, candles.length));
+         return;
+       }
+       t.mfePct = Math.max(t.mfePct, pctChange(t.entryPrice, k.high));
+@@ -87,13 +101,13 @@
+       if (k.high >= t.slPrice) {
+         t.mfePct = Math.max(t.mfePct, sidePnl("SHORT", t.entryPrice, k.low));
+         t.maePct = Math.min(t.maePct, sidePnl("SHORT", t.entryPrice, k.high));
+-        closeTrade(t, t.slPrice, ct, "SL");
++        closeTrade(t, t.slPrice, ct, "SL", evidenceOf(t, k, now, candles.length));
+         return;
+       }
+       if (k.low <= t.tpPrice) {
+         t.mfePct = Math.max(t.mfePct, sidePnl("SHORT", t.entryPrice, k.low));
+         t.maePct = Math.min(t.maePct, sidePnl("SHORT", t.entryPrice, k.high));
+-        closeTrade(t, t.tpPrice, ct, "TP");
++        closeTrade(t, t.tpPrice, ct, "TP", evidenceOf(t, k, now, candles.length));
+         return;
+       }
+       t.mfePct = Math.max(t.mfePct, sidePnl("SHORT", t.entryPrice, k.low));
+@@ -104,7 +118,7 @@
+   // پایان مهلت نگهداری — خروج با قیمت آخرین کندل بسته‌شده
+   if (t.status === "OPEN" && now - t.entryTime >= maxHoldMs) {
+     const lastClosed = [...candles].reverse().find((k) => k.closed && closeTimeMs(k) > t.entryTime);
+-    if (lastClosed) closeTrade(t, lastClosed.close, closeTimeMs(lastClosed), "TIME");
++    if (lastClosed) closeTrade(t, lastClosed.close, closeTimeMs(lastClosed), "TIME", evidenceOf(t, lastClosed, now, candles.length));
+   }
+ }
+ 
+diff -ruN a/src/lib/paper/types.ts b/src/lib/paper/types.ts
+--- a/src/lib/paper/types.ts	2026-11-05 07:39:57.083215378 +0330
++++ b/src/lib/paper/types.ts	2026-11-05 07:40:20.309281096 +0330
+@@ -36,6 +36,16 @@
+   exitReason: PaperExitReason | null;
+   realizedPnlPct: number | null; // بازده بسته‌شده پس از کسر کارمزد فرضی
+   costPctApplied?: number; // هزینه کل رفت‌وبرگشت (کارمزد+لغزش) که لحظهٔ بسته‌شدن اعمال شد؛ نبودنش = معامله قدیمی با کارمزد ۰.۱٪
++  /** LOG-01: شواهد لحظهٔ خروج — کندلی که خروج را فعال کرد، سطح حد ضرر/سودِ لحظه، و زمان دور پایش؛ برای بازپخش و ممیزی مستقل. معاملات قدیمی این فیلد را ندارند. */
++  exitEvidence?: {
++    candleOpenMs: number; // زمان باز شدن کندل محرک
++    o: number; h: number; l: number; c: number; // OHLC همان کندل، همان‌طور که موتور دید
++    stopAtCheck: number; // slPrice لحظهٔ بررسی (پیش از بستن)
++    targetAtCheck: number; // tpPrice لحظهٔ بررسی
++    beActiveAtCheck: boolean;
++    cycleNowMs: number; // Date.now() در همین دور پایش
++    candlesInCycle: number; // تعداد کندل‌های همین دور (عقب‌جبرانی را نشان می‌دهد)
++  };
+   createdAt: number; // زمان ثبت در سامانه
+   // --- فیلدهای نسخه ۲ (mari-paper-v2) — معاملات قدیمی نسخه ۱ این فیلدها را ندارند و به‌صورت FIXED خوانده می‌شوند ---
+   slBasis?: "FIXED" | "ATR"; // پایه حد ضرر: ثابت نسخه ۱ یا دینامیک ATR نسخه ۲
