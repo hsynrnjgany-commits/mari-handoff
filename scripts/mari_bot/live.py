@@ -16,7 +16,7 @@ from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quo
 from .engine import MariBot
 from .ledger import Ledger
 from .btc_trend import DAY_MS, BtcTrend
-from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event, fmt_health
+from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event, fmt_health, fmt_turtle_event
 
 LEDGER_URL = "https://github.com/hsynrnjgany-commits/mari-handoff/blob/mari-bot-state/ledger.jsonl"
 from .trend import SymbolSeries
@@ -58,6 +58,7 @@ class LiveRunner:
         self.bot = MariBot(self.cfg, self.ledger, state)
         self.tg = Telegram(os.path.join(state_dir, "telegram.json"))
         self.btc = BtcTrend(os.path.join(state_dir, "btc_trend.json"))
+        self.turtle = BtcTrend(os.path.join(state_dir, "btc_turtle.json"), mode="turtle")
         self.bot.btc_summary = self.btc.summary() if self.btc.s["position"] else None
 
     # ---------------------------------------------------------------- انتخاب نمادها
@@ -128,7 +129,12 @@ class LiveRunner:
             daily = drop_unclosed(src.klines("BTCUSDT", "1d", 220), now_ms, DAY_MS)
             if quality_check(daily, interval_ms=DAY_MS)["ok"]:
                 btc_events = self.btc.update(daily)
+                for ev in self.turtle.update(daily):
+                    ev["strategy"] = "turtle"
+                    self.ledger.write("TURTLE_SWITCH", ts=ev["t"], **{k: v for k, v in ev.items() if k != "t"})
+                    self.tg.broadcast(fmt_turtle_event(ev, self.turtle.summary()))
             self.bot.btc_summary = self.btc.summary()
+            self.bot.turtle_summary = self.turtle.summary()
         except DataError as e:
             self.ledger.write("BTC_TREND_DATA_FAIL", error=str(e)[:200])
         for ev in btc_events:
@@ -158,7 +164,7 @@ class LiveRunner:
         for v in self.bot.snapshot.values():
             states[v["state"]] = states.get(v["state"], 0) + 1
         market["trend_states_scanned"] = dict(sorted(states.items()))
-        summary = {"btc_trend": self.bot.btc_summary, "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+        summary = {"btc_trend": self.bot.btc_summary, "btc_turtle": getattr(self.bot, "turtle_summary", None), "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}

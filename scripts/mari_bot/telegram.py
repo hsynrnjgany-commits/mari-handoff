@@ -119,6 +119,20 @@ def fmt_health(ok: bool, streak: int, why: str | None) -> str:
                  "اگر تا چند ساعت دیگر پیام «دوباره سالم است» نیامد، زبانهٔ Actions گیت‌هاب را ببین یا به Claude بگو."])
 
 
+def fmt_turtle_event(ev: dict, summ: dict | None = None) -> str:
+    if ev["to"] == "BTC":
+        head, why = "🐢🟢 <b>روش لاک‌پشت‌ها: خرید تمرینی بیت‌کوین</b>", "قیمت بسته سقف ۵۵ روز گذشته را شکست."
+    else:
+        head, why = "🐢⚪ <b>روش لاک‌پشت‌ها: نقد شدن تمرینی</b>", "قیمت بسته کف ۲۰ روز گذشته را شکست."
+    if ev.get("boot"):
+        head += " (شروع پیگیری)"
+        why = "وضعیت فعلی در شروع پیگیری."
+    lines = [head, f"قیمت: {fa(ev['close'], 0)}", f"چرا: {why}"]
+    if summ:
+        lines.append(f"سرمایهٔ فرضی این روش: {fa(summ['equity'])} تتر")
+    return _end(lines)
+
+
 def fmt_daily_simple(bot, monday: bool = False) -> str:
     """گزارش روزانهٔ ساده: فقط آنچه مهم است."""
     b = getattr(bot, "btc_summary", None)
@@ -129,6 +143,11 @@ def fmt_daily_simple(bot, monday: bool = False) -> str:
                   f"وضعیت: {pos} — قیمت {fa(b['close'], 0)} — میانگین ۱۵۰روزه {fa(b['sma150'], 0)}",
                   f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ "
                   f"(نگه‌داری سادهٔ BTC: {fa(b['btc_hold_return_pct'], sign=True)}٪)", ""]
+    tt = getattr(bot, "turtle_summary", None)
+    if tt and tt.get("position"):
+        lines += ["🐢 <b>روش لاک‌پشت‌ها (دومین روش قبول‌شده)</b>",
+                  f"وضعیت: {'🟢 نگه‌داری' if tt['position'] == 'BTC' else '⚪ نقد'} — "
+                  f"نتیجهٔ تمرینی از شروع: {fa(tt['return_pct'], sign=True)}٪", ""]
     snap = bot.snapshot or {}
     if snap:
         counts = {}

@@ -21,8 +21,9 @@ def _sma(xs, n):
 
 
 class BtcTrend:
-    def __init__(self, path: str, start_equity: float = 1000.0):
-        self.path = path
+    def __init__(self, path: str, start_equity: float = 1000.0, mode: str = "sma150"):
+        """mode: «sma150» (T-006) یا «turtle» (C-007: ورود با شکست سقف ۵۵روزه، خروج با شکست کف ۲۰روزه)."""
+        self.path, self.mode = path, mode
         self.s = {"position": None, "cash": start_equity, "units": 0.0, "start_equity": start_equity,
                   "last_day_ts": 0, "switches": [], "last_close": None, "last_sma": None,
                   "first_price": None}
@@ -54,12 +55,20 @@ class BtcTrend:
         for k, b in enumerate(daily):
             if b["t"] <= self.s["last_day_ts"]:
                 continue
-            hist = closes[: k + 1]
-            sma = _sma(hist, SMA_N)
-            if sma is None:
-                continue
             c = b["c"]
-            want = "BTC" if c > sma else "CASH"
+            if self.mode == "turtle":
+                if k < 55:
+                    continue
+                hi55 = max(x["h"] for x in daily[k - 55:k])
+                lo20 = min(x["l"] for x in daily[k - 20:k])
+                cur = self.s["position"] or "CASH"
+                want = "BTC" if c > hi55 else ("CASH" if c < lo20 else cur)
+                sma = lo20 if want == "BTC" else hi55       # سطح مرجع: کف خروج یا سقف ورود
+            else:
+                sma = _sma(closes[: k + 1], SMA_N)
+                if sma is None:
+                    continue
+                want = "BTC" if c > sma else "CASH"
             boot = self.s["position"] is None
             if self.s["first_price"] is None:
                 self.s["first_price"] = c

@@ -608,6 +608,25 @@ class TestICT(unittest.TestCase):
         self.assertGreater(r["events"]["BTCUSDT"]["bull"]["n"], 10)
 
 
+class TestTurtleLive(unittest.TestCase):
+    def test_turtle_entry_exit(self):
+        from mari_bot.btc_trend import BtcTrend
+        D_ = 86_400_000
+        flat = [{"t": i * D_, "o": 100, "h": 101, "l": 99, "c": 100, "v": 1, "qv": 1} for i in range(70)]
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "t.json")
+            bt = BtcTrend(p, mode="turtle")
+            ev = bt.update(flat)
+            self.assertEqual(ev[0]["to"], "CASH")              # شروع: بدون شکست → نقد
+            up = flat + [{"t": 70 * D_, "o": 100, "h": 106, "l": 100, "c": 105, "v": 1, "qv": 1}]
+            ev = BtcTrend(p, mode="turtle").update(up)
+            self.assertEqual(ev[0]["to"], "BTC")               # شکست سقف ۵۵ روزه
+            hold = up + [{"t": 71 * D_, "o": 105, "h": 105, "l": 100, "c": 100.5, "v": 1, "qv": 1}]
+            self.assertEqual(BtcTrend(p, mode="turtle").update(hold), [])   # هنوز بالای کف ۲۰ روزه
+            dn = hold + [{"t": 72 * D_, "o": 100, "h": 100, "l": 97, "c": 98, "v": 1, "qv": 1}]
+            self.assertEqual(BtcTrend(p, mode="turtle").update(dn)[0]["to"], "CASH")
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

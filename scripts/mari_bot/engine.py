@@ -34,6 +34,7 @@ class MariBot:
         self.btc_state: str | None = st.get("btc_state")
         self.new_events: list[dict] = []          # رویدادهای همین چرخه برای اطلاع‌رسانی تلگرام
         self.btc_summary: dict | None = None      # وضعیت استراتژی تمرینی روند بیت‌کوین (T-006)
+        self.turtle_summary: dict | None = None   # وضعیت روش لاک‌پشت‌ها (C-007)
 
     # ------------------------------------------------------------------ وضعیت
     def equity(self) -> float:
