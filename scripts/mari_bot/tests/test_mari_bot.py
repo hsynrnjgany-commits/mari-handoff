@@ -1303,5 +1303,50 @@ class Ideas12Tests(unittest.TestCase):
         self.assertFalse(_beats_risk({"sharpe": 0.4, "max_drawdown_pct": 10.0}, b))
 
 
+class Ideas13Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _days(self, n):
+        return [i * self.DAY for i in range(n)]
+
+    def test_annualized_needs_enough_settlements(self):
+        from mari_bot.ideas13 import annualized
+        self.assertIsNone(annualized([None, None, 0.001]))
+        self.assertAlmostEqual(annualized([0.001] * 7), 0.365, places=9)
+        self.assertAlmostEqual(annualized([0.001, 0.001, 0.001, 0.001, None, None, None]), 0.365, places=9)
+
+    def test_entry_exit_lagged_by_one_day_and_costs_charged(self):
+        from mari_bot.ideas13 import run_carry
+        n = 400
+        fd = [0.0005] * n                                  # سالانه حدود ۱۸٪ → باید وارد شود
+        r = run_carry(self._days(n), fd, cost=0.003)
+        self.assertEqual(r["cycles"], 1)                   # یک ورود، بدون خروج
+        self.assertLess(r["days_in_position_pct"], 100.0)  # روزهای اول بیرون است (تأخیر سیگنال)
+        self.assertGreater(r["total_return_pct"], 0)
+        free = run_carry(self._days(n), fd, cost=0.0)
+        self.assertGreater(free["total_return_pct"], r["total_return_pct"])
+
+    def test_negative_funding_forces_exit(self):
+        from mari_bot.ideas13 import run_carry
+        n = 400
+        fd = [0.0005] * 200 + [-0.0005] * (n - 200)
+        r = run_carry(self._days(n), fd)
+        self.assertEqual(r["cycles"], 1)
+        self.assertLess(r["days_in_position_pct"], 55.0)   # پس از منفی شدن خارج می‌شود
+
+    def test_passes_requires_all_three_bars(self):
+        from mari_bot.ideas13 import passes
+        self.assertTrue(passes({"sharpe": 1.5, "max_drawdown_pct": 3.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 0.9, "max_drawdown_pct": 3.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 1.5, "max_drawdown_pct": 12.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 1.5, "max_drawdown_pct": 3.0, "total_return_pct": -1.0}))
+        self.assertFalse(passes({"insufficient": True}))
+
+    def test_short_sample_is_insufficient_not_pass(self):
+        from mari_bot.ideas13 import run_carry
+        r = run_carry(self._days(50), [0.001] * 50)
+        self.assertTrue(r["insufficient"])
+
+
 if __name__ == "__main__":
     unittest.main()

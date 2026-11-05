@@ -1196,6 +1196,53 @@ def run_ideas12_research(start: str = "2017-09-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas13_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas13: کری دلتا-نیوترال فاندینگ (Y-057) روی BTC و ETH."""
+    from .funding import daily_funding, fetch_funding
+    from .ideas13 import IDEA13_HYPOTHESES, run_ideas13
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    days = list(range(start_ms, end, DAY_MS))
+    fund, sources = {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        name, rows, tried = fetch_funding(s, start_ms - 20 * DAY_MS, end, need_from_ms=start_ms)
+        fund[s] = daily_funding(rows, days)
+        settled = sum(1 for v in fund[s] if v is not None)
+        sources[s] = {"used": name, "rows": len(rows), "settled_days": settled, "failed_before": tried}
+    res = run_ideas13(fund, days)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T20:00Z",
+              "hypotheses": IDEA13_HYPOTHESES, "sources": sources,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۷ می‌رسد.",
+                               "پوشش کامل فرض شده: اختلاف قیمت اسپات و دائمی (basis)، هزینهٔ مارجین و"
+                               " خطر لیکویید شدن مدل نشده‌اند. نتیجه سقف خوش‌بینانه است، نه بازده واقعی.",
+                               "بدون اهرم: درآمد روی همان سرمایه حساب شده (مقاله‌ها معمولاً اهرم دارند).",
+                               "هزینه: ۴ پا در هر چرخه، مجموعاً ۰٫۶٪ (۰٫۳٪ ورود + ۰٫۳٪ خروج).",
+                               "فاندینگ تاریخی بایننس از ۲۰۲۰-۰۱؛ پیش از آن داده نیست."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas13_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas13: کری دلتا-نیوترال فاندینگ", "",
+          f"- دوره: {start} تا {report['period']['to']}",
+          "- منبع: " + "، ".join(f"{k}: {v['used']} ({v['settled_days']} روز تسویه)" for k, v in sources.items()),
+          "", "**هشدار:** پوشش کامل فرض شده؛ اختلاف قیمت اسپات/دائمی و خطر لیکویید در مدل نیست."
+          " عددها سقف خوش‌بینانه‌اند.", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA13_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | نسخه | بازده کل ٪ | بیشترین افت ٪ | شارپ | چرخه | روز در موقعیت ٪ |",
+           "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("H-MARI-Y-057", "ALWAYS_ON_INFO"):
+            st = (x or {}).get(name) or {}
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('cycles')} | {st.get('days_in_position_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas13_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
