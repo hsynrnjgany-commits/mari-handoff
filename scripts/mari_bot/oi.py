@@ -20,6 +20,7 @@ MIN_GROUP = 20
 METRICS_PREFIX = "/data/futures/um/daily/metrics/"
 
 OI_HYPOTHESES = {
+    "H-MARI-O-043": "همان قاعدهٔ O-042 روی چهار نمونهٔ تازه (۲۰۲۲-۱۱ تا ۲۰۲۴-۱۱): CI95 اختلاف ادغامی بالای صفر، گروه جهش ≥ ۲۰، اختلاف مثبت در دست‌کم ۳ از ۴ نمونه.",
     "H-MARI-O-042": "جهش OI ≥ ۲۵٪ در ۲۴ ساعت پیش از ورود: میانگین بازدهٔ معامله کمتر از بقیه، CI95 بالای صفر، در هر دو نمونه، با دست‌کم ۲۰ معامله در گروه جهش.",
 }
 
@@ -137,3 +138,11 @@ def combine(per_sample: dict) -> str:
     if any(v == "INSUFFICIENT_DATA" for v in vs):
         return "INSUFFICIENT_DATA"
     return "SUPPORTED_IN_TEST_RANGE" if all(v.startswith("SUPPORTED") for v in vs) else "FALSIFIED"
+
+
+def pooled_verdict(per_sample: dict, pooled: dict, need_pos: int = 3) -> str:
+    if pooled["surge"]["n"] < MIN_GROUP:
+        return "INSUFFICIENT_DATA"
+    pos = sum(1 for x in per_sample.values() if (x["rest_minus_surge"] or {}).get("diff_pct", 0) > 0)
+    ok = pooled["rest_minus_surge"] and pooled["rest_minus_surge"]["ci95_low"] > 0 and pos >= need_pos
+    return "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"

@@ -1031,6 +1031,14 @@ class OITests(unittest.TestCase):
         self.assertEqual(r["surge"]["n"], 30)
         self.assertEqual(r["verdict"], "SUPPORTED_IN_TEST_RANGE")
 
+    def test_pooled_verdict_needs_majority(self):
+        from mari_bot.oi import pooled_verdict
+        pool = {"surge": {"n": 40}, "rest_minus_surge": {"diff_pct": 2, "ci95_low": 0.5}}
+        mk = lambda d: {"rest_minus_surge": {"diff_pct": d}}
+        self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(1), "d": mk(-1)}, pool), "SUPPORTED_IN_TEST_RANGE")
+        self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(-1), "d": mk(-1)}, pool), "FALSIFIED")
+        self.assertEqual(pooled_verdict({}, {"surge": {"n": 5}, "rest_minus_surge": None}), "INSUFFICIENT_DATA")
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -204,7 +204,7 @@ def cmd_ideas7(a):
 
 def cmd_oi(a):
     from .research import run_oi_research
-    r = run_oi_research(samples=a.samples, out_dir=a.out)
+    r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
@@ -315,6 +315,7 @@ def main(argv=None):
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")
+    oi.add_argument("--pooled", action="store_true", help="O-043: ادغام نمونه‌ها")
     oi.set_defaults(fn=cmd_oi)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)

@@ -66,10 +66,11 @@ jobs:
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
           echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
-          if [ "${{ inputs.kind }}" = "oi" ]; then
+          if [ "${{ inputs.kind }}" = "oi" ] || [ "${{ inputs.kind }}" = "oi43" ]; then
             SAMPLES=""
             for d in $(echo "${{ inputs.variants }}" | tr ',' ' '); do SAMPLES="$SAMPLES${SAMPLES:+,}../out-wt/$d/trades.json"; done
-            python -m mari_bot oi --samples "$SAMPLES" --out "$RUN_DIR"
+            POOL=""; [ "${{ inputs.kind }}" = "oi43" ] && POOL="--pooled"
+            python -m mari_bot oi --samples "$SAMPLES" $POOL --out "$RUN_DIR"
             exit 0
           fi
           if [ "${{ inputs.kind }}" = "ideas7" ]; then
