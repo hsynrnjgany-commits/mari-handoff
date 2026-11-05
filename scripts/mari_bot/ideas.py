@@ -443,3 +443,33 @@ def run_ideas6(daily: dict, start_ms: int, end_ms: int) -> dict:
                    and ro.get("max_drawdown_pct", 100) <= t6.get("max_drawdown_pct", 0))
         out[name] = {"T-006": t6, "H-MARI-D-032": ro}
     return {"by_period": out, "verdict": {"H-MARI-D-032": "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"}}
+
+
+# ---------------------------------------------------------------- آزمون تکرار روش‌های قبول‌شده (ثبت 2026-11-05T06:45Z)
+REP_HYPOTHESES = {
+    "H-MARI-T-006-REP": "T-006 روی ETH: شارپ بیشتر و افت کمتر از نگه‌داری ETH، CI95 هفتگی > ۰.",
+    "H-MARI-C-007-REP": "لاک‌پشت (۵۵/۲۰) روی ETH: شارپ بیشتر و افت کمتر از نگه‌داری ETH، CI95 هفتگی > ۰.",
+}
+
+
+def run_replication(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights, turtle
+    sym, d = "ETHUSDT", {"ETHUSDT": daily["ETHUSDT"]}
+
+    def hold(k, ctx):
+        if not ctx["state"].get("done"):
+            ctx["state"]["done"] = True
+            return {sym: 1.0}
+        return None
+    base, _, _ = run_weights(d, [sym], start_ms, end_ms, hold)
+    res = {"ETH_BUY_HOLD": base}
+    verdict = {}
+    for hid, fn in (("H-MARI-T-006-REP", t006_for(sym)),
+                    ("H-MARI-C-007-REP", lambda k, ctx: turtle(k, ctx, sym=sym))):
+        st, _, _ = run_weights(d, [sym], start_ms, end_ms, fn)
+        ci = st.get("weekly_bootstrap") or {}
+        ok = bool((st.get("sharpe") or -9) > (base.get("sharpe") or 9)
+                  and st.get("max_drawdown_pct", 100) < base.get("max_drawdown_pct", 0) and ci and ci["ci95_low"] > 0)
+        res[hid] = st
+        verdict[hid] = "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"
+    return {"strategies": res, "verdict": verdict}

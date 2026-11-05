@@ -803,3 +803,32 @@ def run_ideas6_research(start: str = "2018-06-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "ideas6_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_replication_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """آزمون تکرار T-006 و لاک‌پشت روی ETH (قاعدهٔ تکرار برای روش‌های قبول‌شده)."""
+    from .ideas import REP_HYPOTHESES, run_replication
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    bars = fetch_history("ETHUSDT", start_ms - 260 * DAY_MS, end, interval="1d")
+    daily = {"ETHUSDT": quality_check(bars, interval_ms=DAY_MS)["clean"]}
+    res = run_replication(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:45Z",
+              "hypotheses": REP_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "replication_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# آزمون تکرار روش‌های قبول‌شده روی ETH", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {REP_HYPOTHESES[hid]}")
+    md += ["", "| روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | CI95 هفتگی ٪ | معامله |", "|---|---|---|---|---|---|"]
+    for name, st in res["strategies"].items():
+        ci = st.get("weekly_bootstrap") or {}
+        md.append(f"| {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                  f"[{ci.get('ci95_low')}, {ci.get('ci95_high')}] | {st['trades']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "replication_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

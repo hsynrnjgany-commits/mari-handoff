@@ -886,5 +886,14 @@ class Ideas6Tests(unittest.TestCase):
         self.assertIn("H-MARI-D-032", run_ideas6({"BTCUSDT": mk(btc), "ETHUSDT": mk(eth)}, days[160], days[-1])["verdict"])
 
 
+class ReplicationTests(unittest.TestCase):
+    def test_replication_runs_on_eth(self):
+        from mari_bot.ideas import run_replication
+        d = IdeasTests()._d()
+        r = run_replication(d, d["ETHUSDT"][300]["t"], d["ETHUSDT"][-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-T-006-REP", "H-MARI-C-007-REP"})
+        self.assertGreater(r["strategies"]["H-MARI-C-007-REP"]["trades"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

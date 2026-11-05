@@ -178,6 +178,12 @@ def cmd_ideas6(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_replication(a):
+    from .research import run_replication_research
+    r = run_replication_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -266,6 +272,10 @@ def main(argv=None):
     i6.add_argument("--start", default="2018-06-01")
     i6.add_argument("--out", default="research_out")
     i6.set_defaults(fn=cmd_ideas6)
+    rp = sub.add_parser("replication", help="آزمون تکرار روش‌های قبول‌شده روی ETH")
+    rp.add_argument("--start", default="2018-06-01")
+    rp.add_argument("--out", default="research_out")
+    rp.set_defaults(fn=cmd_replication)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)
