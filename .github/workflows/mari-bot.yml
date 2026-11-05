@@ -12,13 +12,13 @@ name: mari-bot
 
 on:
   schedule:
-    - cron: "7 * * * *"      # هر ساعت، دقیقهٔ ۷ (پس از بسته‌شدن کندل ساعتی)
-    - cron: "37 * * * *"     # پشتیبان: گیت‌هاب گاهی اجرای زمان‌بندی‌شده را جا می‌اندازد.
-                             # اجرای اضافه بی‌خطر است: کندل تکراری پردازش نمی‌شود (last_ts) و concurrency جلوی هم‌پوشانی را می‌گیرد.
+    - cron: "17 */6 * * *"   # فقط پشتیبان: اگر زنجیرهٔ اجراها قطع شد، دوباره راهش می‌اندازد.
+                             # کار اصلی را زنجیره انجام می‌دهد (هر اجرا ~۵٫۵ ساعت، هر ساعت یک چرخه).
   workflow_dispatch: {}      # دکمهٔ اجرای دستی
 
 permissions:
   contents: write            # فقط برای ذخیرهٔ وضعیت در برانچ mari-bot-state
+  actions: write             # فقط برای اینکه هر اجرا، اجرای بعدی خودش را شروع کند (زنجیره)
 
 concurrency:
   group: mari-bot
@@ -27,7 +27,7 @@ concurrency:
 jobs:
   cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 355       # هر اجرا ~۵٫۵ ساعت، هر ساعت یک چرخه؛ بعد اجرای بعدی را خودش شروع می‌کند
     steps:
       - uses: actions/checkout@v5
 
@@ -50,13 +50,28 @@ jobs:
         working-directory: scripts
         run: python -m unittest discover -s mari_bot/tests -t .
 
-      - name: Run one paper cycle
+      - name: Run hourly paper cycles (~5.5h)
         working-directory: scripts
         env:
           MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
           MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
           MARI_TELEGRAM_CHANNEL_ID: ${{ secrets.MARI_TELEGRAM_CHANNEL_ID }}
-        run: python -m mari_bot once --state ../state-wt --top 1000 --rotate 0
+        run: |
+          # زمان‌بندی گیت‌هاب گاهی ساعت‌ها اجرا نمی‌شود؛ پس خود اجرا هر ساعت یک چرخه می‌زند.
+          END=$(( $(date +%s) + 330*60 ))
+          save_state() {
+            ( cd ../state-wt && rm -f *.tmp && git add -A && \
+              { git diff --cached --quiet || { git commit -q -m "state: $(date -u +%Y-%m-%dT%H:%MZ)"; \
+                for i in 1 2 3; do git push -q origin mari-bot-state && break; sleep $((i*5)); done; }; } )
+          }
+          while :; do
+            python -m mari_bot once --state ../state-wt --top 1000 --rotate 0
+            save_state
+            now=$(date +%s); next=$(( (now / 3600 + 1) * 3600 + 7 * 60 ))
+            [ "$next" -ge "$END" ] && break
+            echo "چرخهٔ بعد: $(date -u -d @$next +%H:%M) UTC"
+            sleep $(( next - now ))
+          done
 
       - name: Alert owner on failure
         if: failure()
@@ -83,3 +98,13 @@ jobs:
             git commit -q -m "state: $(date -u +%Y-%m-%dT%H:%MZ)"
             for i in 1 2 3; do git push origin mari-bot-state && break; sleep $((i*5)); done
           fi
+
+      - name: Start next run (chain)
+        if: always() && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # اگر این اجرا خطا داشت، ۱۵ دقیقه صبر کن تا خطای پشت‌سرهم، اجرای بی‌وقفه نسازد.
+          if [ "${{ job.status }}" != "success" ]; then sleep 900; fi
+          gh api -X POST "repos/${{ github.repository }}/actions/workflows/mari-bot.yml/dispatches" -f ref=main \
+            && echo "اجرای بعدی در صف قرار گرفت"
