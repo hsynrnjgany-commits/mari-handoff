@@ -1,0 +1,486 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T06:55Z",
+ "hypotheses": {
+  "H-MARI-T-033": "T-006 روی هر ارز بزرگ، شارپ بیشتر و افت کمتر از نگه‌داری همان ارز، دست‌کم ۸ از ۱۰.",
+  "H-MARI-V-034": "کنترل نوسان ۵۰٪، شارپ بیشتر و افت کمتر از T-006 همان ارز، دست‌کم ۷ از ۱۰.",
+  "H-MARI-T-035": "سبد وزن برابر BTC + ۱۰ ارز، هر کدام فقط بالای SMA150 خودش: شارپ بیشتر و افت کمتر یا برابر T-006 روی BTC."
+ },
+ "period": {
+  "from": "2021-01-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "SURVIVORSHIP: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه).",
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۷ می‌رسد."
+ ],
+ "results": {
+  "per_coin": {
+   "BNBUSDT": {
+    "hold": {
+     "total_return_pct": 1780.33,
+     "cagr_pct": 65.21,
+     "max_drawdown_pct": 70.86,
+     "sharpe": 1.01,
+     "weekly_bootstrap": {
+      "mean_pct": 1.68,
+      "ci95_low": 0.273,
+      "ci95_high": 3.353
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 937.77,
+     "cagr_pct": 49.24,
+     "max_drawdown_pct": 72.48,
+     "sharpe": 0.9,
+     "weekly_bootstrap": {
+      "mean_pct": 1.35,
+      "ci95_low": 0.091,
+      "ci95_high": 2.94
+     },
+     "trades": 81,
+     "time_in_cash_pct": 45.4
+    },
+    "voltarget": {
+     "total_return_pct": 480.3,
+     "cagr_pct": 35.11,
+     "max_drawdown_pct": 47.11,
+     "sharpe": 0.93,
+     "weekly_bootstrap": {
+      "mean_pct": 0.754,
+      "ci95_low": 0.095,
+      "ci95_high": 1.513
+     },
+     "trades": 175,
+     "time_in_cash_pct": 45.4
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": true
+   },
+   "XRPUSDT": {
+    "hold": {
+     "total_return_pct": 490.66,
+     "cagr_pct": 35.52,
+     "max_drawdown_pct": 83.24,
+     "sharpe": 0.77,
+     "weekly_bootstrap": {
+      "mean_pct": 1.379,
+      "ci95_low": -0.112,
+      "ci95_high": 3.01
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 34.89,
+     "cagr_pct": 5.26,
+     "max_drawdown_pct": 89.14,
+     "sharpe": 0.43,
+     "weekly_bootstrap": {
+      "mean_pct": 0.621,
+      "ci95_low": -0.573,
+      "ci95_high": 1.926
+     },
+     "trades": 75,
+     "time_in_cash_pct": 53.9
+    },
+    "voltarget": {
+     "total_return_pct": 95.56,
+     "cagr_pct": 12.16,
+     "max_drawdown_pct": 64.01,
+     "sharpe": 0.45,
+     "weekly_bootstrap": {
+      "mean_pct": 0.45,
+      "ci95_low": -0.339,
+      "ci95_high": 1.317
+     },
+     "trades": 191,
+     "time_in_cash_pct": 53.9
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": true
+   },
+   "ADAUSDT": {
+    "hold": {
+     "total_return_pct": 11.04,
+     "cagr_pct": 1.81,
+     "max_drawdown_pct": 95.15,
+     "sharpe": 0.48,
+     "weekly_bootstrap": {
+      "mean_pct": 0.88,
+      "ci95_low": -0.656,
+      "ci95_high": 2.476
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 471.9,
+     "cagr_pct": 34.77,
+     "max_drawdown_pct": 77.67,
+     "sharpe": 0.77,
+     "weekly_bootstrap": {
+      "mean_pct": 1.119,
+      "ci95_low": -0.114,
+      "ci95_high": 2.446
+     },
+     "trades": 54,
+     "time_in_cash_pct": 60.2
+    },
+    "voltarget": {
+     "total_return_pct": 161.83,
+     "cagr_pct": 17.9,
+     "max_drawdown_pct": 54.98,
+     "sharpe": 0.63,
+     "weekly_bootstrap": {
+      "mean_pct": 0.49,
+      "ci95_low": -0.199,
+      "ci95_high": 1.22
+     },
+     "trades": 168,
+     "time_in_cash_pct": 60.2
+    },
+    "t006_beats_hold": true,
+    "vt_beats_t006": false
+   },
+   "DOGEUSDT": {
+    "hold": {
+     "total_return_pct": 631.16,
+     "cagr_pct": 40.56,
+     "max_drawdown_pct": 92.33,
+     "sharpe": 0.69,
+     "weekly_bootstrap": {
+      "mean_pct": 3.523,
+      "ci95_low": -0.268,
+      "ci95_high": 8.655
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 2079.28,
+     "cagr_pct": 69.44,
+     "max_drawdown_pct": 86.64,
+     "sharpe": 0.72,
+     "weekly_bootstrap": {
+      "mean_pct": 3.632,
+      "ci95_low": -0.046,
+      "ci95_high": 8.639
+     },
+     "trades": 68,
+     "time_in_cash_pct": 59.6
+    },
+    "voltarget": {
+     "total_return_pct": 1367.14,
+     "cagr_pct": 58.35,
+     "max_drawdown_pct": 41.85,
+     "sharpe": 0.79,
+     "weekly_bootstrap": {
+      "mean_pct": 1.708,
+      "ci95_low": -0.014,
+      "ci95_high": 3.916
+     },
+     "trades": 183,
+     "time_in_cash_pct": 59.6
+    },
+    "t006_beats_hold": true,
+    "vt_beats_t006": true
+   },
+   "LINKUSDT": {
+    "hold": {
+     "total_return_pct": -6.47,
+     "cagr_pct": -1.14,
+     "max_drawdown_pct": 90.18,
+     "sharpe": 0.48,
+     "weekly_bootstrap": {
+      "mean_pct": 0.752,
+      "ci95_low": -0.641,
+      "ci95_high": 2.174
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 1.34,
+     "cagr_pct": 0.23,
+     "max_drawdown_pct": 91.41,
+     "sharpe": 0.35,
+     "weekly_bootstrap": {
+      "mean_pct": 0.422,
+      "ci95_low": -0.589,
+      "ci95_high": 1.459
+     },
+     "trades": 91,
+     "time_in_cash_pct": 58.0
+    },
+    "voltarget": {
+     "total_return_pct": 35.76,
+     "cagr_pct": 5.37,
+     "max_drawdown_pct": 66.6,
+     "sharpe": 0.33,
+     "weekly_bootstrap": {
+      "mean_pct": 0.248,
+      "ci95_low": -0.356,
+      "ci95_high": 0.878
+     },
+     "trades": 213,
+     "time_in_cash_pct": 58.0
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": false
+   },
+   "LTCUSDT": {
+    "hold": {
+     "total_return_pct": -58.97,
+     "cagr_pct": -14.14,
+     "max_drawdown_pct": 89.45,
+     "sharpe": 0.24,
+     "weekly_bootstrap": {
+      "mean_pct": 0.296,
+      "ci95_low": -0.88,
+      "ci95_high": 1.532
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": -45.72,
+     "cagr_pct": -9.93,
+     "max_drawdown_pct": 84.08,
+     "sharpe": 0.14,
+     "weekly_bootstrap": {
+      "mean_pct": 0.145,
+      "ci95_low": -0.769,
+      "ci95_high": 1.108
+     },
+     "trades": 79,
+     "time_in_cash_pct": 57.7
+    },
+    "voltarget": {
+     "total_return_pct": -9.89,
+     "cagr_pct": -1.77,
+     "max_drawdown_pct": 64.45,
+     "sharpe": 0.14,
+     "weekly_bootstrap": {
+      "mean_pct": 0.095,
+      "ci95_low": -0.469,
+      "ci95_high": 0.673
+     },
+     "trades": 190,
+     "time_in_cash_pct": 57.7
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": false
+   },
+   "TRXUSDT": {
+    "hold": {
+     "total_return_pct": 1074.27,
+     "cagr_pct": 52.43,
+     "max_drawdown_pct": 69.51,
+     "sharpe": 0.89,
+     "weekly_bootstrap": {
+      "mean_pct": 1.228,
+      "ci95_low": 0.205,
+      "ci95_high": 2.291
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 147.31,
+     "cagr_pct": 16.76,
+     "max_drawdown_pct": 83.17,
+     "sharpe": 0.53,
+     "weekly_bootstrap": {
+      "mean_pct": 0.664,
+      "ci95_low": -0.273,
+      "ci95_high": 1.652
+     },
+     "trades": 112,
+     "time_in_cash_pct": 32.1
+    },
+    "voltarget": {
+     "total_return_pct": 185.26,
+     "cagr_pct": 19.65,
+     "max_drawdown_pct": 59.29,
+     "sharpe": 0.59,
+     "weekly_bootstrap": {
+      "mean_pct": 0.511,
+      "ci95_low": -0.099,
+      "ci95_high": 1.137
+     },
+     "trades": 189,
+     "time_in_cash_pct": 32.1
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": true
+   },
+   "SOLUSDT": {
+    "hold": {
+     "total_return_pct": 5203.99,
+     "cagr_pct": 97.29,
+     "max_drawdown_pct": 96.27,
+     "sharpe": 1.17,
+     "weekly_bootstrap": {
+      "mean_pct": 2.451,
+      "ci95_low": 0.712,
+      "ci95_high": 4.291
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 5439.54,
+     "cagr_pct": 98.77,
+     "max_drawdown_pct": 75.63,
+     "sharpe": 1.24,
+     "weekly_bootstrap": {
+      "mean_pct": 1.977,
+      "ci95_low": 0.665,
+      "ci95_high": 3.431
+     },
+     "trades": 77,
+     "time_in_cash_pct": 47.2
+    },
+    "voltarget": {
+     "total_return_pct": 609.95,
+     "cagr_pct": 39.85,
+     "max_drawdown_pct": 56.03,
+     "sharpe": 1.02,
+     "weekly_bootstrap": {
+      "mean_pct": 0.827,
+      "ci95_low": 0.16,
+      "ci95_high": 1.555
+     },
+     "trades": 234,
+     "time_in_cash_pct": 47.2
+    },
+    "t006_beats_hold": true,
+    "vt_beats_t006": false
+   },
+   "AVAXUSDT": {
+    "hold": {
+     "total_return_pct": 149.6,
+     "cagr_pct": 16.94,
+     "max_drawdown_pct": 95.63,
+     "sharpe": 0.69,
+     "weekly_bootstrap": {
+      "mean_pct": 1.77,
+      "ci95_low": -0.302,
+      "ci95_high": 4.136
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": 54.62,
+     "cagr_pct": 7.74,
+     "max_drawdown_pct": 74.32,
+     "sharpe": 0.47,
+     "weekly_bootstrap": {
+      "mean_pct": 0.676,
+      "ci95_low": -0.538,
+      "ci95_high": 1.886
+     },
+     "trades": 49,
+     "time_in_cash_pct": 63.1
+    },
+    "voltarget": {
+     "total_return_pct": 145.04,
+     "cagr_pct": 16.58,
+     "max_drawdown_pct": 47.51,
+     "sharpe": 0.6,
+     "weekly_bootstrap": {
+      "mean_pct": 0.434,
+      "ci95_low": -0.199,
+      "ci95_high": 1.084
+     },
+     "trades": 159,
+     "time_in_cash_pct": 63.1
+    },
+    "t006_beats_hold": false,
+    "vt_beats_t006": true
+   },
+   "DOTUSDT": {
+    "hold": {
+     "total_return_pct": -89.64,
+     "cagr_pct": -32.16,
+     "max_drawdown_pct": 98.6,
+     "sharpe": 0.08,
+     "weekly_bootstrap": {
+      "mean_pct": 0.009,
+      "ci95_low": -1.345,
+      "ci95_high": 1.4
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "T-006": {
+     "total_return_pct": -36.11,
+     "cagr_pct": -7.38,
+     "max_drawdown_pct": 86.07,
+     "sharpe": 0.2,
+     "weekly_bootstrap": {
+      "mean_pct": 0.184,
+      "ci95_low": -0.73,
+      "ci95_high": 1.1
+     },
+     "trades": 54,
+     "time_in_cash_pct": 68.9
+    },
+    "voltarget": {
+     "total_return_pct": -27.79,
+     "cagr_pct": -5.42,
+     "max_drawdown_pct": 73.49,
+     "sharpe": -0.01,
+     "weekly_bootstrap": {
+      "mean_pct": -0.012,
+      "ci95_low": -0.496,
+      "ci95_high": 0.482
+     },
+     "trades": 144,
+     "time_in_cash_pct": 68.9
+    },
+    "t006_beats_hold": true,
+    "vt_beats_t006": false
+   }
+  },
+  "basket": {
+   "total_return_pct": 153.37,
+   "cagr_pct": 17.24,
+   "max_drawdown_pct": 53.0,
+   "sharpe": 0.58,
+   "weekly_bootstrap": {
+    "mean_pct": 0.528,
+    "ci95_low": -0.232,
+    "ci95_high": 1.341
+   },
+   "trades": 751,
+   "time_in_cash_pct": 16.0
+  },
+  "btc_t006": {
+   "total_return_pct": 257.4,
+   "cagr_pct": 24.35,
+   "max_drawdown_pct": 45.05,
+   "sharpe": 0.74,
+   "weekly_bootstrap": {
+    "mean_pct": 0.575,
+    "ci95_low": -0.064,
+    "ci95_high": 1.243
+   },
+   "trades": 55,
+   "time_in_cash_pct": 45.4
+  },
+  "wins": {
+   "T-033": 4,
+   "V-034": 5
+  },
+  "verdict": {
+   "H-MARI-T-033": "FALSIFIED",
+   "H-MARI-V-034": "FALSIFIED",
+   "H-MARI-T-035": "FALSIFIED"
+  }
+ }
+}
