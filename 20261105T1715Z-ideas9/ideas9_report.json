@@ -1,0 +1,239 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T17:20Z",
+ "hypotheses": {
+  "H-MARI-R-048": "استحکام T-006: با میانگین ۱۰۰، ۱۲۵، ۱۷۵ و ۲۰۰ هم شارپ بیشتر از خرید-و-نگه‌داری، و بدترین شارپ دست‌کم ۸۰٪ شارپ ۱۵۰، روی BTC و ETH.",
+  "H-MARI-W-049": "T-006 هفتگی (تصمیم فقط یکشنبه‌ها): شارپ برابر یا بیشتر از T-006 روزانه با معاملهٔ کمتر، روی BTC و ETH.",
+  "H-MARI-A-047": "سبد BTC + ۱۰ ارز بزرگ با دروازهٔ BTC بالای میانگین ۱۵۰: شارپ بیشتر و افت کمتر یا برابر T-006 روی BTC."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "alt_from": "2021-01-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۰ می‌رسد.",
+  "SURVIVORSHIP در A-047: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه)."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "BUY_HOLD": {
+     "total_return_pct": 952.13,
+     "cagr_pct": 32.19,
+     "max_drawdown_pct": 76.63,
+     "sharpe": 0.77,
+     "weekly_bootstrap": {
+      "mean_pct": 0.885,
+      "ci95_low": 0.142,
+      "ci95_high": 1.691
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "H-MARI-W-049": {
+     "total_return_pct": 1430.53,
+     "cagr_pct": 38.2,
+     "max_drawdown_pct": 44.28,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 0.806,
+      "ci95_low": 0.234,
+      "ci95_high": 1.427
+     },
+     "trades": 31,
+     "time_in_cash_pct": 45.6
+    },
+    "SMA100": {
+     "total_return_pct": 2298.21,
+     "cagr_pct": 45.76,
+     "max_drawdown_pct": 46.49,
+     "sharpe": 1.09,
+     "weekly_bootstrap": {
+      "mean_pct": 0.898,
+      "ci95_low": 0.357,
+      "ci95_high": 1.49
+     },
+     "trades": 105,
+     "time_in_cash_pct": 45.9
+    },
+    "SMA125": {
+     "total_return_pct": 2654.02,
+     "cagr_pct": 48.17,
+     "max_drawdown_pct": 37.84,
+     "sharpe": 1.13,
+     "weekly_bootstrap": {
+      "mean_pct": 0.934,
+      "ci95_low": 0.37,
+      "ci95_high": 1.551
+     },
+     "trades": 57,
+     "time_in_cash_pct": 45.6
+    },
+    "SMA150": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "SMA175": {
+     "total_return_pct": 855.42,
+     "cagr_pct": 30.69,
+     "max_drawdown_pct": 64.86,
+     "sharpe": 0.84,
+     "weekly_bootstrap": {
+      "mean_pct": 0.701,
+      "ci95_low": 0.127,
+      "ci95_high": 1.326
+     },
+     "trades": 59,
+     "time_in_cash_pct": 46.7
+    },
+    "SMA200": {
+     "total_return_pct": 971.3,
+     "cagr_pct": 32.47,
+     "max_drawdown_pct": 54.97,
+     "sharpe": 0.87,
+     "weekly_bootstrap": {
+      "mean_pct": 0.724,
+      "ci95_low": 0.156,
+      "ci95_high": 1.346
+     },
+     "trades": 61,
+     "time_in_cash_pct": 46.0
+    }
+   },
+   "ETHUSDT": {
+    "BUY_HOLD": {
+     "total_return_pct": 309.74,
+     "cagr_pct": 18.2,
+     "max_drawdown_pct": 86.48,
+     "sharpe": 0.62,
+     "weekly_bootstrap": {
+      "mean_pct": 0.927,
+      "ci95_low": -0.078,
+      "ci95_high": 1.981
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "H-MARI-W-049": {
+     "total_return_pct": 1618.43,
+     "cagr_pct": 40.11,
+     "max_drawdown_pct": 67.96,
+     "sharpe": 0.87,
+     "weekly_bootstrap": {
+      "mean_pct": 0.984,
+      "ci95_low": 0.211,
+      "ci95_high": 1.797
+     },
+     "trades": 29,
+     "time_in_cash_pct": 47.8
+    },
+    "SMA100": {
+     "total_return_pct": 816.01,
+     "cagr_pct": 30.04,
+     "max_drawdown_pct": 73.83,
+     "sharpe": 0.75,
+     "weekly_bootstrap": {
+      "mean_pct": 0.869,
+      "ci95_low": 0.089,
+      "ci95_high": 1.7
+     },
+     "trades": 118,
+     "time_in_cash_pct": 47.1
+    },
+    "SMA125": {
+     "total_return_pct": 1382.07,
+     "cagr_pct": 37.67,
+     "max_drawdown_pct": 70.35,
+     "sharpe": 0.84,
+     "weekly_bootstrap": {
+      "mean_pct": 0.955,
+      "ci95_low": 0.2,
+      "ci95_high": 1.792
+     },
+     "trades": 77,
+     "time_in_cash_pct": 48.3
+    },
+    "SMA150": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "SMA175": {
+     "total_return_pct": 1120.16,
+     "cagr_pct": 34.53,
+     "max_drawdown_pct": 67.34,
+     "sharpe": 0.8,
+     "weekly_bootstrap": {
+      "mean_pct": 0.906,
+      "ci95_low": 0.136,
+      "ci95_high": 1.733
+     },
+     "trades": 49,
+     "time_in_cash_pct": 48.6
+    },
+    "SMA200": {
+     "total_return_pct": 1407.38,
+     "cagr_pct": 37.95,
+     "max_drawdown_pct": 75.26,
+     "sharpe": 0.84,
+     "weekly_bootstrap": {
+      "mean_pct": 0.952,
+      "ci95_low": 0.181,
+      "ci95_high": 1.757
+     },
+     "trades": 47,
+     "time_in_cash_pct": 48.6
+    }
+   }
+  },
+  "basket": {
+   "total_return_pct": 545.71,
+   "cagr_pct": 37.6,
+   "max_drawdown_pct": 50.67,
+   "sharpe": 0.9,
+   "weekly_bootstrap": {
+    "mean_pct": 0.876,
+    "ci95_low": 0.055,
+    "ci95_high": 1.775
+   },
+   "trades": 214,
+   "time_in_cash_pct": 47.6
+  },
+  "btc_t006_alt_period": {
+   "total_return_pct": 257.4,
+   "cagr_pct": 24.35,
+   "max_drawdown_pct": 45.05,
+   "sharpe": 0.74,
+   "weekly_bootstrap": {
+    "mean_pct": 0.575,
+    "ci95_low": -0.064,
+    "ci95_high": 1.243
+   },
+   "trades": 55,
+   "time_in_cash_pct": 45.4
+  },
+  "verdict": {
+   "H-MARI-R-048": "FALSIFIED",
+   "H-MARI-W-049": "FALSIFIED",
+   "H-MARI-A-047": "FALSIFIED"
+  }
+ }
+}
