@@ -36,6 +36,7 @@ class MariBot:
         self.blocked = None                       # اختیاری (فقط پژوهش): تابع (sym, ts) → فهرست ممنوعه
         self.btc_summary: dict | None = None      # وضعیت استراتژی تمرینی روند بیت‌کوین (T-006)
         self.turtle_summary: dict | None = None   # وضعیت روش لاک‌پشت‌ها (C-007)
+        self.carry_summary: dict | None = None    # کری فاندینگ تمرینی (Y-057)
 
     # ------------------------------------------------------------------ وضعیت
     def equity(self) -> float:

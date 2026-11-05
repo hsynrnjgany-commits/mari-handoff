@@ -639,6 +639,30 @@ class TestTurtleLive(unittest.TestCase):
             self.assertEqual(BtcTrend(p, mode="turtle").update(dn)[0]["to"], "CASH")
 
 
+class TestFundingCarryLive(unittest.TestCase):
+    def test_boot_entry_accrual_exit(self):
+        from mari_bot.funding_live import FundingCarry
+        from mari_bot.telegram import fmt_carry_event
+        D_ = 86_400_000
+        hi = 0.0005           # هر تسویه؛ ۳ بار در روز ≈ ۵۵٪ سالانه
+        rows = [(d * D_ + h * 8 * 3_600_000, hi) for d in range(20) for h in range(3)]
+        with tempfile.TemporaryDirectory() as tmp:
+            p = os.path.join(tmp, "c.json")
+            fc = FundingCarry(p)
+            self.assertEqual(fc.update("BTCUSDT", rows, "x", 20 * D_), [])     # شروع: فقط تصمیم، بدون بازپخش
+            self.assertTrue(fc.s["assets"]["BTCUSDT"]["pending"])
+            rows2 = rows + [(20 * D_ + h * 8 * 3_600_000, hi) for h in range(3)]
+            ev = FundingCarry(p).update("BTCUSDT", rows2, "x", 21 * D_)
+            self.assertEqual(ev[0]["to"], "ON")
+            fc = FundingCarry(p)
+            eq_on = fc.s["assets"]["BTCUSDT"]["equity"]
+            self.assertGreater(eq_on, 1000 * (1 - 0.003))                    # هزینه کسر و فاندینگ روز افزوده
+            neg = rows2 + [(d * D_ + h * 8 * 3_600_000, -0.002) for d in range(21, 30) for h in range(3)]
+            evs = FundingCarry(p).update("BTCUSDT", neg, "x", 30 * D_)
+            self.assertIn("OFF", [e["to"] for e in evs])
+            self.assertIn(LOCK_LINE, fmt_carry_event(evs[-1]))
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

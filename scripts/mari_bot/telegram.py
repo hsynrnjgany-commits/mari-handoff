@@ -133,6 +133,18 @@ def fmt_turtle_event(ev: dict, summ: dict | None = None) -> str:
     return _end(lines)
 
 
+def fmt_carry_event(ev: dict) -> str:
+    name = ev["sym"].replace("USDT", "")
+    if ev["to"] == "ON":
+        head = f"💵 <b>کری فاندینگ {name}: ورود تمرینی</b>"
+        why = "میانگین ۷ روزهٔ فاندینگ سالانه‌شده از ۱۰٪ بالاتر رفت (خرید اسپات + فروش دائمی، روی کاغذ)."
+    else:
+        head = f"💵 <b>کری فاندینگ {name}: خروج تمرینی</b>"
+        why = "میانگین ۷ روزهٔ فاندینگ زیر صفر آمد."
+    return _end([head, f"چرا: {why}", f"سرمایهٔ فرضی: {fa(ev['equity'])} تتر",
+                 "یادآوری: مدل «پوشش کامل» فرض می‌کند؛ خطر لیکویید شدن، اختلاف قیمت و مسدودی حساب در آن نیست."])
+
+
 def fmt_daily_simple(bot, monday: bool = False) -> str:
     """گزارش روزانهٔ ساده: فقط آنچه مهم است."""
     b = getattr(bot, "btc_summary", None)
@@ -143,6 +155,14 @@ def fmt_daily_simple(bot, monday: bool = False) -> str:
                   f"وضعیت: {pos} — قیمت {fa(b['close'], 0)} — میانگین ۱۵۰روزه {fa(b['sma150'], 0)}",
                   f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ "
                   f"(نگه‌داری سادهٔ BTC: {fa(b['btc_hold_return_pct'], sign=True)}٪)", ""]
+    cs = getattr(bot, "carry_summary", None) or {}
+    if cs:
+        parts = []
+        for sym, x in cs.items():
+            st = "فعال" if x["in_position"] else "خاموش"
+            parts.append(f"{sym.replace('USDT', '')}: {st}، {fa(x['return_pct'], sign=True)}٪ "
+                         f"(فاندینگ ۷روزه {fa(x['apr7_pct'], 1)}٪ سالانه)")
+        lines += ["💵 <b>کری فاندینگ (تمرینی، خوش‌بینانه)</b>", " — ".join(parts), ""]
     tt = getattr(bot, "turtle_summary", None)
     if tt and tt.get("position"):
         lines += ["🐢 <b>روش لاک‌پشت‌ها (دومین روش قبول‌شده)</b>",

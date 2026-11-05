@@ -16,7 +16,9 @@ from .data import LAST_TICKER, DataError, SourcePicker, drop_unclosed, fetch_quo
 from .engine import MariBot
 from .ledger import Ledger
 from .btc_trend import DAY_MS, BtcTrend
-from .telegram import Telegram, fmt_btc_event, fmt_channel_event, fmt_event, fmt_health, fmt_turtle_event
+from .funding_live import FundingCarry, fetch_recent
+from .telegram import (Telegram, fmt_btc_event, fmt_carry_event, fmt_channel_event, fmt_event, fmt_health,
+                       fmt_turtle_event)
 
 LEDGER_URL = "https://github.com/hsynrnjgany-commits/mari-handoff/blob/mari-bot-state/ledger.jsonl"
 from .trend import SymbolSeries
@@ -59,6 +61,7 @@ class LiveRunner:
         self.tg = Telegram(os.path.join(state_dir, "telegram.json"))
         self.btc = BtcTrend(os.path.join(state_dir, "btc_trend.json"))
         self.turtle = BtcTrend(os.path.join(state_dir, "btc_turtle.json"), mode="turtle")
+        self.carry = FundingCarry(os.path.join(state_dir, "funding_carry.json"))
         self.bot.btc_summary = self.btc.summary() if self.btc.s["position"] else None
 
     # ---------------------------------------------------------------- انتخاب نمادها
@@ -137,6 +140,20 @@ class LiveRunner:
             self.bot.turtle_summary = self.turtle.summary()
         except DataError as e:
             self.ledger.write("BTC_TREND_DATA_FAIL", error=str(e)[:200])
+        try:
+            for sym in ("BTCUSDT", "ETHUSDT"):
+                try:
+                    source, rows = fetch_recent(sym, now_ms)
+                except DataError as e:
+                    self.ledger.write("FUNDING_DATA_FAIL", symbol=sym, error=str(e)[:300])
+                    continue
+                for ev in self.carry.update(sym, rows, source, now_ms):
+                    self.ledger.write("CARRY_SWITCH", ts=ev["day"], source=source,
+                                      **{k: v for k, v in ev.items() if k != "day"})
+                    self.tg.broadcast(fmt_carry_event(ev))
+            self.bot.carry_summary = self.carry.summary()
+        except Exception as e:  # noqa: BLE001 — کری فاندینگ نباید چرخهٔ اصلی را بخواباند
+            self.ledger.write("FUNDING_ERROR", error=f"{type(e).__name__}: {str(e)[:200]}")
         for ev in btc_events:
             self.ledger.write("BTC_TREND_SWITCH", ts=ev["t"], **{k: v for k, v in ev.items() if k != "t"})
         self.tg.check()
@@ -164,7 +181,8 @@ class LiveRunner:
         for v in self.bot.snapshot.values():
             states[v["state"]] = states.get(v["state"], 0) + 1
         market["trend_states_scanned"] = dict(sorted(states.items()))
-        summary = {"btc_trend": self.bot.btc_summary, "btc_turtle": getattr(self.bot, "turtle_summary", None), "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+        summary = {"btc_trend": self.bot.btc_summary, "btc_turtle": getattr(self.bot, "turtle_summary", None),
+                   "funding_carry": getattr(self.bot, "carry_summary", None), "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}
