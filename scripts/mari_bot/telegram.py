@@ -459,15 +459,18 @@ class Telegram:
 
 
 # ---------------------------------------------------------------- خلاصهٔ پژوهش برای صاحب ربات
+_VERDICTS = ("SUPPORTED_IN_TEST_RANGE", "FALSIFIED", "INCONCLUSIVE")
+
+
 def _verdicts(obj, out: dict) -> dict:
     """همهٔ حکم‌های «H-MARI-…» را از هر ساختار گزارشی بیرون می‌کشد."""
     if isinstance(obj, dict):
         for k, v in obj.items():
             if isinstance(k, str) and k.startswith("H-MARI"):
-                if isinstance(v, str) and v.isupper():
-                    out.setdefault(k, v)
-                elif isinstance(v, dict) and isinstance(v.get("verdict"), str):
-                    out.setdefault(k, v["verdict"])
+                if isinstance(v, str) and v in _VERDICTS:
+                    out[k] = v
+                elif isinstance(v, dict) and v.get("verdict") in _VERDICTS:
+                    out[k] = v["verdict"]
             _verdicts(v, out)
     elif isinstance(obj, list):
         for v in obj:

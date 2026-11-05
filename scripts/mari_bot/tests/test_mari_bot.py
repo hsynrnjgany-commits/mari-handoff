@@ -729,7 +729,8 @@ class ResearchNotifyTests(unittest.TestCase):
         from mari_bot.telegram import fmt_research
         d = tempfile.mkdtemp()
         with open(os.path.join(d, "a_report.json"), "w", encoding="utf-8") as fh:
-            json.dump({"results": {"verdict": {"H-MARI-F-017": "FALSIFIED"}},
+            json.dump({"hypotheses": {"H-MARI-F-017": "ادعای IC > ۰ در CI95 و BTC بالای SMA150"},
+                       "results": {"verdict": {"H-MARI-F-017": "FALSIFIED"}},
                        "H-MARI-X-1": {"verdict": "SUPPORTED_IN_TEST_RANGE"}}, fh)
         with mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "123:SECRET"}):
             msg = fmt_research("funding", d, True)
