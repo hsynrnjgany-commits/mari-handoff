@@ -834,5 +834,24 @@ class Ideas3Tests(unittest.TestCase):
         self.assertEqual(w, {"X": 1.0})
 
 
+class Ideas4Tests(unittest.TestCase):
+    def test_minervini_and_holy_grail_run_causally(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import holy_grail_for, minervini_for, run_ideas4
+        d = IdeasTests()._d()
+        bars = d["BTCUSDT"]
+        a, b = bars[400]["t"], bars[-1]["t"]
+        r = run_ideas4(d, a, b)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-M-028", "H-MARI-R-029"})
+        # بدون نگاه به آینده: تغییر دادهٔ پس از روز ۸۰۰ نتیجهٔ تا روز ۸۰۰ را عوض نمی‌کند
+        cut = bars[800]["t"]
+        d2 = {"BTCUSDT": [dict(x, c=x["c"] * (3 if x["t"] > cut else 1), h=x["h"] * (3 if x["t"] > cut else 1),
+                               l=x["l"] * (3 if x["t"] > cut else 1)) for x in bars]}
+        for f in (minervini_for, holy_grail_for):
+            s1, c1, _ = run_weights({"BTCUSDT": bars}, ["BTCUSDT"], a, cut, f("BTCUSDT"))
+            s2, c2, _ = run_weights(d2, ["BTCUSDT"], a, cut, f("BTCUSDT"))
+            self.assertEqual(c1, c2)
+
+
 if __name__ == "__main__":
     unittest.main()

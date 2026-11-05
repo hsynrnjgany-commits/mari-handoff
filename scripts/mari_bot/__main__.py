@@ -160,6 +160,12 @@ def cmd_ideas3(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas4(a):
+    from .research import run_ideas4_research
+    r = run_ideas4_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -236,6 +242,10 @@ def main(argv=None):
     i3.add_argument("--start", default="2018-06-01")
     i3.add_argument("--out", default="research_out")
     i3.set_defaults(fn=cmd_ideas3)
+    i4 = sub.add_parser("ideas4", help="صف ایده‌ها: مینروینی و راشکی")
+    i4.add_argument("--start", default="2018-06-01")
+    i4.add_argument("--out", default="research_out")
+    i4.set_defaults(fn=cmd_ideas4)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)

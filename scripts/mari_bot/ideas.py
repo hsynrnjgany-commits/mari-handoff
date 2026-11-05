@@ -241,3 +241,69 @@ def run_ideas3(daily: dict, start_ms: int, end_ms: int) -> dict:
             ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
         out[sym] = {"T-006": t6, "H-MARI-L-026": lw, "H-MARI-B-027": bb}
     return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}
+
+
+# ---------------------------------------------------------------- ایده‌های ۷ و ۸ (ثبت 2026-11-05T06:10Z)
+IDEA4_HYPOTHESES = {
+    "H-MARI-M-028": "قالب روند مینروینی (SMA50>150>200، SMA200 صعودی، ≥۲۵٪ بالای کف و ≤۲۵٪ زیر سقف سالانه): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+    "H-MARI-R-029": "جام مقدس راشکی (ADX>30 صعودی، پولبک به EMA20، ورود با بستهٔ بالای سقف پولبک): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+}
+
+
+def minervini_for(sym):
+    def fn(k, ctx):
+        st, c = ctx["state"], ctx["c"][sym]
+        if k < 365:
+            return None
+        s50, s150, s200 = _sma(c, k, 50), _sma(c, k, 150), _sma(c, k, 200)
+        s200_ago = _sma(c, k - 20, 200)
+        lo, hi = min(ctx["l"][sym][k - 364: k + 1]), max(ctx["h"][sym][k - 364: k + 1])
+        ok = (c[k] > s50 > s150 > s200 and s200 > s200_ago and c[k] >= 1.25 * lo and c[k] >= 0.75 * hi)
+        if ok != st.get("in"):
+            st["in"] = ok
+            return {sym: 1.0} if ok else {}
+        return None
+    return fn
+
+
+def holy_grail_for(sym):
+    from .indicators import adx, ema
+
+    def fn(k, ctx):
+        st, c, h, l = ctx["state"], ctx["c"][sym], ctx["h"][sym], ctx["l"][sym]
+        if "adx" not in st:                       # هر دو شاخص بازگشتی‌اند: مقدار k فقط به دادهٔ ≤ k بستگی دارد
+            bars = [{"h": h[i], "l": l[i], "c": c[i]} for i in range(len(c))]
+            st["adx"], st["ema"] = adx(bars, 14), ema(c, 20)
+        a, e = st["adx"], st["ema"]
+        if k < 40 or a[k] != a[k] or e[k] != e[k]:
+            return None
+        if st.get("in"):
+            if c[k] < st["stop"] or c[k] > st["target"]:
+                st["in"] = False
+                return {}
+            return None
+        strong = a[k] > 30 and a[k - 5] == a[k - 5] and a[k] > a[k - 5]
+        if strong and l[k] <= e[k] and c[k - 1] > e[k - 1]:
+            st["pb"] = {"k": k, "high": h[k], "low": l[k]}
+        pb = st.get("pb")
+        if pb and 0 < k - pb["k"] <= 5 and c[k] > pb["high"]:
+            st.update({"in": True, "stop": pb["low"], "target": max(h[k - 20: k])})
+            st["pb"] = None
+            return {sym: 1.0}
+        return None
+    return fn
+
+
+def run_ideas4(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights
+    out, ok = {}, {"H-MARI-M-028": True, "H-MARI-R-029": True}
+    for sym in ("BTCUSDT", "ETHUSDT"):
+        d = {sym: daily[sym]}
+        t6, _, _ = run_weights(d, [sym], start_ms, end_ms, t006_for(sym))
+        mv, _, _ = run_weights(d, [sym], start_ms, end_ms, minervini_for(sym))
+        hg, _, _ = run_weights(d, [sym], start_ms, end_ms, holy_grail_for(sym))
+        s6, m6 = t6.get("sharpe") or 9, t6.get("max_drawdown_pct", 0)
+        for hid, st in (("H-MARI-M-028", mv), ("H-MARI-R-029", hg)):
+            ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
+        out[sym] = {"T-006": t6, "H-MARI-M-028": mv, "H-MARI-R-029": hg}
+    return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}
