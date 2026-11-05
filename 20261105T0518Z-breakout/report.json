@@ -1,0 +1,695 @@
+{
+ "falsified_if": "بازده خالص کل ≤ ۰ یا کران پایین بازهٔ اطمینان ۹۵٪ میانگین هر معامله < ۰ یا ضریب سود < ۱ در هزینهٔ پایه",
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-05T05:18:42+00:00",
+ "period": {
+  "from": "2025-05-12T00:00:00+00:00",
+  "to": "2025-11-08T00:00:00+00:00",
+  "months": 6
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines (public, read-only)",
+ "universe": {
+  "requested_top": 60,
+  "used": 44,
+  "failed": [],
+  "quality_failed": [
+   "BEBUSDT",
+   "CRCLBUSDT",
+   "GOOGLBUSDT",
+   "HYPEUSDT",
+   "INTCBUSDT",
+   "KORUBUSDT",
+   "MSTRBUSDT",
+   "MUBUSDT",
+   "NVDABUSDT",
+   "QQQBUSDT",
+   "SKHYBUSDT",
+   "SNDKBUSDT",
+   "SNXXBUSDT",
+   "SOXLBUSDT",
+   "SPCXBUSDT",
+   "TSLABUSDT"
+  ]
+ },
+ "known_biases": [
+  "SURVIVORSHIP: نمادها با حجم امروز انتخاب شدند؛ نمادهای حذف‌شده در گذشته غایب‌اند (به نفع نتیجه).",
+  "VENUE: تاریخچه از بایننس است، اجرای زنده از تووبیت؛ قیمت‌ها نزدیک‌اند اما یکسان نیستند.",
+  "MULTIPLE_TESTS: تعداد فرضیه‌های آزموده‌شده تا این اجرا: 3."
+ ],
+ "baseline": {
+  "btc_buy_hold_pct": -0.75,
+  "equal_weight_buy_hold_pct": 18.27
+ },
+ "results": {
+  "H-MARI-B-001": {
+   "statement": "ورود در شکست سقف ۲۰ کندل در روند A/B با حجم بالا، همراه با مدیریت خروج پله‌ای دکترین، پس از هزینه‌های فرضی بازده مثبت دارد.",
+   "status_before": "FALSIFIED on 2026-05-08..2026-11-04 (run 20261104T2009Z) — اینجا فقط گروه کنترل است",
+   "config_sha": "da7e02f14273dc44",
+   "verdict": "FALSIFIED",
+   "full_period": {
+    "trades": 414,
+    "win_rate_pct": 32.6,
+    "profit_factor": 0.9,
+    "net_return_pct": -6.875,
+    "max_drawdown_pct": 19.272,
+    "avg_winner_pct": 3.88,
+    "avg_loser_pct": -2.123,
+    "profit_capture_ratio": 0.374,
+    "avg_giveback_pct": 5.022,
+    "early_exit_rate_pct": 19.3,
+    "avg_held_h": 10.9,
+    "exit_reasons": {
+     "STOP_LOSS": 267,
+     "TRAIL_STOP": 145,
+     "EMERGENCY_CRASH": 2
+    },
+    "end_equity": 931.25,
+    "bootstrap": {
+     "mean_pct": -0.165,
+     "ci95_low": -0.52,
+     "ci95_high": 0.221
+    },
+    "open_at_end": 5
+   },
+   "cost_sensitivity": {
+    "fee_side_0.00pct": {
+     "trades": 414,
+     "net_return_pct": 9.308,
+     "profit_factor": 1.06,
+     "win_rate_pct": 34.1,
+     "max_drawdown_pct": 14.681
+    },
+    "fee_side_0.05pct": {
+     "trades": 413,
+     "net_return_pct": 0.365,
+     "profit_factor": 0.97,
+     "win_rate_pct": 33.4,
+     "max_drawdown_pct": 16.24
+    },
+    "fee_side_0.10pct": {
+     "trades": 414,
+     "net_return_pct": -6.875,
+     "profit_factor": 0.9,
+     "win_rate_pct": 32.6,
+     "max_drawdown_pct": 19.272
+    },
+    "fee_side_0.20pct": {
+     "trades": 410,
+     "net_return_pct": -19.196,
+     "profit_factor": 0.79,
+     "win_rate_pct": 31.2,
+     "max_drawdown_pct": 27.809
+    },
+    "fee_side_0.30pct": {
+     "trades": 404,
+     "net_return_pct": -34.706,
+     "profit_factor": 0.63,
+     "win_rate_pct": 29.5,
+     "max_drawdown_pct": 40.887
+    }
+   },
+   "folds": [
+    {
+     "from": "2025-05-12",
+     "to": "2025-06-11",
+     "btc_return_pct": 5.48,
+     "regime": "FLAT",
+     "trades": 67,
+     "net_return_pct": -9.123,
+     "profit_factor": 0.38,
+     "win_rate_pct": 22.4,
+     "max_drawdown_pct": 17.326
+    },
+    {
+     "from": "2025-06-11",
+     "to": "2025-07-11",
+     "btc_return_pct": 4.82,
+     "regime": "FLAT",
+     "trades": 62,
+     "net_return_pct": 4.906,
+     "profit_factor": 0.91,
+     "win_rate_pct": 30.6,
+     "max_drawdown_pct": 5.982
+    },
+    {
+     "from": "2025-07-11",
+     "to": "2025-08-10",
+     "btc_return_pct": 0.64,
+     "regime": "FLAT",
+     "trades": 73,
+     "net_return_pct": 4.605,
+     "profit_factor": 0.97,
+     "win_rate_pct": 35.6,
+     "max_drawdown_pct": 8.85
+    },
+    {
+     "from": "2025-08-10",
+     "to": "2025-09-09",
+     "btc_return_pct": -4.13,
+     "regime": "FLAT",
+     "trades": 63,
+     "net_return_pct": -3.706,
+     "profit_factor": 0.7,
+     "win_rate_pct": 33.3,
+     "max_drawdown_pct": 10.194
+    },
+    {
+     "from": "2025-09-09",
+     "to": "2025-10-09",
+     "btc_return_pct": 9.61,
+     "regime": "FLAT",
+     "trades": 75,
+     "net_return_pct": -6.214,
+     "profit_factor": 0.65,
+     "win_rate_pct": 28.0,
+     "max_drawdown_pct": 8.1
+    },
+    {
+     "from": "2025-10-09",
+     "to": "2025-11-08",
+     "btc_return_pct": -16.19,
+     "regime": "BEAR",
+     "trades": 59,
+     "net_return_pct": 6.543,
+     "profit_factor": 1.19,
+     "win_rate_pct": 39.0,
+     "max_drawdown_pct": 6.747
+    }
+   ],
+   "tail_removal_top5pct": {
+    "removed": 20,
+    "net_pnl_all": -97.7,
+    "net_pnl_without_top": -471.94,
+    "net_pct_without_top": -47.19
+   }
+  },
+  "H-MARI-B-003": {
+   "statement": "همان H-001، اما ارزهای ۲۰٪ پایین امتیاز الگوی P-019 (علامت‌های منجمد، دوشنبه‌ها) خریده نمی‌شوند.",
+   "status_before": "ثبت پیشاپیش 2026-11-05T05:20Z؛ دورهٔ دست‌نخورده 2025-05-09..2025-11-08. قبول فقط اگر معیار H-001 برقرار باشد و بازده خالص از گروه کنترل H-001 بیشتر باشد.",
+   "config_sha": "da7e02f14273dc44",
+   "verdict": "FALSIFIED",
+   "full_period": {
+    "trades": 372,
+    "win_rate_pct": 29.0,
+    "profit_factor": 0.68,
+    "net_return_pct": -24.981,
+    "max_drawdown_pct": 32.086,
+    "avg_winner_pct": 3.394,
+    "avg_loser_pct": -2.023,
+    "profit_capture_ratio": 0.359,
+    "avg_giveback_pct": 4.373,
+    "early_exit_rate_pct": 19.6,
+    "avg_held_h": 10.2,
+    "exit_reasons": {
+     "STOP_LOSS": 252,
+     "TRAIL_STOP": 120
+    },
+    "end_equity": 750.19,
+    "bootstrap": {
+     "mean_pct": -0.45,
+     "ci95_low": -0.777,
+     "ci95_high": -0.089
+    },
+    "open_at_end": 5
+   },
+   "cost_sensitivity": {
+    "fee_side_0.00pct": {
+     "trades": 382,
+     "net_return_pct": -9.288,
+     "profit_factor": 0.86,
+     "win_rate_pct": 31.9,
+     "max_drawdown_pct": 20.203
+    },
+    "fee_side_0.05pct": {
+     "trades": 387,
+     "net_return_pct": -16.379,
+     "profit_factor": 0.78,
+     "win_rate_pct": 31.0,
+     "max_drawdown_pct": 24.574
+    },
+    "fee_side_0.10pct": {
+     "trades": 372,
+     "net_return_pct": -24.981,
+     "profit_factor": 0.68,
+     "win_rate_pct": 29.0,
+     "max_drawdown_pct": 32.086
+    },
+    "fee_side_0.20pct": {
+     "trades": 366,
+     "net_return_pct": -34.001,
+     "profit_factor": 0.58,
+     "win_rate_pct": 28.4,
+     "max_drawdown_pct": 40.053
+    },
+    "fee_side_0.30pct": {
+     "trades": 353,
+     "net_return_pct": -40.791,
+     "profit_factor": 0.51,
+     "win_rate_pct": 26.3,
+     "max_drawdown_pct": 46.056
+    }
+   },
+   "folds": [
+    {
+     "from": "2025-05-12",
+     "to": "2025-06-11",
+     "btc_return_pct": 5.48,
+     "regime": "FLAT",
+     "trades": 65,
+     "net_return_pct": -14.532,
+     "profit_factor": 0.21,
+     "win_rate_pct": 18.5,
+     "max_drawdown_pct": 21.964
+    },
+    {
+     "from": "2025-06-11",
+     "to": "2025-07-11",
+     "btc_return_pct": 4.82,
+     "regime": "FLAT",
+     "trades": 50,
+     "net_return_pct": 0.403,
+     "profit_factor": 0.73,
+     "win_rate_pct": 24.0,
+     "max_drawdown_pct": 7.636
+    },
+    {
+     "from": "2025-07-11",
+     "to": "2025-08-10",
+     "btc_return_pct": 0.64,
+     "regime": "FLAT",
+     "trades": 73,
+     "net_return_pct": -1.512,
+     "profit_factor": 0.65,
+     "win_rate_pct": 32.9,
+     "max_drawdown_pct": 8.107
+    },
+    {
+     "from": "2025-08-10",
+     "to": "2025-09-09",
+     "btc_return_pct": -4.13,
+     "regime": "FLAT",
+     "trades": 62,
+     "net_return_pct": -5.163,
+     "profit_factor": 0.7,
+     "win_rate_pct": 32.3,
+     "max_drawdown_pct": 10.228
+    },
+    {
+     "from": "2025-09-09",
+     "to": "2025-10-09",
+     "btc_return_pct": 9.61,
+     "regime": "FLAT",
+     "trades": 70,
+     "net_return_pct": -8.59,
+     "profit_factor": 0.41,
+     "win_rate_pct": 25.7,
+     "max_drawdown_pct": 9.882
+    },
+    {
+     "from": "2025-10-09",
+     "to": "2025-11-08",
+     "btc_return_pct": -16.19,
+     "regime": "BEAR",
+     "trades": 45,
+     "net_return_pct": -0.037,
+     "profit_factor": 0.77,
+     "win_rate_pct": 24.4,
+     "max_drawdown_pct": 7.294
+    }
+   ],
+   "tail_removal_top5pct": {
+    "removed": 18,
+    "net_pnl_all": -273.14,
+    "net_pnl_without_top": -549.79,
+    "net_pct_without_top": -54.98
+   },
+   "blacklist": {
+    "weeks": 34,
+    "avg_blocked": 7.0
+   }
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 4520,
+   "sha": "8f3f9c08305cb8ea",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "ETHUSDT": {
+   "bars": 4520,
+   "sha": "888f8d6724bf3b4c",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "SOLUSDT": {
+   "bars": 4520,
+   "sha": "f596bc4ac33f331c",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "ZECUSDT": {
+   "bars": 4520,
+   "sha": "71c66838bd5c3328",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "XRPUSDT": {
+   "bars": 4520,
+   "sha": "644eea473917e358",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "BNBUSDT": {
+   "bars": 4520,
+   "sha": "684b0c3ce54fb6a4",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "NEARUSDT": {
+   "bars": 4520,
+   "sha": "6b5c40345a360ad8",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "PEPEUSDT": {
+   "bars": 4520,
+   "sha": "ff4c78825147dbad",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "UNIUSDT": {
+   "bars": 4520,
+   "sha": "84e88c420c5f37ca",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "SNDKBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "SOXLBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "SUIUSDT": {
+   "bars": 4520,
+   "sha": "42dea56e55fc5b68",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "TRUMPUSDT": {
+   "bars": 4520,
+   "sha": "a48ead9ec513991b",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "DOGEUSDT": {
+   "bars": 4520,
+   "sha": "18ed346003a86db1",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "HYPEUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "ENAUSDT": {
+   "bars": 4520,
+   "sha": "bffd2539580dc385",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "SPCXBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "TRXUSDT": {
+   "bars": 4520,
+   "sha": "c8273b4650b2d8bb",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "CRCLBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "LINKUSDT": {
+   "bars": 4520,
+   "sha": "0b486098e20a59ef",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "WLDUSDT": {
+   "bars": 4520,
+   "sha": "b8f6dfa872f414bc",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "MUBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "AAVEUSDT": {
+   "bars": 4520,
+   "sha": "71230448c84046bf",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "GOOGLBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "ADAUSDT": {
+   "bars": 4520,
+   "sha": "6d80c2f86c386f77",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "PUMPUSDT": {
+   "bars": 1380,
+   "sha": "7b45cc02468c13dc",
+   "first": 1757592000000,
+   "last": 1762556400000
+  },
+  "MSTRBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "AVAXUSDT": {
+   "bars": 4520,
+   "sha": "9ee7d0693bf0aabf",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "QNTUSDT": {
+   "bars": 4520,
+   "sha": "f73328f87912f659",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "TAOUSDT": {
+   "bars": 4520,
+   "sha": "e04b85eedbe1d6aa",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "SKHYBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "BMTUSDT": {
+   "bars": 4520,
+   "sha": "614e0fce33291b28",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "LTCUSDT": {
+   "bars": 4520,
+   "sha": "23e35efa62b9ae0b",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "KORUBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "INTCBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "BEBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "HUMAUSDT": {
+   "bars": 3971,
+   "sha": "bea56a32f648cc38",
+   "first": 1748264400000,
+   "last": 1762556400000
+  },
+  "ONDOUSDT": {
+   "bars": 4520,
+   "sha": "bcf240e934104f91",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "NVDABUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "INJUSDT": {
+   "bars": 4520,
+   "sha": "182fa49574de1ba1",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "ARBUSDT": {
+   "bars": 4520,
+   "sha": "7bf7fa388207f478",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "CELOUSDT": {
+   "bars": 4520,
+   "sha": "4d4f896d78143db7",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "BEAMXUSDT": {
+   "bars": 4520,
+   "sha": "e5110f19cca9e5c8",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "QQQBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "XLMUSDT": {
+   "bars": 4520,
+   "sha": "b34c3126c103e139",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "BCHUSDT": {
+   "bars": 4520,
+   "sha": "41f96b3e4ca4734a",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "LSKUSDT": {
+   "bars": 4520,
+   "sha": "a492bc6edd04e157",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "FETUSDT": {
+   "bars": 4520,
+   "sha": "1e488d53bc3b695c",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "RUNEUSDT": {
+   "bars": 4520,
+   "sha": "204703bd3b9f267f",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "ZROUSDT": {
+   "bars": 4520,
+   "sha": "e7856a5db9019633",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "WLFIUSDT": {
+   "bars": 1619,
+   "sha": "42ada4264fa71e7d",
+   "first": 1756731600000,
+   "last": 1762556400000
+  },
+  "TSLABUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "TONUSDT": {
+   "bars": 4520,
+   "sha": "8f4a72831d591cf3",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "ASTERUSDT": {
+   "bars": 780,
+   "sha": "70d139d6d4d22321",
+   "first": 1759752000000,
+   "last": 1762556400000
+  },
+  "HBARUSDT": {
+   "bars": 4520,
+   "sha": "e49f42a1553a3e45",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "FILUSDT": {
+   "bars": 4520,
+   "sha": "2720df7761222d6e",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "SNXXBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "XPLUSDT": {
+   "bars": 1043,
+   "sha": "6ca94f9bb6a9c01e",
+   "first": 1758805200000,
+   "last": 1762556400000
+  },
+  "TIAUSDT": {
+   "bars": 4520,
+   "sha": "2954ad38b499aaf1",
+   "first": 1746288000000,
+   "last": 1762556400000
+  },
+  "POLUSDT": {
+   "bars": 4520,
+   "sha": "40da1c3146bd7b52",
+   "first": 1746288000000,
+   "last": 1762556400000
+  }
+ }
+}
