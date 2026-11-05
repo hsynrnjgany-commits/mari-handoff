@@ -1,0 +1,67 @@
+diff -ruN a/src/lib/paper/cursor.ts b/src/lib/paper/cursor.ts
+--- a/src/lib/paper/cursor.ts	1970-01-01 03:30:00.000000000 +0330
++++ b/src/lib/paper/cursor.ts	2026-11-05 08:14:43.088123568 +0330
+@@ -0,0 +1,17 @@
++// FIX-RETRO-01 — نشانگر ارزیابی: هر کندل فقط یک بار، با حد ضررِ «همان لحظه»، بررسی شود.
++// باگ قبلی: هر دور پایش همهٔ کندل‌های پس از ورود را از اول با حد ضررِ «فعلی» (که شاید بعداً به سربه‌سر/تریلینگ ارتقا یافته)
++// دوباره بررسی می‌کرد؛ پس سطحی که بعداً تعیین شده بود روی کندل‌های گذشته اعمال می‌شد (اعمال عطف‌به‌ماسبق).
++// اصل ثابت: READ ONLY | PAPER ONLY | NO LIVE ORDERS
++
++export interface CursorFields {
++  evalCursorMs?: number | null;
++  lastCheck: number | null;
++}
++
++/** نقطهٔ شروع ارزیابی این دور. کندل‌هایی با زمان بسته‌شدن ≤ این مقدار قبلاً ارزیابی شده‌اند و رد می‌شوند.
++ *  معاملهٔ باز قدیمی بدون نشانگر: هر کندلی که تا lastCheck بسته شده بود، در همان دور ارزیابی شده است. */
++export function evalCursorStart(t: CursorFields, intervalMs: number): number | null {
++  if (typeof t.evalCursorMs === "number") return t.evalCursorMs;
++  if (typeof t.lastCheck === "number") return Math.floor(t.lastCheck / intervalMs) * intervalMs;
++  return null;
++}
+diff -ruN a/src/lib/paper/engine.ts b/src/lib/paper/engine.ts
+--- a/src/lib/paper/engine.ts	2026-11-05 08:14:43.075194207 +0330
++++ b/src/lib/paper/engine.ts	2026-11-05 08:14:43.088810699 +0330
+@@ -19,6 +19,7 @@
+ import { readStore, writeStore, trimStore } from "./store";
+ import { V2_PARAMS, computeAtrPct, computeV2Stops, v2EntryFilter, positionSizeUsd } from "./v2";
+ import { grossPct, netPctWithCost, roundTripCostPct, BREAKEVEN_EPS } from "./pnl";
++import { evalCursorStart } from "./cursor";
+ import { pushDecision, bePromotion, trailPromotion, openDecision } from "./decisionlog";
+ 
+ const { tpPct, slPct, maxHoldMs, cooldownMs, interval, sourceVersion } = PAPER_PARAMS;
+@@ -67,6 +68,7 @@
+ 
+ /** ارزیابی یک معامله باز با کندل‌های بسته‌شده پس از ورود — قابل بازتولید */
+ function evaluateTrade(t: PaperTrade, candles: KlinePoint[], now: number): void {
++  const cursor = evalCursorStart(t, intervalMs); // FIX-RETRO-01
+   for (const k of candles) {
+     if (t.status !== "OPEN") return;
+     if (!k.closed) {
+@@ -75,6 +77,7 @@
+     }
+     const ct = closeTimeMs(k);
+     if (ct <= t.entryTime) continue; // کندل‌های قبل یا هم‌زمان تصمیم — استفاده نمی‌شوند (بدون نشت آینده)
++    if (cursor !== null && ct <= cursor) continue; // FIX-RETRO-01: این کندل قبلاً با حد ضرر همان لحظه ارزیابی شده
+     t.lastPrice = k.close;
+     t.lastCheck = now;
+     if (t.side === "LONG") {
+@@ -114,6 +117,7 @@
+       t.maePct = Math.min(t.maePct, sidePnl("SHORT", t.entryPrice, k.high));
+       if (t.slBasis === "ATR") updateV2StopsShort(t, k);
+     }
++    t.evalCursorMs = ct; // FIX-RETRO-01: این کندل بدون خروج ارزیابی شد
+   }
+   // پایان مهلت نگهداری — خروج با قیمت آخرین کندل بسته‌شده
+   if (t.status === "OPEN" && now - t.entryTime >= maxHoldMs) {
+diff -ruN a/src/lib/paper/types.ts b/src/lib/paper/types.ts
+--- a/src/lib/paper/types.ts	2026-11-05 08:14:43.074834607 +0330
++++ b/src/lib/paper/types.ts	2026-11-05 08:14:43.088014429 +0330
+@@ -36,6 +36,7 @@
+   exitReason: PaperExitReason | null;
+   realizedPnlPct: number | null; // بازده بسته‌شده پس از کسر کارمزد فرضی
+   costPctApplied?: number; // هزینه کل رفت‌وبرگشت (کارمزد+لغزش) که لحظهٔ بسته‌شدن اعمال شد؛ نبودنش = معامله قدیمی با کارمزد ۰.۱٪
++  evalCursorMs?: number | null; // FIX-RETRO-01: زمان بسته‌شدن آخرین کندلی که ارزیابی شد — هر کندل فقط یک بار و با حد ضرر همان لحظه بررسی می‌شود
+   /** LOG-01: شواهد لحظهٔ خروج — کندلی که خروج را فعال کرد، سطح حد ضرر/سودِ لحظه، و زمان دور پایش؛ برای بازپخش و ممیزی مستقل. معاملات قدیمی این فیلد را ندارند. */
+   exitEvidence?: {
+     candleOpenMs: number; // زمان باز شدن کندل محرک

@@ -8,13 +8,13 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا)"
+        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان) یا ideas / ideas2 / ideas3 / ideas4 / ideas5 / ideas6 / ideas7 / ideas8 / ideas9 / ideas10 / ideas11 / ideas12 / ideas13 (صف ایده‌ها) یا oi (جهش موقعیت‌های باز)"
         default: "breakout"
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
         default: "5"
       variants:
-        description: "فقط momentum: نسخه‌ها، جداشده با کاما (خالی = M-003,M-004)"
+        description: "momentum: نسخه‌ها (خالی = M-003,M-004) — oi: پوشه‌های نمونه در mari-research، جداشده با کاما"
         default: ""
       start_date:
         description: "فقط momentum: شروع دوره YYYY-MM-DD (خالی = اکنون منهای years)"
@@ -65,6 +65,90 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
+          if [ "${{ inputs.kind }}" = "oi" ] || [ "${{ inputs.kind }}" = "oi43" ]; then
+            SAMPLES=""
+            for d in $(echo "${{ inputs.variants }}" | tr ',' ' '); do SAMPLES="$SAMPLES${SAMPLES:+,}../out-wt/$d/trades.json"; done
+            POOL=""; [ "${{ inputs.kind }}" = "oi43" ] && POOL="--pooled"
+            python -m mari_bot oi --samples "$SAMPLES" $POOL --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas13" ]; then
+            python -m mari_bot ideas13 --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas12" ]; then
+            python -m mari_bot ideas12 --start "${{ inputs.start_date || '2017-09-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas11" ]; then
+            python -m mari_bot ideas11 --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas10" ]; then
+            python -m mari_bot ideas10 --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas9" ]; then
+            python -m mari_bot ideas9 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas8" ]; then
+            python -m mari_bot ideas8 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "p044" ]; then
+            python -m mari_bot p044 --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas7" ]; then
+            python -m mari_bot ideas7 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "sessions" ]; then
+            python -m mari_bot sessions --start "${{ inputs.start_date || '2021-01-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "market" ]; then
+            python -m mari_bot market --start "${{ inputs.start_date || '2021-01-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "replication" ]; then
+            python -m mari_bot replication --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas6" ]; then
+            python -m mari_bot ideas6 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas5" ]; then
+            python -m mari_bot ideas5 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas4" ]; then
+            python -m mari_bot ideas4 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas3" ]; then
+            python -m mari_bot ideas3 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas2" ]; then
+            python -m mari_bot ideas2 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas" ]; then
+            python -m mari_bot ideas --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "pattern" ]; then
+            python -m mari_bot pattern --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "funding" ]; then
+            python -m mari_bot funding --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "ict" ]; then
             python -m mari_bot ict --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0
@@ -94,3 +178,10 @@ jobs:
             git commit -q -m "research: $(date -u +%Y-%m-%dT%H:%MZ)"
             for i in 1 2 3; do git push origin mari-research && break; sleep $((i*5)); done
           fi
+      - name: Telegram summary
+        if: always()
+        working-directory: scripts
+        env:
+          MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
+          MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+        run: python -m mari_bot notify-research --kind "${{ inputs.kind }}" --dir "${RUN_DIR:-../out-wt}" --status "${{ job.status }}" || true

@@ -22,6 +22,21 @@ STABLE_BASES = {
     "USDT", "USDC", "FDUSD", "TUSD", "DAI", "BUSD", "USDP", "USDD", "PYUSD", "USD1", "RLUSD",
     "RWUSD", "BFUSD", "USDE", "EUR", "EURI", "GUSD", "U", "XUSD", "USDS", "FRAX", "LUSD", "PAXG", "XAUT",  # طلا هم قیمت مستقل کریپتویی ندارد
 }
+# سهام، صندوق و طلای توکنی (Ondo با پسوند ON، xStocks با پسوند X، و قالب B): بازار سنتی، نه کریپتو.
+# فقط نمادهای شناخته‌شده؛ پسوند تنها کافی نیست (TON، TRX، IMX کریپتوی واقعی‌اند).
+TRADFI_TICKERS = {
+    "AAPL", "AMZN", "COIN", "GLD", "HOOD", "META", "QQQ", "SPY", "TSLA", "NVDA", "MSTR", "CRCL", "IAU", "SLV",
+    "MCD", "SPCX", "DFDV", "MSFT", "GOOGL", "GOOG", "NFLX", "AMD", "INTC", "TQQQ", "SOXL", "MU", "SKHY", "SNDK",
+    "AVGO", "ORCL", "PLTR", "JPM", "V", "MA", "WMT", "KO", "BRK",
+}
+TRADFI_SUFFIXES = ("ON", "X", "B")
+
+
+def is_tradfi(sym: str) -> bool:
+    base = sym[:-4] if sym.endswith("USDT") else sym
+    return any(base.endswith(sfx) and base[: -len(sfx)] in TRADFI_TICKERS for sfx in TRADFI_SUFFIXES)
+
+
 # «UP» عمداً نیست: نام‌های واقعی مثل SYRUP یا JUP را به‌اشتباه حذف می‌کرد.
 LEVERAGED_SUFFIXES = ("DOWN", "BULL", "BEAR", "3L", "3S", "5L", "5S", "2L", "2S")
 
@@ -118,6 +133,6 @@ def tradable_symbol(sym: str) -> bool:
     base = sym[:-4]
     if not base or not base.isascii():
         return False
-    if base in STABLE_BASES:
+    if base in STABLE_BASES or is_tradfi(sym):
         return False
     return not any(base.endswith(s) and len(base) > len(s) + 1 for s in LEVERAGED_SUFFIXES)

@@ -33,6 +33,13 @@ HYPOTHESES = {
         "risk_overrides": {},
         "status_before": "FALSIFIED on 2026-05-08..2026-11-04 (run 20261104T2009Z) — اینجا فقط گروه کنترل است",
     },
+    "H-MARI-B-003": {
+        "statement": "همان H-001، اما ارزهای ۲۰٪ پایین امتیاز الگوی P-019 (علامت‌های منجمد، دوشنبه‌ها) خریده نمی‌شوند.",
+        "risk_overrides": {},
+        "blacklist": True,
+        "status_before": "ثبت پیشاپیش 2026-11-05T05:20Z؛ دورهٔ دست‌نخورده 2025-05-09..2025-11-08. "
+                         "قبول فقط اگر معیار H-001 برقرار باشد و بازده خالص از گروه کنترل H-001 بیشتر باشد.",
+    },
     "H-MARI-B-002": {
         "statement": "همان H-001، اما ورود فقط وقتی BTC در وضعیت A یا B (صعودی) است.",
         "risk_overrides": {"require_btc_states": ("A", "B")},
@@ -79,9 +86,10 @@ def pick_universe_all() -> list[str]:
     return ["BTCUSDT"] + sorted(out - {"BTCUSDT"})
 
 
-def _run(series, quality, cfg, start_ts, end_ts, run_id):
+def _run(series, quality, cfg, start_ts, end_ts, run_id, blocked=None):
     led = Ledger(None, run_id, cfg.sha())
     bot = MariBot(cfg, led)
+    bot.blocked = blocked
     bot.last_ts = start_ts - 1
     bot.process(series, quality, until_ts=end_ts)
     add_counterfactuals(bot.trades, series)
@@ -118,18 +126,18 @@ def _verdict(full):
     return "FALSIFIED"
 
 
-def _evaluate(series, quality, cfg, start, end, tag):
-    full, trades = _run(series, quality, cfg, start, end, f"{tag}-FULL")
+def _evaluate(series, quality, cfg, start, end, tag, blocked=None):
+    full, trades = _run(series, quality, cfg, start, end, f"{tag}-FULL", blocked)
     costs = {}
     for fee in (0.0, 0.0005, 0.001, 0.002, 0.003):
         c = replace(cfg, cost=CostParams(fee_side=fee, slippage=cfg.cost.slippage))
-        m, _ = _run(series, quality, c, start, end, f"{tag}-FEE{fee}")
+        m, _ = _run(series, quality, c, start, end, f"{tag}-FEE{fee}", blocked)
         costs[f"fee_side_{fee * 100:.2f}pct"] = {k: m[k] for k in ("trades", "net_return_pct", "profit_factor",
                                                                     "win_rate_pct", "max_drawdown_pct")}
     folds, a = [], start
     while a < end:
         b = min(a + 30 * DAY_MS, end)
-        m, _ = _run(series, quality, cfg, a, b, f"{tag}-FOLD{len(folds)}")
+        m, _ = _run(series, quality, cfg, a, b, f"{tag}-FOLD{len(folds)}", blocked)
         btc = _bh(series, "BTCUSDT", a, b)
         regime = "BULL" if btc is not None and btc > 10 else "BEAR" if btc is not None and btc < -10 else "FLAT"
         folds.append({"from": datetime.fromtimestamp(a / 1000, timezone.utc).strftime("%Y-%m-%d"),
@@ -146,6 +154,7 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out", 
                  hypotheses: list[str] | None = None) -> dict:
     base = BotConfig()
     hyps = hypotheses or list(HYPOTHESES)
+    hyps = sorted(hyps, key=lambda h: bool(HYPOTHESES[h].get("blacklist")))   # گروه کنترل پیش از فهرست ممنوعه
     t_fetch = datetime.now(timezone.utc).isoformat(timespec="seconds")
     end = (end_ms or int(time.time() * 1000)) // HOUR_MS * HOUR_MS
     warm = (base.trend.min_bars + 40) * HOUR_MS
@@ -168,11 +177,31 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out", 
         if q["n"] >= base.trend.min_bars + 2:
             series[s] = SymbolSeries(s, q["clean"], base.trend)
 
+    blocked, bl_info = None, None
+    if any(HYPOTHESES[h].get("blacklist") for h in hyps):
+        from .pattern import blacklist_fn, build_blacklist
+        daily = {}
+        for s in series:
+            try:
+                daily[s] = quality_check(fetch_history(s, start - 120 * DAY_MS, end, interval="1d"),
+                                         interval_ms=DAY_MS)["clean"]
+            except DataError:
+                continue
+        bl = build_blacklist({k: v for k, v in daily.items() if v})
+        blocked = blacklist_fn(bl)
+        bl_info = {"weeks": len(bl), "avg_blocked": round(sum(len(v) for v in bl.values()) / max(1, len(bl)), 1)}
     results, all_trades = {}, {}
     for hid in hyps:
         h = HYPOTHESES[hid]
         cfg = replace(base, risk=replace(base.risk, **h["risk_overrides"]))
-        res, trades = _evaluate(series, quality, cfg, start, end, hid)
+        res, trades = _evaluate(series, quality, cfg, start, end, hid, blocked if h.get("blacklist") else None)
+        if h.get("blacklist"):
+            res["blacklist"] = bl_info
+            ctrl = results.get("H-MARI-B-001", {}).get("full_period", {}).get("net_return_pct")
+            if res["verdict"] == "SUPPORTED_IN_TEST_RANGE" and ctrl is not None \
+                    and res["full_period"]["net_return_pct"] <= ctrl:
+                res["verdict"] = "FALSIFIED"
+                res["verdict_note"] = "معیار H-001 برقرار بود اما از گروه کنترل بهتر نبود."
         results[hid] = {"statement": h["statement"], "status_before": h["status_before"], **res}
         all_trades[hid] = trades
     bh_all = [r for r in (_bh(series, s, start, end) for s in series if s != "BTCUSDT") if r is not None]
@@ -452,5 +481,843 @@ def run_ict_research(start: str = "2018-06-01", out_dir: str = "research_out") -
                       f"{st['trades']} | {st['time_in_cash_pct']} |")
     md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
     with open(os.path.join(out_dir, "ict_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_funding_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """نرخ فاندینگ (F-017 مطالعهٔ رویداد، F-018 فیلتر روی T-006) روی BTC و ETH روزانه."""
+    from .funding import FUNDING_HYPOTHESES, WINDOW, fetch_funding, run_funding
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    pre = start_ms - (WINDOW + 30) * DAY_MS
+    daily, funding, sources = {}, {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, min(pre, start_ms - 200 * DAY_MS), end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+        name, rows, tried = fetch_funding(s, pre - 10 * DAY_MS, end, need_from_ms=start_ms)
+        funding[s], sources[s] = rows, {"used": name, "rows": len(rows), "failed_before": tried}
+    res = run_funding(daily, funding, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T04:20Z",
+              "hypotheses": FUNDING_HYPOTHESES, "sources": sources,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۸ می‌رسد.",
+                               "بازده ۵روزه هم‌پوشانی دارد و روزهای شلوغ پشت‌سرهم‌اند؛ CI خوش‌بینانه است.",
+                               "فاندینگ از صرافی فیوچرز و قیمت از اسپات است.",
+                               "انحراف از ثبت: بایگانی بایننس از ۲۰۲۰-۰۱ شروع می‌شود؛ صدک ۱۸۰روزه تا حدود ۲۰۲۰-۰۷ آماده نیست، پس روزهای اول دوره بدون سیگنال‌اند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "funding_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# آزمون نرخ فاندینگ", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- منبع: " + "، ".join(f"{k}: {v['used']} ({v['rows']} ردیف)" for k, v in sources.items()), ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {FUNDING_HYPOTHESES[hid]}")
+    md += ["", "## مطالعهٔ رویداد (بازده ۵ روز بعد، اجرا یک روز دیرتر)", "",
+           "| دارایی | همهٔ روزها ٪ | شلوغی خرید: تعداد / میانگین ٪ / اختلاف [CI95] | شلوغی فروش: تعداد / میانگین ٪ / اختلاف [CI95] |",
+           "|---|---|---|---|"]
+    for sym, e in res["events"].items():
+        def cell(x):
+            v = x["vs_all"] or {}
+            return f"{x['n']} / {x['mean_fwd5_pct']} / {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}]"
+        md.append(f"| {sym} | {e['mean_fwd5_all_pct']} | {cell(e['crowded_long'])} | {cell(e['crowded_short'])} |")
+    md += ["", "## راهبرد روی BTC", "", "| روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|"]
+    for name, st in res["strategy"].items():
+        md.append(f"| {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                  f"{st['trades']} | {st['time_in_cash_pct']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "funding_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_pattern_research(out_dir: str = "research_out") -> dict:
+    """الگوی مشترک پنهان (P-019، P-020): یادگیری ۲۰۲۱-۰۶..۲۰۲۳-۱۲، آزمون ۲۰۲۴-۰۱..اکنون."""
+    from .pattern import PATTERN_HYPOTHESES, run_pattern
+
+    def ms(d):
+        return int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    train, test = (ms("2021-06-01"), ms("2023-12-31")), (ms("2024-01-01"), end)
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, train[0] - 220 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_pattern(daily, train, test)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T04:25Z",
+              "hypotheses": PATTERN_HYPOTHESES,
+              "period": {"train": "2021-06-01..2023-12-31",
+                         "test": "2024-01-01.." + datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "universe": {"symbols_listed_ever": len(syms), "with_data": len(daily), "failed": len(failed)},
+              "known_biases": ["SURVIVORSHIP: ارزهایی که پیش از دسترس‌پذیری بایگانی حذف شده‌اند در داده نیستند.",
+                               "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۰ می‌رسد.",
+                               "ارزی که وسط هفته بی‌داده شود با آخرین قیمت معلوم نقد فرض می‌شود (خوش‌بینانه)."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "pattern_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# الگوی مشترک پنهان ارزهای صعودی", "",
+          f"- یادگیری: {report['period']['train']} ({res['train_weeks']} هفته)",
+          f"- آزمون دست‌نخورده: {report['period']['test']} ({res['test_weeks']} هفته، "
+          f"میانگین {res['avg_universe_test']} ارز در هفته)", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {PATTERN_HYPOTHESES[hid]}")
+    md += ["", "## آنچه از دورهٔ یادگیری آموخته شد", "", "| ویژگی | IC میانگین | علامت | CI95 ٪ |", "|---|---|---|---|"]
+    for f, x in res["learned"].items():
+        ci = x["ci"] or {}
+        md.append(f"| {f} | {x['mean_ic']} | {x['sign']:+d} | [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    ic = res["test_ic"]
+    ci = ic["ci"] or {}
+    md += ["", f"## آزمون: IC میانگین {ic['mean_ic']}، CI95٪ [{ci.get('ci95_low')}, {ci.get('ci95_high')}], "
+           f"هفته‌های مثبت {ic['hit_weeks_pct']}٪", "",
+           "| روش (دورهٔ آزمون) | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله |", "|---|---|---|---|---|"]
+    for name, st in (("۵ ارز برتر + فیلتر BTC", res["strategy_test"]), ("T-006", res["t006_test"])):
+        md.append(f"| {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | {st.get('sharpe')} | "
+                  f"{st.get('trades')} |")
+    dg = res["diagnostics_post_hoc"]
+    md += ["", "## تشخیص پس از نتیجه (حکم را تغییر نمی‌دهد)", "",
+           "بازده میانگین ۷ روز بعد هر پنجک امتیاز (Q1 بدترین، Q5 بهترین): " +
+           "، ".join(f"{k}: {v}٪" for k, v in dg["quintile_mean_fwd7_pct"].items()),
+           f"۵ ارز برتر: میانگین {dg['top5_mean_fwd7_pct']}٪، میانه {dg['top5_median_fwd7_pct']}٪", "",
+           "| ارز پرتکرار در ۵ برتر | هفته | بازده میانگین ٪ |", "|---|---|---|"]
+    md += [f"| {x['sym']} | {x['weeks']} | {x['mean_fwd7_pct']} |" for x in dg["most_picked"]]
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "pattern_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۱ و ۲: کنترل نوسان روی T-006 و تقاطع طلایی، روی BTC و ETH."""
+    from .ideas import IDEA_HYPOTHESES, run_ideas
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T05:35Z",
+              "hypotheses": IDEA_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۳ می‌رسد؛ قاعدهٔ تکرار روی ETH اعمال شد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: کنترل نوسان و تقاطع طلایی", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st['total_return_pct']} | {st['cagr_pct']} | {st['max_drawdown_pct']} | "
+                      f"{st['sharpe']} | {st['trades']} | {st['time_in_cash_pct']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas2_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۳ و ۴: چرخهٔ هاوینگ و اثر روز هفته، روی BTC و ETH."""
+    from .ideas import IDEA2_HYPOTHESES, run_ideas2
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas2(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T05:45Z",
+              "hypotheses": IDEA2_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۵ می‌رسد.",
+                               "هاوینگ: فقط دو رویداد در دوره؛ توان آماری کم."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas2_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    days_fa = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
+    md = ["# صف ایده‌ها: چرخهٔ هاوینگ و روز هفته", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA2_HYPOTHESES[hid]}")
+    md += ["", "## هاوینگ", "", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | زمان نقد ٪ |", "|---|---|---|---|---|---|"]
+    for sym, x in res["halving"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                      f"{st['time_in_cash_pct']} |")
+    wb = res["weekday"]["BTCUSDT"]
+    md += ["", f"## روز هفته — روز برتر دورهٔ کشف: {days_fa[wb['best_day']]}", "",
+           "میانگین بازده روزانهٔ BTC در دورهٔ کشف: " +
+           "، ".join(f"{days_fa[int(w)]} {m}٪" for w, m in wb["discovery_means_pct"].items()), "",
+           "| دارایی | تعداد روز آزمون | اختلاف با میانگین ٪ [CI95] |", "|---|---|---|"]
+    for sym, w in res["weekday"].items():
+        v = w["test_vs_all"] or {}
+        md.append(f"| {sym} | {w['test_n']} | {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas2_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas3_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۵ و ۶: شکست نوسانی ویلیامز و فشردگی بولینگر، روی BTC و ETH."""
+    from .ideas import IDEA3_HYPOTHESES, run_ideas3
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas3(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:00Z",
+              "hypotheses": IDEA3_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۷ می‌رسد.",
+                               "L-026: پر شدن دقیق در سطح شکست با دادهٔ روزانه خوش‌بینانه است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas3_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: لری ویلیامز و فشردگی بولینگر", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA3_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas3_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas4_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۷ و ۸: قالب روند مینروینی و جام مقدس راشکی، روی BTC و ETH."""
+    from .ideas import IDEA4_HYPOTHESES, run_ideas4
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 420 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas4(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:10Z",
+              "hypotheses": IDEA4_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۹ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas4_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: مینروینی و راشکی", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA4_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas4_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas5_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۹ و ۱۰: صفحهٔ سه‌گانهٔ الدر و KAMA کافمن، روی BTC و ETH."""
+    from .ideas import IDEA5_HYPOTHESES, run_ideas5
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 420 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas5(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:20Z",
+              "hypotheses": IDEA5_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۱ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas5_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: الدر و کافمن", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA5_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas5_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas6_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۱۱: چرخش BTC/ETH با نسبت ETH/BTC، در دو دورهٔ جدا."""
+    from .ideas import IDEA6_HYPOTHESES, run_ideas6
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas6(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:30Z",
+              "hypotheses": IDEA6_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۲ می‌رسد.",
+                               "نسبت ETH/BTC جانشین دامیننس است، نه خود آن."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas6_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: چرخش بیت‌کوین و آلت‌کوین", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA6_HYPOTHESES[hid]}")
+    md += ["", "| دوره | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for per, x in res["by_period"].items():
+        for name, st in x.items():
+            md.append(f"| {per} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas6_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_replication_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """آزمون تکرار T-006 و لاک‌پشت روی ETH (قاعدهٔ تکرار برای روش‌های قبول‌شده)."""
+    from .ideas import REP_HYPOTHESES, run_replication
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    bars = fetch_history("ETHUSDT", start_ms - 260 * DAY_MS, end, interval="1d")
+    daily = {"ETHUSDT": quality_check(bars, interval_ms=DAY_MS)["clean"]}
+    res = run_replication(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:45Z",
+              "hypotheses": REP_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "replication_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# آزمون تکرار روش‌های قبول‌شده روی ETH", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {REP_HYPOTHESES[hid]}")
+    md += ["", "| روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | CI95 هفتگی ٪ | معامله |", "|---|---|---|---|---|---|"]
+    for name, st in res["strategies"].items():
+        ci = st.get("weekly_bootstrap") or {}
+        md.append(f"| {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                  f"[{ci.get('ci95_low')}, {ci.get('ci95_high')}] | {st['trades']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "replication_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_market_research(start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """روند بلندمدت روی ۱۰ ارز بزرگ: T-033، V-034، T-035."""
+    from .ideas import LARGE_CAPS, MARKET_HYPOTHESES, run_market
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT",) + LARGE_CAPS:
+        bars = fetch_history(s, start_ms - 200 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_market(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:55Z",
+              "hypotheses": MARKET_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["SURVIVORSHIP: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه).",
+                               "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۷ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "market_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# روند بلندمدت روی ۱۰ ارز بزرگ", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- T-006 بهتر از نگه‌داری: {res['wins']['T-033']} از ۱۰؛ کنترل نوسان بهتر از T-006: {res['wins']['V-034']} از ۱۰", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {MARKET_HYPOTHESES[hid]}")
+    md += ["", "| ارز | نگه‌داری: بازده ٪ / افت ٪ / شارپ | T-006: بازده ٪ / افت ٪ / شارپ | کنترل نوسان: بازده ٪ / افت ٪ / شارپ |",
+           "|---|---|---|---|"]
+    def c(st):
+        return f"{st['total_return_pct']} / {st['max_drawdown_pct']} / {st['sharpe']}"
+    for sym, x in res["per_coin"].items():
+        md.append(f"| {sym} | {c(x['hold'])} | {c(x['T-006'])} | {c(x['voltarget'])} |")
+    md += ["", f"**سبد روند (۱۱ ارز):** {c(res['basket'])}", f"**T-006 روی BTC:** {c(res['btc_t006'])}",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "market_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_sessions_research(start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """خوشهٔ B سند مادر: AMD و سشن‌ها روی کندل ساعتی BTC و ETH."""
+    from .sessions import SESSION_HYPOTHESES, run_sessions
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    hourly = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 70 * DAY_MS, end, interval="1h")
+        hourly[s] = quality_check(bars)["clean"]
+    res = run_sessions(hourly, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T07:05Z",
+              "hypotheses": SESSION_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۹ می‌رسد.",
+                               "روزهایی که یکی از سشن‌ها ساعت گمشده دارد کنار گذاشته می‌شوند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "sessions_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# خوشهٔ B: AMD و سشن‌ها", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {SESSION_HYPOTHESES[hid]}")
+    md += ["", "## S-036: بازده نیویورک پس از شکار محدودهٔ آسیا", "",
+           "| دارایی | روز | میانگین نیویورک ٪ | شکار کف: تعداد / اختلاف ٪ [CI95] | شکار سقف: تعداد / اختلاف ٪ [CI95] |",
+           "|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        a = x["S-036"]
+        def cell(e):
+            v = e["vs_all"] or {}
+            return f"{e['n']} / {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}]"
+        md.append(f"| {sym} | {a['n_days']} | {a['mean_ny_pct']} | {cell(a['bull'])} | {cell(a['bear'])} |")
+    md += ["", "## S-037: نرخ درستی «نیویورک خلاف لندن» پس از آسیای آرام", "",
+           "| دارایی | تعداد | نرخ درستی ٪ | CI95 ٪ |", "|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        h = x["S-037"]["hit"] or {}
+        md.append(f"| {sym} | {h.get('n')} | {h.get('rate_pct')} | [{h.get('ci95_low')}, {h.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "sessions_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas7_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """ideas7: روند چندسرعته (E-040) و اثر اول ماه (M-041) روی BTC و ETH."""
+    from .ideas7 import IDEA7_HYPOTHESES, run_ideas7
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas7(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T13:55Z",
+              "hypotheses": IDEA7_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۱ می‌رسد.",
+                               "E-040 میانگین ۱۵۰ را به‌عنوان یکی از چهار داور دارد؛ به T-006 وابسته است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas7_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas7: روند چندسرعته و اثر اول ماه", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA7_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("T-006", "H-MARI-E-040", "TOM_ONLY_INFO"):
+            st = x[name]
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "## M-041: بازده روزانه در پنجرهٔ اول ماه", "",
+           "| دارایی | روز پنجره | روز دیگر | میانگین پنجره ٪ | میانگین بقیه ٪ | اختلاف ٪ [CI95] |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        t = x["H-MARI-M-041"]
+        ci = t["tom_minus_rest"] or {}
+        md.append(f"| {sym} | {t['n_tom']} | {t['n_rest']} | {t['tom_mean_pct']} | {t['rest_mean_pct']} | "
+                  f"{ci.get('diff_pct')} [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas7_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas8_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """ideas8: ترس و طمع (F-044)، اثر هالووین (S-045)، حد ضرر متحرک روی T-006 (K-046)."""
+    from .ideas8 import IDEA8_HYPOTHESES, fetch_fng, run_ideas8
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    fng = fetch_fng()
+    res = run_ideas8(daily, fng, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:05Z",
+              "hypotheses": IDEA8_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۶ می‌رسد.",
+                               "شاخص ترس و طمع یک شاخص برای کل بازار است (بیشتر بر پایهٔ BTC)؛ ETH تکرار مستقل کامل نیست.",
+                               "K-046 به T-006 وابسته است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas8_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas8: ترس و طمع، اثر هالووین، حد ضرر متحرک", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- دادهٔ ترس و طمع: {res['fng_points']} روز از {res['fng_first']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA8_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("BUY_HOLD", "T-006", "H-MARI-F-044", "H-MARI-K-046", "WINTER_ONLY_INFO"):
+            st = x[name]
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "## S-045: بازده روزانه، زمستان (نوامبر-آوریل) در برابر تابستان", "",
+           "| دارایی | روز زمستان | روز تابستان | میانگین زمستان ٪ | میانگین تابستان ٪ | اختلاف ٪ [CI95] |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        t = x["H-MARI-S-045"]
+        ci = t["winter_minus_summer"] or {}
+        md.append(f"| {sym} | {t['n_winter']} | {t['n_summer']} | {t['winter_mean_pct']} | {t['summer_mean_pct']} | "
+                  f"{ci.get('diff_pct')} [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas8_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas9_research(start: str = "2018-06-01", alt_start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """ideas9: استحکام T-006 (R-048)، T-006 هفتگی (W-049)، سبد ۱۱ ارزی با دروازهٔ BTC (A-047)."""
+    from .ideas import LARGE_CAPS
+    from .ideas9 import IDEA9_HYPOTHESES, run_a, run_r_w, verdicts
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    start_ms, alt_ms = ms(start), ms(alt_start)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT") + LARGE_CAPS:
+        s0 = start_ms if s in ("BTCUSDT", "ETHUSDT") else alt_ms
+        bars = fetch_history(s, s0 - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    rw = run_r_w(daily, start_ms, end)
+    a = run_a(daily, alt_ms, end)
+    res = {"by_asset": rw["by_asset"], "basket": a["basket"], "btc_t006_alt_period": a["btc_t006"],
+           "verdict": verdicts(rw, a)}
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:20Z",
+              "hypotheses": IDEA9_HYPOTHESES,
+              "period": {"from": start, "alt_from": alt_start,
+                         "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۰ می‌رسد.",
+                               "SURVIVORSHIP در A-047: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه)."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas9_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas9: استحکام روش روند، نسخهٔ هفتگی، سبد ۱۱ ارزی", "",
+          f"- دوره: {start} تا {report['period']['to']} (سبد از {alt_start})", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA9_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    rows = [(sym, name, st) for sym, x in res["by_asset"].items() for name, st in x.items()]
+    rows += [("BTC+10", "A-047 سبد", res["basket"]), ("BTCUSDT", "T-006 (از ۲۰۲۱)", res["btc_t006_alt_period"])]
+    for sym, name, st in rows:
+        md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                  f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas9_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas10_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas10: عامل روند کریپتو (C-051) و نزدیکی به سقف ۵۲ هفته (N-052)، بین‌مقطعی، شامل ارزهای حذف‌شده."""
+    from .ideas10 import IDEA10_HYPOTHESES, run_ideas10
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas10(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:22Z",
+              "hypotheses": IDEA10_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed), "failed_sample": failed[:10]},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۲ می‌رسد.",
+                               "C-051 نسخهٔ ساده‌شدهٔ مقاله است (۷ میانگین قیمت به جای ۲۸ سیگنال و elastic net).",
+                               "فقط خرید؛ مقاله‌ها بازده خرید-فروش را گزارش می‌کنند.",
+                               "ارزهایی که پیش از حذف هیچ داده‌ای در API عمومی ندارند، دیده نمی‌شوند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas10_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas10: عامل روند کریپتو و سقف ۵۲ هفته", "",
+          f"- دوره: {start} تا {report['period']['to']} — {res['mondays']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA10_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | اضافهٔ هفتگی ٪ [CI95] | نیمهٔ اول ٪ | نیمهٔ دوم ٪ | با ضرر ۵۰٪ حذف ٪ | سبد: بازده / افت / شارپ | وزن برابر: بازده / افت / شارپ | با دروازهٔ BTC: بازده / افت / شارپ |",
+           "|---|---|---|---|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    for hid, e in res["by_hypothesis"].items():
+        a = e["excess_all"] or {}
+        md.append(f"| {hid} | {a.get('mean_pct')} [{a.get('ci95_low')}, {a.get('ci95_high')}] | "
+                  f"{(e['excess_first_half'] or {}).get('mean_pct')} | {(e['excess_second_half'] or {}).get('mean_pct')} | "
+                  f"{(e['haircut50_excess_all'] or {}).get('mean_pct')} | {f(e['top'])} | {f(e['ew'])} | {f(e['btc_gated_info'])} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas10_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas11_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas11: دروازهٔ BTC در برابر انتخاب ارز (G-053) و MAX مومنتوم (X-054)."""
+    from .ideas11 import IDEA11_HYPOTHESES, run_ideas11
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas11(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:40Z",
+              "hypotheses": IDEA11_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۴ می‌رسد.",
+                               "G-053 از سرنخی آمد که در ideas10 پس از دیدن نتیجه دیده شد؛ پرسش اینجا عوض شده"
+                               " (آیا انتخاب ارز روی دروازه چیزی اضافه می‌کند؟) اما همان دوره است، پس قبولی"
+                               " آن نیاز به تکرار روی دورهٔ تازه دارد.",
+                               "فقط خرید؛ مقالهٔ MAX بازده خرید-فروش گزارش می‌کند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas11_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas11: دروازهٔ BTC در برابر انتخاب ارز، و MAX مومنتوم", "",
+          f"- دوره: {start} تا {report['period']['to']} — {res['mondays']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA11_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | دوره | سبد: بازده ٪ / افت ٪ / شارپ | محک: بازده ٪ / افت ٪ / شارپ |", "|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    names = {"full": "کل", "first_half": "نیمهٔ اول", "second_half": "نیمهٔ دوم"}
+    for hid, e in res["by_hypothesis"].items():
+        for k, fa in names.items():
+            md.append(f"| {hid} | {fa} | {f(e['portfolio'][k])} | {f(e['benchmark'][k])} |")
+    lm = res["by_hypothesis"]["H-MARI-X-054"].get("low_max_decile_info") or {}
+    md += ["", f"- اطلاعی: دهک **پایین** MAX (خلاف مقاله): {f(lm)}",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas11_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas12_research(start: str = "2017-09-01", out_dir: str = "research_out") -> dict:
+    """ideas12: تکرار G-055 روی دورهٔ کنار گذاشته‌شده، و بتای نزولی B-056."""
+    from .ideas12 import IDEA12_HYPOTHESES, run_ideas12
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    g_start, g_end = ms(start), ms("2020-06-01")
+    b_start = ms("2020-06-01")
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, g_start - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas12(daily, g_start, g_end, b_start, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T18:00Z",
+              "hypotheses": IDEA12_HYPOTHESES,
+              "period": {"G-055": f"{start} تا 2020-06-01 (کنار گذاشته‌شده)",
+                         "B-056": f"2020-06-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۶ می‌رسد.",
+                               "G-055: دورهٔ ۲۰۱۷-۲۰۲۰ ارزهای کمتری دارد؛ جهان کوچک‌تر است.",
+                               "سنجهٔ G-055 (شارپ و افت) پیش از دیدن نتیجهٔ این دوره اعلام شد،"
+                               " اما پس از دیدن الگوی G-053 در دورهٔ دیگر انتخاب شد — همین دلیلِ"
+                               " آزمون روی دورهٔ کنار گذاشته‌شده است.",
+                               "B-056: مقاله بازده خرید-فروش گزارش می‌کند؛ اینجا فقط خرید."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas12_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas12: تکرار سرنخ دروازه روی دورهٔ تازه، و بتای نزولی", "",
+          f"- G-055: {report['period']['G-055']} — {res['weeks']['G-055']} هفته",
+          f"- B-056: {report['period']['B-056']} — {res['weeks']['B-056']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA12_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | دوره | سبد: بازده ٪ / افت ٪ / شارپ | محک: بازده ٪ / افت ٪ / شارپ |", "|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    names = {"full": "کل", "first_half": "نیمهٔ اول", "second_half": "نیمهٔ دوم"}
+    for hid, e in res["by_hypothesis"].items():
+        for k, fa in names.items():
+            md.append(f"| {hid} | {fa} | {f(e['portfolio'][k])} | {f(e['benchmark'][k])} |")
+    lb = res["by_hypothesis"]["H-MARI-B-056"].get("low_beta_quintile_info") or {}
+    md += ["", f"- اطلاعی: پنجک **پایین** بتای نزولی: {f(lb)}", "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas12_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas13_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas13: کری دلتا-نیوترال فاندینگ (Y-057) روی BTC و ETH."""
+    from .funding import daily_funding, fetch_funding
+    from .ideas13 import IDEA13_HYPOTHESES, run_ideas13
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    days = list(range(start_ms, end, DAY_MS))
+    fund, sources = {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        name, rows, tried = fetch_funding(s, start_ms - 20 * DAY_MS, end, need_from_ms=start_ms)
+        fund[s] = daily_funding(rows, days)
+        settled = sum(1 for v in fund[s] if v is not None)
+        sources[s] = {"used": name, "rows": len(rows), "settled_days": settled, "failed_before": tried}
+    res = run_ideas13(fund, days)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T20:00Z",
+              "hypotheses": IDEA13_HYPOTHESES, "sources": sources,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۷ می‌رسد.",
+                               "پوشش کامل فرض شده: اختلاف قیمت اسپات و دائمی (basis)، هزینهٔ مارجین و"
+                               " خطر لیکویید شدن مدل نشده‌اند. نتیجه سقف خوش‌بینانه است، نه بازده واقعی.",
+                               "بدون اهرم: درآمد روی همان سرمایه حساب شده (مقاله‌ها معمولاً اهرم دارند).",
+                               "هزینه: ۴ پا در هر چرخه، مجموعاً ۰٫۶٪ (۰٫۳٪ ورود + ۰٫۳٪ خروج).",
+                               "فاندینگ تاریخی بایننس از ۲۰۲۰-۰۱؛ پیش از آن داده نیست."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas13_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas13: کری دلتا-نیوترال فاندینگ", "",
+          f"- دوره: {start} تا {report['period']['to']}",
+          "- منبع: " + "، ".join(f"{k}: {v['used']} ({v['settled_days']} روز تسویه)" for k, v in sources.items()),
+          "", "**هشدار:** پوشش کامل فرض شده؛ اختلاف قیمت اسپات/دائمی و خطر لیکویید در مدل نیست."
+          " عددها سقف خوش‌بینانه‌اند.", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA13_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | نسخه | بازده کل ٪ | بیشترین افت ٪ | شارپ | چرخه | روز در موقعیت ٪ |",
+           "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("H-MARI-Y-057", "ALWAYS_ON_INFO"):
+            st = (x or {}).get(name) or {}
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('cycles')} | {st.get('days_in_position_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas13_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
+    """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
+    from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
+    per, cov, all_tro = {}, {}, []
+    for path in [p for p in samples.split(",") if p]:
+        with open(path, encoding="utf-8") as fh:
+            trades = json.load(fh)["H-MARI-B-001"]
+        name = os.path.basename(os.path.dirname(path))
+        tro, cov[name] = collect(trades)
+        all_tro += tro
+        per[name] = evaluate(tro, SURGE)
+        cov[name]["period"] = [datetime.fromtimestamp(min(t["entry_ts"] for t in trades) / 1000, timezone.utc).strftime("%Y-%m-%d"),
+                               datetime.fromtimestamp(max(t["entry_ts"] for t in trades) / 1000, timezone.utc).strftime("%Y-%m-%d")]
+    hid = "H-MARI-O-043" if pooled else "H-MARI-O-042"
+    pool = evaluate(all_tro, SURGE) if pooled else None
+    if pooled:
+        per["ادغام"] = pool
+        cov["ادغام"] = {"trades_total": sum(c["trades_total"] for c in cov.values()), "with_oi": len(all_tro),
+                         "period": [min(c["period"][0] for c in cov.values()), max(c["period"][1] for c in cov.values())]}
+        verdict = {hid: pooled_verdict({k: v for k, v in per.items() if k != "ادغام"}, pool)}
+    else:
+        verdict = {hid: combine(per)}
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T15:05Z" if pooled else "2026-11-05T14:10Z",
+              "hypotheses": {hid: OI_HYPOTHESES[hid]},
+              "surge_threshold": SURGE, "coverage": cov,
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۲ می‌رسد.",
+                               "فقط ارزهای دارای قرارداد آتی بایننس پوشش داده می‌شوند."],
+              "results": {"per_sample": per, "verdict": verdict}}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "oi_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# O-042: جهش موقعیت‌های باز (OI) پیش از ورود شکارچی ساعتی", "",
+          f"- {hid}: **{verdict[hid]}** — {OI_HYPOTHESES[hid]}", "",
+          "| نمونه | دوره | معامله / با OI | گروه جهش: تعداد / میانگین ٪ / برد ٪ / حد ضرر ٪ | بقیه: تعداد / میانگین ٪ / برد ٪ / حد ضرر ٪ | بقیه منهای جهش ٪ [CI95] | حکم |",
+          "|---|---|---|---|---|---|---|"]
+    for name, x in per.items():
+        c = cov[name]
+        def g(e):
+            return f"{e['n']} / {e['mean_pnl_pct']} / {e['win_rate_pct']} / {e['stop_loss_pct']}"
+        d = x["rest_minus_surge"] or {}
+        v = verdict[hid] if name == "ادغام" else ("—" if pooled else x["verdict"])
+        md.append(f"| {name} | {c['period'][0]} تا {c['period'][1]} | {c['trades_total']} / {c['with_oi']} | {g(x['surge'])} | "
+                  f"{g(x['rest'])} | {d.get('diff_pct')} [{d.get('ci95_low')}, {d.get('ci95_high')}] | {v} |")
+    md += ["", "| نمونه | سود خالص همه (تتر) | بدون گروه جهش (تتر) | صدک‌های جهش OI ٪ (۱۰/۵۰/۹۰/۹۹) |", "|---|---|---|---|"]
+    for name, x in per.items():
+        md.append(f"| {name} | {x['info_net_pnl_all_usdt']} | {x['info_net_pnl_without_surge_usdt']} | {x['oi_change_percentiles_pct']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "oi_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_p044_research(out_dir: str = "research_out") -> dict:
+    """P-044: سبد روند BTC + ETH در برابر T-006 تنهای BTC، در دو دوره."""
+    from .ideas7 import P044_HYPOTHESES, run_p044
+    start_ms = int(datetime(2018, 6, 1, tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_p044(daily, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:20Z", "hypotheses": P044_HYPOTHESES,
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۴ می‌رسد."], "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "p044_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# P-044: سبد روند BTC + ETH", "",
+          f"- H-MARI-P-044: **{res['verdict']['H-MARI-P-044']}** — {P044_HYPOTHESES['H-MARI-P-044']}", "",
+          "| دوره | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for per, x in res["by_period"].items():
+        for name, st in x.items():
+            md.append(f"| {per} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | {st.get('sharpe')} | "
+                      f"{st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "p044_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report

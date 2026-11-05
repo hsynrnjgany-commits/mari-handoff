@@ -157,9 +157,14 @@ def fmt_daily_simple(bot, monday: bool = False) -> str:
         lines += ["📡 <b>رادار بازار</b>",
                   f"{fa(len(snap))} ارز بررسی شد — روند صعودی: {fa(up)} — نزولی یا سقوط: "
                   f"{fa(counts.get('E', 0) + counts.get('F', 0) + counts.get('G', 0))}"]
-        best = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])[:5]
+        from .config import is_tradfi
+        strong = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])
+        best = [kv for kv in strong if not is_tradfi(kv[0])][:5]
+        trad = [kv for kv in strong if is_tradfi(kv[0])][:3]
         if best:
-            lines.append("قوی‌ترین‌ها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+            lines.append("قوی‌ترین ارزها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+        if trad:
+            lines.append("دارایی سنتی توکنی (سهام/طلا، نه کریپتو): " + "، ".join(s.replace("USDT", "") for s, _ in trad))
         lines.append("(فقط برای آگاهی — شکار آلت‌کوین در آزمون ۸ساله ضررده بود)")
         lines.append("")
     eq = bot.equity()
@@ -475,3 +480,59 @@ class Telegram:
                 self.save()
                 return True
         return False
+
+
+# ---------------------------------------------------------------- خلاصهٔ پژوهش برای صاحب ربات
+_VERDICTS = ("SUPPORTED_IN_TEST_RANGE", "FALSIFIED", "INCONCLUSIVE")
+
+
+def _verdicts(obj, out: dict) -> dict:
+    """همهٔ حکم‌های «H-MARI-…» را از هر ساختار گزارشی بیرون می‌کشد."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.startswith("H-MARI"):
+                if isinstance(v, str) and v in _VERDICTS:
+                    out[k] = v
+                elif isinstance(v, dict) and v.get("verdict") in _VERDICTS:
+                    out[k] = v["verdict"]
+            _verdicts(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _verdicts(v, out)
+    return out
+
+
+def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
+    import glob
+    import html
+    if not ok:
+        return _end([f"⚠️ پژوهش «{html.escape(kind)}» کامل نشد.", "علت در گیت‌هاب ثبت شده و ربات اصلی آسیبی ندیده."])
+    found, about = {}, {}
+    for p in sorted(glob.glob(os.path.join(run_dir, "*.json"))):
+        try:
+            with open(p, encoding="utf-8") as fh:
+                rep = json.load(fh)
+            _verdicts(rep, found)
+            if isinstance(rep, dict) and isinstance(rep.get("hypotheses"), dict):
+                about.update({k: v for k, v in rep["hypotheses"].items() if isinstance(v, str)})
+        except (OSError, ValueError):
+            continue
+    lines = [f"🔬 پژوهش «{html.escape(kind)}» تمام شد."]
+    if not found:
+        lines.append("حکمی در گزارش پیدا نشد؛ گزارش کامل در برانچ mari-research است.")
+    for hid, v in found.items():
+        mark = "✅ قبول" if v.startswith("SUPPORTED") else ("❌ رد" if v == "FALSIFIED" else html.escape(v))
+        lines.append(f"{mark} — {html.escape(hid)}")
+        if hid in about:                      # توضیح ساده برای صاحب پروژه
+            txt = about[hid].split(":")[0].strip()
+            lines.append(f"   ({html.escape(txt[:90])})")
+    lines.append(f"گزارش کامل: برانچ mari-research، پوشهٔ {html.escape(os.path.basename(run_dir.rstrip('/')))}")
+    return _end(lines)
+
+
+def notify_research(kind: str, run_dir: str, ok: bool) -> bool:
+    tg = Telegram(os.path.join(run_dir, ".tg_tmp.json"))
+    if tg.owner is None:
+        print(fmt_research(kind, run_dir, ok))
+        return False
+    return tg.send(tg.owner, fmt_research(kind, run_dir, ok))

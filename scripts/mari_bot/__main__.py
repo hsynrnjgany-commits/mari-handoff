@@ -125,6 +125,131 @@ def cmd_macro(a):
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_funding(a):
+    from .research import run_funding_research
+    r = run_funding_research(start=a.start, out_dir=a.out)
+    print(json.dumps({"verdict": r["results"]["verdict"], "sources": r["sources"]}, ensure_ascii=False, indent=2))
+
+
+def cmd_pattern(a):
+    from .research import run_pattern_research
+    r = run_pattern_research(out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_notify_research(a):
+    from .telegram import notify_research
+    notify_research(a.kind, a.dir, a.status == "success")
+
+
+def cmd_ideas(a):
+    from .research import run_ideas_research
+    r = run_ideas_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas2(a):
+    from .research import run_ideas2_research
+    r = run_ideas2_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas3(a):
+    from .research import run_ideas3_research
+    r = run_ideas3_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas4(a):
+    from .research import run_ideas4_research
+    r = run_ideas4_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas5(a):
+    from .research import run_ideas5_research
+    r = run_ideas5_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas6(a):
+    from .research import run_ideas6_research
+    r = run_ideas6_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_replication(a):
+    from .research import run_replication_research
+    r = run_replication_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_market(a):
+    from .research import run_market_research
+    r = run_market_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_sessions(a):
+    from .research import run_sessions_research
+    r = run_sessions_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas7(a):
+    from .research import run_ideas7_research
+    r = run_ideas7_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas8(a):
+    from .research import run_ideas8_research
+    r = run_ideas8_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas9(a):
+    from .research import run_ideas9_research
+    r = run_ideas9_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas10(a):
+    from .research import run_ideas10_research
+    r = run_ideas10_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas11(a):
+    from .research import run_ideas11_research
+    r = run_ideas11_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas12(a):
+    from .research import run_ideas12_research
+    r = run_ideas12_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_ideas13(a):
+    from .research import run_ideas13_research
+    r = run_ideas13_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_oi(a):
+    from .research import run_oi_research
+    r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_p044(a):
+    from .research import run_p044_research
+    r = run_p044_research(out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -182,6 +307,90 @@ def main(argv=None):
     ic.add_argument("--start", default="2018-06-01")
     ic.add_argument("--out", default="research_out")
     ic.set_defaults(fn=cmd_ict)
+    fu = sub.add_parser("funding", help="آزمون نرخ فاندینگ روی BTC/ETH")
+    fu.add_argument("--start", default="2020-06-01")
+    fu.add_argument("--out", default="research_out")
+    fu.set_defaults(fn=cmd_funding)
+    pa = sub.add_parser("pattern", help="الگوی مشترک پنهان ارزهای صعودی")
+    pa.add_argument("--out", default="research_out")
+    pa.set_defaults(fn=cmd_pattern)
+    idp = sub.add_parser("ideas", help="صف ایده‌ها: کنترل نوسان و تقاطع طلایی")
+    idp.add_argument("--start", default="2018-06-01")
+    idp.add_argument("--out", default="research_out")
+    idp.set_defaults(fn=cmd_ideas)
+    i2 = sub.add_parser("ideas2", help="صف ایده‌ها: هاوینگ و روز هفته")
+    i2.add_argument("--start", default="2018-06-01")
+    i2.add_argument("--out", default="research_out")
+    i2.set_defaults(fn=cmd_ideas2)
+    i3 = sub.add_parser("ideas3", help="صف ایده‌ها: ویلیامز و بولینگر")
+    i3.add_argument("--start", default="2018-06-01")
+    i3.add_argument("--out", default="research_out")
+    i3.set_defaults(fn=cmd_ideas3)
+    i4 = sub.add_parser("ideas4", help="صف ایده‌ها: مینروینی و راشکی")
+    i4.add_argument("--start", default="2018-06-01")
+    i4.add_argument("--out", default="research_out")
+    i4.set_defaults(fn=cmd_ideas4)
+    i5 = sub.add_parser("ideas5", help="صف ایده‌ها: الدر و کافمن")
+    i5.add_argument("--start", default="2018-06-01")
+    i5.add_argument("--out", default="research_out")
+    i5.set_defaults(fn=cmd_ideas5)
+    i6 = sub.add_parser("ideas6", help="صف ایده‌ها: چرخش BTC/ETH")
+    i6.add_argument("--start", default="2018-06-01")
+    i6.add_argument("--out", default="research_out")
+    i6.set_defaults(fn=cmd_ideas6)
+    rp = sub.add_parser("replication", help="آزمون تکرار روش‌های قبول‌شده روی ETH")
+    rp.add_argument("--start", default="2018-06-01")
+    rp.add_argument("--out", default="research_out")
+    rp.set_defaults(fn=cmd_replication)
+    mk = sub.add_parser("market", help="روند بلندمدت روی ۱۰ ارز بزرگ")
+    mk.add_argument("--start", default="2021-01-01")
+    mk.add_argument("--out", default="research_out")
+    mk.set_defaults(fn=cmd_market)
+    se = sub.add_parser("sessions", help="خوشهٔ B: AMD و سشن‌ها")
+    se.add_argument("--start", default="2021-01-01")
+    se.add_argument("--out", default="research_out")
+    se.set_defaults(fn=cmd_sessions)
+    i7 = sub.add_parser("ideas7", help="صف ایده‌ها: روند چندسرعته و اثر اول ماه")
+    i7.add_argument("--start", default="2018-06-01")
+    i7.add_argument("--out", default="research_out")
+    i7.set_defaults(fn=cmd_ideas7)
+    pp = sub.add_parser("p044", help="سبد روند BTC + ETH")
+    pp.add_argument("--out", default="research_out")
+    pp.set_defaults(fn=cmd_p044)
+    i8 = sub.add_parser("ideas8", help="صف ایده‌ها: ترس و طمع، هالووین، حد ضرر متحرک")
+    i8.add_argument("--start", default="2018-06-01")
+    i8.add_argument("--out", default="research_out")
+    i8.set_defaults(fn=cmd_ideas8)
+    i9 = sub.add_parser("ideas9", help="صف ایده‌ها: استحکام روند، هفتگی، سبد ۱۱ ارزی")
+    i9.add_argument("--start", default="2018-06-01")
+    i9.add_argument("--out", default="research_out")
+    i9.set_defaults(fn=cmd_ideas9)
+    i10 = sub.add_parser("ideas10", help="عامل روند کریپتو و سقف ۵۲ هفته (بین‌مقطعی)")
+    i10.add_argument("--start", default="2020-06-01")
+    i10.add_argument("--out", default="research_out")
+    i10.set_defaults(fn=cmd_ideas10)
+    i11 = sub.add_parser("ideas11", help="دروازهٔ BTC در برابر انتخاب ارز، و MAX مومنتوم")
+    i11.add_argument("--start", default="2020-06-01")
+    i11.add_argument("--out", default="research_out")
+    i11.set_defaults(fn=cmd_ideas11)
+    i12 = sub.add_parser("ideas12", help="تکرار دروازه روی دورهٔ تازه، و بتای نزولی")
+    i12.add_argument("--start", default="2017-09-01")
+    i12.add_argument("--out", default="research_out")
+    i12.set_defaults(fn=cmd_ideas12)
+    i13 = sub.add_parser("ideas13", help="کری دلتا-نیوترال فاندینگ")
+    i13.add_argument("--start", default="2020-06-01")
+    i13.add_argument("--out", default="research_out")
+    i13.set_defaults(fn=cmd_ideas13)
+    oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
+    oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
+    oi.add_argument("--out", default="research_out")
+    oi.add_argument("--pooled", action="store_true", help="O-043: ادغام نمونه‌ها")
+    oi.set_defaults(fn=cmd_oi)
+    nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
+    nr.add_argument("--kind", required=True)
+    nr.add_argument("--dir", required=True)
+    nr.add_argument("--status", default="success")
+    nr.set_defaults(fn=cmd_notify_research)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

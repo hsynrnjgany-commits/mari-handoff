@@ -26,7 +26,36 @@ _ALLOWED = {
     TOOBIT: ("/quote/v1/klines", "/quote/v1/ticker/24hr", "/api/v1/exchangeInfo"),
     BINANCE_VISION: ("/api/v3/klines", "/api/v3/ticker/24hr", "/api/v3/exchangeInfo"),
     FRED: ("/graph/fredgraph.csv",),
+    # فاندینگ عمومی قراردادهای دائمی — فقط برای پژوهش، بدون کلید
+    "https://fapi.binance.com": ("/fapi/v1/fundingRate",),
+    "https://api.bybit.com": ("/v5/market/funding/history",),
+    "https://www.bitmex.com": ("/api/v1/funding",),
+    # شاخص ترس و طمع (alternative.me) — عمومی، بدون کلید، فقط برای پژوهش
+    "https://api.alternative.me": ("/fng/",),
 }
+BINANCE_ARCHIVE = "https://data.binance.vision"     # بایگانی عمومی فایل‌های ماهانه (بدون محدودیت جغرافیایی)
+_ARCHIVE_PREFIX = "/data/futures/um/monthly/fundingRate/"
+_ARCHIVE_PREFIXES = (_ARCHIVE_PREFIX, "/data/futures/um/daily/metrics/")
+
+
+def http_get_bytes(path: str, base: str = BINANCE_ARCHIVE, timeout: float = 60.0, retries: int = 3) -> bytes | None:
+    """دریافت فایل بایگانی؛ ۴۰۴ = None (ماهی که هنوز منتشر نشده)."""
+    if base != BINANCE_ARCHIVE or not path.startswith(_ARCHIVE_PREFIXES) or ".." in path:
+        raise DataError(f"مسیر غیرمجاز: {base}{path}")
+    last = None
+    for i in range(retries):
+        try:
+            req = urllib.request.Request(base + path, headers=UA, method="GET")
+            with urllib.request.urlopen(req, timeout=timeout, context=_ctx()) as r:
+                return r.read()
+        except urllib.error.HTTPError as e:
+            if e.code == 404:
+                return None
+            last = f"HTTP_{e.code}"
+        except Exception as e:  # noqa: BLE001
+            last = type(e).__name__
+        time.sleep(2 ** i)
+    raise DataError(f"دریافت ناموفق {path} ({last})")
 
 
 def http_get_text(path: str, params: dict | None = None, base: str = FRED, timeout: float = 30.0,

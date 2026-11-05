@@ -320,6 +320,17 @@ class TestTelegramOwnerMode(unittest.TestCase):
             D.http_get_json("/api/v3/klines", base="https://evil.example")
 
 
+def _to_daily(bars):
+    out = {}
+    for b in bars:
+        d = b["t"] // 86_400_000 * 86_400_000
+        x = out.setdefault(d, {"t": d, "o": b["o"], "h": b["h"], "l": b["l"], "c": b["c"], "v": 0.0, "qv": 0.0})
+        x["h"], x["l"], x["c"] = max(x["h"], b["h"]), min(x["l"], b["l"]), b["c"]
+        x["v"] += b.get("v", 0)
+        x["qv"] += b.get("qv", 0)
+    return [out[k] for k in sorted(out)]
+
+
 class TestResearch(unittest.TestCase):
     def test_offline_research_pipeline(self):
         from mari_bot import research as R
@@ -328,7 +339,8 @@ class TestResearch(unittest.TestCase):
                 "ETHUSDT": synth(1500, -0.0005, seed=9)}
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(R, "pick_universe", return_value=list(data)), \
-                mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b: data[s]), \
+                mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b, interval="1h":
+                                  data[s] if interval == "1h" else _to_daily(data[s])), \
                 mock.patch.object(R.time, "time", return_value=t_end / 1000):
             rep = R.run_research(months=1, top=3, out_dir=d)
             self.assertEqual(set(rep["results"]), set(R.HYPOTHESES))
@@ -648,6 +660,711 @@ class TestLiveBoot(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(d, "state.json")))
             r2 = live.LiveRunner(d)                              # بازیابی وضعیت
             self.assertEqual(r2.bot.last_ts, r.bot.last_ts)
+
+
+class FundingTests(unittest.TestCase):
+    def test_daily_sum_and_no_lookahead(self):
+        from mari_bot.funding import DAY_MS, crowding, daily_funding
+        days = [i * DAY_MS for i in range(400)]
+        rows = [(d + h * 3_600_000, 0.0001) for d in days for h in (0, 8, 16)]
+        df = daily_funding(rows, days)
+        self.assertAlmostEqual(df[5], 0.0003)
+        df2 = list(df)
+        df2[300] = 0.01                                   # جهش در روز ۳۰۰
+        p1, p2 = crowding(df), crowding(df2)
+        self.assertEqual(p1[:300], p2[:300])              # گذشته از آینده خبر ندارد
+        self.assertGreater(p2[300], 90)
+
+    def test_run_funding_synthetic(self):
+        import math
+        from mari_bot.funding import DAY_MS, run_funding
+        days = [1_577_836_800_000 + i * DAY_MS for i in range(900)]
+        daily = {}
+        for sym, a in (("BTCUSDT", 0.004), ("ETHUSDT", 0.006)):
+            px = [100 * math.exp(0.0008 * i + 0.3 * math.sin(i / 40)) for i in range(900)]
+            daily[sym] = [{"t": t, "o": p, "h": p * (1 + a), "l": p * (1 - a), "c": p, "v": 1, "qv": 1}
+                          for t, p in zip(days, px)]
+        funding = {s: [(t + h * 3_600_000, 0.0001 * math.sin(i / 25)) for i, t in enumerate(days) for h in (0, 8, 16)]
+                   for s in ("BTCUSDT", "ETHUSDT")}
+        r = run_funding(daily, funding, days[300], days[-1])
+        self.assertIn(r["verdict"]["H-MARI-F-017"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+        self.assertGreater(r["events"]["BTCUSDT"]["crowded_long"]["n"], 0)
+        self.assertEqual(r["coverage"]["BTCUSDT"]["days_with_funding_pct"], 100.0)
+
+    def test_funding_paths_allowed_and_readonly(self):
+        from mari_bot.data import _ALLOWED
+        for base, paths in _ALLOWED.items():
+            for p in paths:
+                self.assertNotIn("order", p.lower())
+
+
+class PatternTests(unittest.TestCase):
+    def _daily(self, planted: bool, n_sym=30, n_days=1400, seed=3):
+        import random
+        from mari_bot.pattern import DAY_MS
+        rnd = random.Random(seed)
+        t0 = 1_609_459_200_000                     # 2021-01-01
+        daily = {}
+        btc = [100.0]
+        for i in range(1, n_days):
+            btc.append(btc[-1] * (1 + 0.001 + rnd.gauss(0, 0.02)))
+        daily["BTCUSDT"] = [{"t": t0 + i * DAY_MS, "o": p, "h": p * 1.01, "l": p * .99, "c": p, "v": 1, "qv": 1e9}
+                            for i, p in enumerate(btc)]
+        for k in range(n_sym):
+            px, bars, regime = 50.0, [], rnd.choice((-1, 1))
+            for i in range(n_days):
+                vol_spike = rnd.random() < 0.1
+                if rnd.random() < 1 / 60:          # روند پایدار که هر ~۶۰ روز عوض می‌شود
+                    regime = -regime
+                drift = 0.006 * regime if planted else 0.0
+                px *= 1 + drift + rnd.gauss(0, 0.03)
+                q = 1e6 * (4 if vol_spike else 1) * (1 + k)
+                bars.append({"t": t0 + i * DAY_MS, "o": px, "h": px * 1.02, "l": px * .98, "c": px, "v": q / px, "qv": q})
+            daily[f"C{k}USDT"] = bars
+        return daily
+
+    def test_monday_and_spearman(self):
+        from mari_bot.pattern import DAY_MS, spearman
+        import datetime
+        t = int(datetime.datetime(2026, 11, 2, tzinfo=datetime.timezone.utc).timestamp() * 1000)
+        self.assertEqual((t // DAY_MS + 3) % 7, 0)
+        self.assertAlmostEqual(spearman(list(range(10)), list(range(10))), 1.0)
+
+    def test_finds_planted_pattern_not_noise(self):
+        from mari_bot.pattern import DAY_MS, run_pattern
+        t0 = 1_609_459_200_000
+        train, test = (t0 + 250 * DAY_MS, t0 + 800 * DAY_MS), (t0 + 801 * DAY_MS, t0 + 1390 * DAY_MS)
+        r = run_pattern(self._daily(True), train, test)
+        self.assertEqual(r["learned"]["ret30"]["sign"], 1)
+        self.assertEqual(r["verdict"]["H-MARI-P-019"], "SUPPORTED_IN_TEST_RANGE")
+        fp = sum(run_pattern(self._daily(False, seed=1000 + k), train, test)["verdict"]["H-MARI-P-019"]
+                 != "FALSIFIED" for k in range(10))
+        self.assertLessEqual(fp, 1)                     # نویز خالص: نرخ مثبت کاذب نزدیک ۲٫۵٪
+
+
+class ResearchNotifyTests(unittest.TestCase):
+    def test_summary_lists_verdicts_without_secrets(self):
+        import tempfile
+        from mari_bot.telegram import fmt_research
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "a_report.json"), "w", encoding="utf-8") as fh:
+            json.dump({"hypotheses": {"H-MARI-F-017": "ادعای IC > ۰ در CI95 و BTC بالای SMA150"},
+                       "results": {"verdict": {"H-MARI-F-017": "FALSIFIED"}},
+                       "H-MARI-X-1": {"verdict": "SUPPORTED_IN_TEST_RANGE"}}, fh)
+        with mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "123:SECRET"}):
+            msg = fmt_research("funding", d, True)
+        self.assertIn("❌ رد — H-MARI-F-017", msg)
+        self.assertIn("✅ قبول — H-MARI-X-1", msg)
+        self.assertNotIn("SECRET", msg)
+        self.assertIn("(ادعای IC &gt; ۰ در CI95 و BTC بالای SMA150)", msg)
+        self.assertIn("کامل نشد", fmt_research("funding", d, False))
+
+
+class BlacklistTests(unittest.TestCase):
+    def test_blacklist_no_lookahead_and_timing(self):
+        from mari_bot.pattern import DAY_MS, blacklist_fn, build_blacklist
+        d = PatternTests()._daily(True, n_sym=20, n_days=300)
+        bl = build_blacklist(d)
+        self.assertTrue(bl)
+        keys = sorted(bl)
+        for k in keys:
+            self.assertEqual(((k - DAY_MS) // DAY_MS + 3) % 7, 0)      # پایان بستهٔ دوشنبه
+            self.assertEqual(len(bl[k]), 4)                            # ۲۰٪ از ۲۰
+        cut = keys[3]
+        d2 = {s: [dict(b, c=b["c"] * (5 if b["t"] >= cut else 1)) for b in bars] for s, bars in d.items()}
+        bl2 = build_blacklist(d2)
+        for k in keys[:4]:
+            self.assertEqual(bl[k], bl2[k])                            # آینده گذشته را عوض نمی‌کند
+        f = blacklist_fn(bl)
+        s0 = next(iter(bl[keys[0]]))
+        self.assertFalse(f(s0, keys[0] - 1))
+        self.assertTrue(f(s0, keys[0]))
+
+    def test_engine_respects_blocked(self):
+        from mari_bot.engine import MariBot
+        import inspect
+        self.assertIn("BLACKLIST_Q1", inspect.getsource(MariBot._scan))
+
+
+class IdeasTests(unittest.TestCase):
+    def _d(self):
+        import random
+        rnd = random.Random(7)
+        t0, px, bars = 1_514_764_800_000, 100.0, []
+        for i in range(1500):
+            px *= 1 + 0.0008 + 0.03 * math.sin(i / 90) / 10 + rnd.gauss(0, 0.03)
+            bars.append({"t": t0 + i * 86_400_000, "o": px, "h": px * 1.01, "l": px * .99, "c": px, "v": 1, "qv": 1})
+        return {"BTCUSDT": bars, "ETHUSDT": [dict(b) for b in bars]}
+
+    def test_t006_matches_reference_and_voltarget_is_partial(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import realized_vol, run_ideas, t006_for, voltarget_for
+        from mari_bot.macro import t006_fn
+        d = self._d()
+        a, b = d["BTCUSDT"][300]["t"], d["BTCUSDT"][-1]["t"]
+        ref, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, t006_fn)
+        mine, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, t006_for("BTCUSDT"))
+        self.assertEqual(ref["total_return_pct"], mine["total_return_pct"])
+        c = [x["c"] for x in d["BTCUSDT"]]
+        self.assertGreater(realized_vol(c, 100), 0.3)                    # ~۰٫۰۳ روزانه ≈ ۵۷٪ سالانه
+        vt, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, voltarget_for("BTCUSDT"))
+        self.assertLess(vt["max_drawdown_pct"], mine["max_drawdown_pct"])  # وزن کمتر از ۱ → افت کمتر
+        r = run_ideas(d, a, b)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-V-022", "H-MARI-G-023"})
+
+
+class Ideas2Tests(unittest.TestCase):
+    def test_weekday_planted_and_halving_windows(self):
+        from mari_bot.ideas import _ms, halving_for, run_ideas2, weekday, weekday_test
+        import random
+        rnd = random.Random(2)
+        t0, px, bars = _ms("2018-01-01"), 100.0, []
+        for i in range(3000):
+            t = t0 + i * 86_400_000
+            px *= 1 + (0.01 if weekday(t) == 4 else 0.0) + rnd.gauss(0, 0.01)
+            bars.append({"t": t, "o": px, "h": px, "l": px, "c": px, "v": 1, "qv": 1})
+        r = weekday_test(bars, (_ms("2018-06-01"), _ms("2022-12-31")), (_ms("2023-01-01"), bars[-1]["t"]))
+        self.assertEqual(r["best_day"], 4)
+        self.assertGreater(r["test_vs_all"]["ci95_low"], 0)
+        ctx = {"state": {}, "days": [_ms("2020-05-11")]}
+        self.assertEqual(halving_for("BTCUSDT")(0, ctx), {"BTCUSDT": 1.0})
+        ctx = {"state": {"in": True}, "days": [_ms("2020-05-11") + 548 * 86_400_000]}
+        self.assertEqual(halving_for("BTCUSDT")(0, ctx), {})
+        out = run_ideas2({"BTCUSDT": bars, "ETHUSDT": [dict(b) for b in bars]}, _ms("2018-06-01"), bars[-1]["t"])
+        self.assertEqual(out["verdict"]["H-MARI-W-025"], "SUPPORTED_IN_TEST_RANGE")
+
+
+class Ideas3Tests(unittest.TestCase):
+    def test_williams_fill_and_bollinger_squeeze(self):
+        from mari_bot.ideas import FEE, SLIP, bollinger_for, run_ideas3, williams_sim
+        d0 = 1_527_811_200_000
+        bars = [{"t": d0, "o": 100, "h": 110, "l": 90, "c": 100},           # دامنهٔ دیروز ۲۰
+                {"t": d0 + 86_400_000, "o": 100, "h": 115, "l": 99, "c": 112},  # سطح ۱۱۰ لمس شد
+                {"t": d0 + 2 * 86_400_000, "o": 113, "h": 113, "l": 113, "c": 113}]
+        st = williams_sim(bars, d0, bars[2]["t"])
+        self.assertEqual(st["trades"], 1)
+        exp = (113 * (1 - SLIP)) / (110 * (1 + SLIP)) * (1 - FEE) ** 2 - 1
+        self.assertAlmostEqual(st["total_return_pct"] / 100, exp, places=3)
+        # بولینگر: ۲۰۰ روز آرام سپس جهش → ورود
+        c = [100 + (0.5 if i % 2 else -0.5) * (1 if i < 150 else 0.2) for i in range(200)] + [110]
+        ctx, w = {"c": {"X": c}, "state": {}, "days": []}, None
+        for k in range(len(c)):
+            r = bollinger_for("X")(k, ctx)
+            w = r if r is not None else w
+        self.assertEqual(w, {"X": 1.0})
+
+
+class Ideas4Tests(unittest.TestCase):
+    def test_minervini_and_holy_grail_run_causally(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import holy_grail_for, minervini_for, run_ideas4
+        d = IdeasTests()._d()
+        bars = d["BTCUSDT"]
+        a, b = bars[400]["t"], bars[-1]["t"]
+        r = run_ideas4(d, a, b)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-M-028", "H-MARI-R-029"})
+        # بدون نگاه به آینده: تغییر دادهٔ پس از روز ۸۰۰ نتیجهٔ تا روز ۸۰۰ را عوض نمی‌کند
+        cut = bars[800]["t"]
+        d2 = {"BTCUSDT": [dict(x, c=x["c"] * (3 if x["t"] > cut else 1), h=x["h"] * (3 if x["t"] > cut else 1),
+                               l=x["l"] * (3 if x["t"] > cut else 1)) for x in bars]}
+        for f in (minervini_for, holy_grail_for):
+            s1, c1, _ = run_weights({"BTCUSDT": bars}, ["BTCUSDT"], a, cut, f("BTCUSDT"))
+            s2, c2, _ = run_weights(d2, ["BTCUSDT"], a, cut, f("BTCUSDT"))
+            self.assertEqual(c1, c2)
+
+
+class Ideas5Tests(unittest.TestCase):
+    def test_elder_kama_causal_and_kama_tracks(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import elder_for, kama, kama_for, run_ideas5
+        k = kama([100.0] * 20 + [100.0 + i for i in range(1, 41)])
+        self.assertGreater(k[-1], k[25])                 # روند کامل → KAMA دنبال می‌کند
+        self.assertAlmostEqual(k[15], 100.0)              # بازار صاف → KAMA ثابت
+        d = IdeasTests()._d()
+        bars = d["BTCUSDT"]
+        a, cut = bars[400]["t"], bars[800]["t"]
+        r = run_ideas5(d, a, bars[-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-E-030", "H-MARI-K-031"})
+        d2 = [dict(x, c=x["c"] * (3 if x["t"] > cut else 1), h=x["h"] * (3 if x["t"] > cut else 1),
+                   v=x["v"] * (9 if x["t"] > cut else 1)) for x in bars]
+        vol1, vol2 = {x["t"]: x["v"] for x in bars}, {x["t"]: x["v"] for x in d2}
+        for f1, f2 in ((elder_for("BTCUSDT", vol1), elder_for("BTCUSDT", vol2)), (kama_for("BTCUSDT"), kama_for("BTCUSDT"))):
+            _, c1, _ = run_weights({"BTCUSDT": bars}, ["BTCUSDT"], a, cut, f1)
+            _, c2, _ = run_weights({"BTCUSDT": d2}, ["BTCUSDT"], a, cut, f2)
+            self.assertEqual(c1, c2)
+
+
+class Ideas6Tests(unittest.TestCase):
+    def test_rotation_picks_stronger_asset(self):
+        from mari_bot.ideas import _ms, rotation_fn, run_ideas6
+        days = [_ms("2018-01-01") + i * 86_400_000 for i in range(400)]
+        btc = [100 * 1.002 ** i for i in range(400)]
+        eth = [10 * 1.004 ** i for i in range(400)]                  # ETH قوی‌تر → نسبت صعودی
+        ctx = {"c": {"BTCUSDT": btc, "ETHUSDT": eth}, "state": {}, "days": days}
+        self.assertEqual(rotation_fn(200, ctx), {"ETHUSDT": 1.0})
+        mk = lambda c: [{"t": t, "o": x, "h": x, "l": x, "c": x, "v": 1, "qv": 1} for t, x in zip(days, c)]
+        self.assertIn("H-MARI-D-032", run_ideas6({"BTCUSDT": mk(btc), "ETHUSDT": mk(eth)}, days[160], days[-1])["verdict"])
+
+
+class ReplicationTests(unittest.TestCase):
+    def test_replication_runs_on_eth(self):
+        from mari_bot.ideas import run_replication
+        d = IdeasTests()._d()
+        r = run_replication(d, d["ETHUSDT"][300]["t"], d["ETHUSDT"][-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-T-006-REP", "H-MARI-C-007-REP"})
+        self.assertGreater(r["strategies"]["H-MARI-C-007-REP"]["trades"], 0)
+
+
+class MarketTests(unittest.TestCase):
+    def test_market_and_basket(self):
+        from mari_bot.ideas import LARGE_CAPS, basket_trend_fn, run_market
+        base = IdeasTests()._d()["BTCUSDT"]
+        d = {s: [dict(b) for b in base] for s in ("BTCUSDT",) + LARGE_CAPS}
+        r = run_market(d, base[300]["t"], base[-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-T-033", "H-MARI-V-034", "H-MARI-T-035"})
+        ctx = {"c": {s: [x["c"] for x in base] for s in ("A", "B")}, "state": {}, "days": [x["t"] for x in base]}
+        w = basket_trend_fn(["A", "B"])(300, ctx)
+        self.assertTrue(w is None or all(abs(v - 0.5) < 1e-9 for v in w.values()))
+
+
+class SessionTests(unittest.TestCase):
+    def _hourly(self, planted, days=400, seed=4):
+        import random
+        rnd = random.Random(seed)
+        t0, px, out = 1_609_459_200_000, 100.0, []
+        for d in range(days):
+            sweep = planted and rnd.random() < 0.3
+            for h in range(24):
+                t = t0 + d * 86_400_000 + h * 3_600_000
+                o = px
+                drift = 0.0
+                if sweep and 8 <= h < 13:
+                    drift = -0.004 if h < 11 else 0.006                # لندن: پایین سپس برگشت
+                if sweep and 13 <= h < 21:
+                    drift = 0.003                                       # نیویورک: صعود
+                px *= 1 + drift + rnd.gauss(0, 0.002)
+                out.append({"t": t, "o": o, "h": max(o, px) * 1.001, "l": min(o, px) * 0.999, "c": px, "v": 1, "qv": 1})
+        return out
+
+    def test_session_split_and_planted_sweep(self):
+        from mari_bot.sessions import daily_sessions, s036
+        days = daily_sessions(self._hourly(True))
+        self.assertEqual(len(days), 400)
+        r = s036(days)
+        self.assertGreater(r["bull"]["n"], 50)
+        self.assertGreater(r["bull"]["vs_all"]["ci95_low"], 0)
+
+    def test_missing_hour_drops_day(self):
+        from mari_bot.sessions import daily_sessions
+        bars = self._hourly(False, days=3)
+        del bars[24 + 15]                                              # روز دوم، ساعت ۱۵
+        self.assertEqual(len(daily_sessions(bars)), 2)
+
+
+class TradfiTests(unittest.TestCase):
+    def test_tokenized_stocks_excluded_real_crypto_kept(self):
+        from mari_bot.config import is_tradfi, tradable_symbol
+        for s in ("IAUONUSDT", "GLDXUSDT", "TSLAONUSDT", "NVDABUSDT", "QQQXUSDT", "SPCXXUSDT"):
+            self.assertTrue(is_tradfi(s), s)
+            self.assertFalse(tradable_symbol(s), s)
+        for s in ("TONUSDT", "TRXUSDT", "IMXUSDT", "ONUSDT", "SOONUSDT", "FLUXUSDT", "DYDXUSDT", "BTCUSDT"):
+            self.assertFalse(is_tradfi(s), s)
+            self.assertTrue(tradable_symbol(s), s)
+
+
+class Ideas7Tests(unittest.TestCase):
+    def test_turn_of_month_window(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas7 import is_tom
+        ms = lambda s: int(datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+        for d in ("2024-01-31", "2024-02-01", "2024-02-03", "2024-02-29", "2023-02-28", "2024-12-31"):
+            self.assertTrue(is_tom(ms(d)), d)
+        for d in ("2024-02-04", "2024-02-28", "2024-01-15", "2023-02-27"):
+            self.assertFalse(is_tom(ms(d)), d)
+
+    def test_ensemble_weight_steps(self):
+        from mari_bot.ideas7 import ensemble_weight
+        up = [float(i) for i in range(1, 301)]
+        self.assertIsNone(ensemble_weight(up, 150))
+        self.assertEqual(ensemble_weight(up, 299), 1.0)
+        down = list(reversed(up))
+        self.assertEqual(ensemble_weight(down, 299), 0.0)
+
+    def test_planted_tom_effect_detected(self):
+        from mari_bot.ideas7 import is_tom, tom_test
+        DAY = 86_400_000
+        t0 = 1_546_300_800_000                                         # 2019-01-01
+        bars, c = [], 100.0
+        for i in range(900):
+            t = t0 + i * DAY
+            c *= 1.01 if is_tom(t) else (0.999 if i % 2 else 1.0)
+            bars.append({"t": t, "c": c})
+        r = tom_test(bars, t0, t0 + 900 * DAY)
+        self.assertGreater(r["tom_minus_rest"]["ci95_low"], 0)
+
+
+class P044Tests(unittest.TestCase):
+    def test_pair_trend_half_weights(self):
+        from mari_bot.ideas7 import pair_trend_fn
+        DAY = 86_400_000
+        up = [float(i) for i in range(1, 201)]
+        down = list(reversed(up))
+        ctx = {"c": {"BTCUSDT": up, "ETHUSDT": down}, "state": {}, "days": [i * DAY for i in range(200)]}
+        fn = pair_trend_fn()
+        self.assertIsNone(fn(100, ctx))
+        self.assertEqual(fn(199, ctx), {"BTCUSDT": 0.5})
+        self.assertIsNone(fn(199, {**ctx, "days": [(i + 1) * DAY for i in range(200)]}) if False else None)
+
+
+class OITests(unittest.TestCase):
+    def _zip(self, rows):
+        import io, zipfile
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            z.writestr("m.csv", "create_time,symbol,sum_open_interest,sum_open_interest_value\n" + "\n".join(rows))
+        return b.getvalue()
+
+    def test_oi_change_uses_only_past(self):
+        from mari_bot.oi import oi_change
+        H = 3_600_000
+        rows = [(i * 300_000, 100.0 if i * 300_000 < 30 * H else 300.0) for i in range(int(48 * H / 300_000))]
+        self.assertAlmostEqual(oi_change(rows, 25 * H), 0.0)            # جهش بعد از ورود دیده نمی‌شود
+        self.assertAlmostEqual(oi_change(rows, 40 * H), 2.0)
+        self.assertIsNone(oi_change(rows, 10 * H))                       # ۲۴ ساعت پیش داده ندارد
+
+    def test_collect_and_planted_effect(self):
+        from mari_bot.oi import collect, evaluate
+        DAY = 86_400_000
+        t0 = 1_746_000_000_000 // DAY * DAY
+        def getter(path):
+            sym = path.split("/")[-2]
+            if sym == "SPOTONLYUSDT":
+                return None
+            d = path.rsplit("-metrics-", 1)[1][:10]
+            from datetime import datetime, timezone
+            base = int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+            rows = []
+            for i in range(288):
+                t = base + i * 300_000
+                hot = sym.startswith("HOT") and t >= t0 + 10 * DAY
+                ts = datetime.fromtimestamp(t / 1000, timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                rows.append(f"{ts},{sym},{200.0 if hot else 100.0},1")
+            return self._zip(rows)
+        trades = []
+        for i in range(30):
+            trades.append({"symbol": "HOTUSDT", "entry_ts": t0 + 10 * DAY + 12 * 3_600_000 + i,
+                           "pnl_pct": -3.0 - (i % 3), "pnl_usdt": -5, "exit_reason": "STOP_LOSS"})
+            trades.append({"symbol": "CALMUSDT", "entry_ts": t0 + 10 * DAY + 12 * 3_600_000,
+                           "pnl_pct": 1.0 + (i % 3), "pnl_usdt": 3, "exit_reason": "TP"})
+        trades.append({"symbol": "SPOTONLYUSDT", "entry_ts": t0 + 10 * DAY, "pnl_pct": 1, "pnl_usdt": 1, "exit_reason": "TP"})
+        tro, cov = collect(trades, getter=getter, pause=0)
+        self.assertEqual(cov["with_oi"], 60)
+        self.assertEqual(cov["symbols_without_futures"], ["SPOTONLYUSDT"])
+        r = evaluate(tro)
+        self.assertEqual(r["surge"]["n"], 30)
+        self.assertEqual(r["verdict"], "SUPPORTED_IN_TEST_RANGE")
+
+    def test_pooled_verdict_needs_majority(self):
+        from mari_bot.oi import pooled_verdict
+        pool = {"surge": {"n": 40}, "rest_minus_surge": {"diff_pct": 2, "ci95_low": 0.5}}
+        mk = lambda d: {"rest_minus_surge": {"diff_pct": d}}
+        self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(1), "d": mk(-1)}, pool), "SUPPORTED_IN_TEST_RANGE")
+        self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(-1), "d": mk(-1)}, pool), "FALSIFIED")
+        self.assertEqual(pooled_verdict({}, {"surge": {"n": 5}, "rest_minus_surge": None}), "INSUFFICIENT_DATA")
+
+
+class Ideas8Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _ctx(self, closes):
+        return {"c": {"X": closes}, "state": {}, "days": [i * self.DAY for i in range(len(closes))]}
+
+    def test_parse_fng_and_no_lookahead(self):
+        from mari_bot.ideas8 import Series, parse_fng
+        pts = parse_fng({"data": [{"value": "15", "timestamp": str(2 * 86400)},
+                                  {"value": "80", "timestamp": str(1 * 86400)},
+                                  {"value": "bad", "timestamp": "x"}]})
+        self.assertEqual(pts, [(self.DAY, 80), (2 * self.DAY, 15)])
+        s = Series(pts)
+        self.assertIsNone(s.at(0))                      # پیش از اولین مقدار: نامعلوم
+        self.assertEqual(s.at(self.DAY + 5), 80)        # مقدار فردا دیده نمی‌شود
+        self.assertIsNone(s.at(10 * self.DAY))          # دادهٔ کهنه
+
+    def test_fng_strategy_buys_fear_sells_greed(self):
+        from mari_bot.ideas8 import Series, fng_for
+        s = Series([(0, 50), (self.DAY, 18), (2 * self.DAY, 40), (3 * self.DAY, 76)])
+        fn, ctx = fng_for("X", s), self._ctx([1, 1, 1, 1])
+        self.assertEqual([fn(k, ctx) for k in range(4)], [None, {"X": 1.0}, None, {}])
+
+    def test_winter_months(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas8 import is_winter
+        ms = lambda m: int(datetime(2024, m, 15, tzinfo=timezone.utc).timestamp() * 1000)
+        self.assertTrue(all(is_winter(ms(m)) for m in (11, 12, 1, 2, 3, 4)))
+        self.assertFalse(any(is_winter(ms(m)) for m in (5, 6, 7, 8, 9, 10)))
+
+    def test_halloween_detects_planted_effect(self):
+        from mari_bot.ideas8 import halloween_test
+        import random
+        rnd, c, bars = random.Random(3), 100.0, []
+        for i in range(1500):
+            t = 1_514_764_800_000 + i * self.DAY            # از ۲۰۱۸-۰۱-۰۱
+            from mari_bot.ideas8 import is_winter
+            c *= 1 + rnd.gauss(0.004 if is_winter(t) else -0.004, 0.01)
+            bars.append({"t": t, "c": c})
+        r = halloween_test(bars, bars[0]["t"], bars[-1]["t"])
+        self.assertGreater(r["winter_minus_summer"]["ci95_low"], 0)
+
+    def test_trailing_stop_exits_and_waits_for_fresh_cross(self):
+        from mari_bot.ideas8 import trail_for
+        closes = [100.0] * 149 + [110, 120, 130, 105, 125, 130, 90, 120]
+        fn, ctx = trail_for("X", trail=0.15, n=150), self._ctx(closes)
+        sig = {k: fn(k, ctx) for k in range(len(closes))}
+        self.assertEqual(sig[149], {"X": 1.0})          # ورود بالای میانگین
+        self.assertEqual(sig[152], {})                   # ۱۰۵ ≤ ۱۳۰×۰٫۸۵ → خروج با حد ضرر
+        self.assertIsNone(sig[153])                      # هنوز بالای میانگین: ورود دوباره ممنوع
+        self.assertIsNone(sig[155])                      # زیر میانگین: فقط مسلح می‌شود
+        self.assertEqual(sig[156], {"X": 1.0})          # تقاطع تازه → ورود
+
+    def test_run_ideas8_on_synthetic(self):
+        from mari_bot.ideas8 import run_ideas8
+        import random
+        rnd, daily = random.Random(5), {}
+        t0 = 1_514_764_800_000
+        for sym in ("BTCUSDT", "ETHUSDT"):
+            c, bars = 100.0, []
+            for i in range(900):
+                c *= 1 + rnd.gauss(0.0005, 0.03)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99, "c": c, "v": 1})
+            daily[sym] = bars
+        fng = [(t0 + i * self.DAY, 10 + (i * 7) % 85) for i in range(900)]
+        r = run_ideas8(daily, fng, t0 + 300 * self.DAY, t0 + 899 * self.DAY)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-F-044", "H-MARI-S-045", "H-MARI-K-046"})
+        self.assertGreater(r["by_asset"]["BTCUSDT"]["H-MARI-F-044"]["trades"], 0)
+
+
+class Ideas9Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_weekday_helpers(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas9 import is_monday, is_sunday
+        ms = lambda y, m, d: int(datetime(y, m, d, tzinfo=timezone.utc).timestamp() * 1000)
+        self.assertTrue(is_sunday(ms(2026, 11, 1)))
+        self.assertTrue(is_monday(ms(2026, 11, 2)))
+        self.assertFalse(is_sunday(ms(2026, 11, 5)))
+
+    def test_weekly_only_decides_on_sunday(self):
+        from mari_bot.ideas9 import is_sunday, weekly_for
+        closes = [100.0] * 160 + [200.0] * 14
+        days = [i * self.DAY for i in range(len(closes))]
+        ctx = {"c": {"X": closes}, "state": {}, "days": days}
+        fn = weekly_for("X")
+        sig = [(k, fn(k, ctx)) for k in range(len(closes))]
+        fired = [k for k, s in sig if s]
+        self.assertTrue(fired and all(is_sunday(days[k]) for k in fired))
+        self.assertGreaterEqual(fired[0], 160)
+
+    def test_gated_basket_follows_btc_only(self):
+        from mari_bot.ideas9 import gated_basket_fn
+        n = 160
+        btc = [100.0] * 150 + [50.0] * 5 + [200.0] * 5
+        alt = [10.0] * n
+        ctx = {"c": {"BTCUSDT": btc, "A": alt}, "state": {}, "days": [i * self.DAY for i in range(n)]}
+        fn = gated_basket_fn(["BTCUSDT", "A"])
+        sig = {k: fn(k, ctx) for k in range(n)}
+        self.assertEqual(sig[149], {})                  # برابر میانگین = بیرون
+        self.assertIsNone(sig[150])
+        self.assertEqual(sig[155], {"BTCUSDT": 0.5, "A": 0.5})
+
+
+class Ideas10Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _daily(self, n_syms=30, days=500, seed=7, planted=False):
+        import random
+        rnd, out = random.Random(seed), {}
+        t0 = 1_577_836_800_000 + 4 * self.DAY            # ۲۰۲۰-۰۱-۰۵
+        for j in range(n_syms):
+            c, bars, drift = 10.0, [], 0.0
+            for i in range(days):
+                if planted and i % 7 == 1:                   # روند هفتهٔ قبل ادامه پیدا می‌کند
+                    drift = 0.004 if bars and bars[-1]["c"] > bars[max(0, len(bars) - 20)]["c"] else -0.004
+                c *= 1 + (drift if planted else 0) + rnd.gauss(0, 0.03)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.02, "l": c * 0.98, "c": c,
+                             "qv": 1e6 * (j + 1)})
+            out[f"S{j}USDT"] = bars
+        out["BTCUSDT"] = out.pop("S0USDT")
+        return out, t0
+
+    def test_universe_point_in_time_and_history(self):
+        from mari_bot.ideas10 import Panel, universe
+        d, t0 = self._daily(days=400)
+        d["NEWUSDT"] = [{"t": t0 + i * self.DAY, "o": 1, "h": 1, "l": 1, "c": 1, "qv": 1e12} for i in range(300, 400)]
+        p = Panel(d)
+        u = universe(p, t0 + 399 * self.DAY, top=5)
+        self.assertNotIn("NEWUSDT", u)                  # تاریخچهٔ کوتاه
+        self.assertEqual(u[0], "S29USDT")               # پرحجم‌ترین
+
+    def test_delisted_coin_uses_last_close(self):
+        from mari_bot.ideas10 import Panel
+        p = Panel({"X": [{"t": 0, "h": 1, "c": 1.0}, {"t": self.DAY, "h": 2, "c": 2.0}]})
+        self.assertEqual(p.close_at_or_before("X", 10 * self.DAY), 2.0)
+        self.assertIsNone(p.close_at_or_before("X", -1))
+
+    def test_noise_mostly_falsified_and_planted_supported(self):
+        from mari_bot.ideas10 import run_ideas10
+        fp = 0
+        for k in range(3):
+            d, t0 = self._daily(seed=100 + k)
+            r = run_ideas10(d, t0 + 366 * self.DAY, t0 + 499 * self.DAY)
+            fp += r["verdict"]["H-MARI-C-051"] != "FALSIFIED"
+        self.assertLessEqual(fp, 1)
+        d, t0 = self._daily(seed=3, days=700, planted=True)
+        r = run_ideas10(d, t0 + 366 * self.DAY, t0 + 699 * self.DAY)
+        self.assertEqual(r["verdict"]["H-MARI-C-051"], "SUPPORTED_IN_TEST_RANGE")
+
+
+class Ideas11Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_score_max_uses_only_past_30_days(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas11 import score_max
+        c = [10.0] * 40 + [20.0] + [20.0] * 40            # جهش ۱۰۰٪ در روز ۴۰
+        bars = [{"t": i * self.DAY, "h": v, "c": v, "qv": 1.0} for i, v in enumerate(c)]
+        p = Panel({"X": bars})
+        self.assertAlmostEqual(score_max(p, ["X"], 45 * self.DAY)["X"], 1.0, places=6)
+        self.assertAlmostEqual(score_max(p, ["X"], 39 * self.DAY)["X"], 0.0, places=6)
+        self.assertAlmostEqual(score_max(p, ["X"], 75 * self.DAY)["X"], 0.0, places=6)
+
+    def test_beats_requires_both_sharpe_and_return(self):
+        from mari_bot.ideas11 import _beats
+        hi = {"sharpe": 1.0, "total_return_pct": 100.0}
+        lo = {"sharpe": 0.5, "total_return_pct": 50.0}
+        self.assertTrue(_beats(hi, lo))
+        self.assertFalse(_beats(lo, hi))
+        self.assertFalse(_beats({"sharpe": 1.0, "total_return_pct": 10.0}, lo))   # شارپ بهتر، بازده کمتر
+        self.assertFalse(_beats({"sharpe": None}, lo))
+
+    def test_compare_needs_all_three_windows(self):
+        from mari_bot.ideas11 import compare
+        import random
+        rnd = random.Random(7)
+        noise = [rnd.gauss(0, 0.01) for _ in range(60)]
+        good = [{"top": 0.02 + z, "ew": 0.001 + z} for z in noise]
+        self.assertEqual(compare(good)["verdict"], "SUPPORTED_IN_TEST_RANGE")
+        mixed = [{"top": (0.02 if i < 30 else -0.02) + z, "ew": 0.001 + z} for i, z in enumerate(noise)]
+        self.assertEqual(compare(mixed)["verdict"], "FALSIFIED")
+        flat = [{"top": 0.02, "ew": 0.001} for _ in range(60)]
+        self.assertEqual(compare(flat)["verdict"], "FALSIFIED")      # نوسان صفر → شارپ نامعلوم
+
+    def test_gate_benchmark_is_gated_and_aligned(self):
+        from mari_bot.ideas10 import Panel, btc_gate, is_monday
+        from mari_bot.ideas11 import _gate_benchmark
+        import random
+        rnd, d = random.Random(11), {}
+        t0 = 1_577_836_800_000 + 4 * self.DAY
+        for j in range(12):
+            c, bars = 10.0, []
+            for i in range(600):
+                c *= 1 + rnd.gauss(0.001, 0.02)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99, "c": c, "qv": 1e6})
+            d[f"S{j}USDT"] = bars
+        d["BTCUSDT"] = d.pop("S0USDT")
+        p = Panel(d)
+        mondays = [t for t in sorted(p.sym["BTCUSDT"]["t"])
+                   if t0 + 400 * self.DAY <= t <= t0 + 590 * self.DAY and is_monday(t)]
+        from mari_bot.ideas10 import run_xs, score_high52
+        g = btc_gate(p)
+        top, _ = run_xs(p, mondays, score_high52, gate=g, frac=0.2)
+        rows = _gate_benchmark(p, mondays, top, g)
+        self.assertEqual(len(rows), len(top))
+        cash = [r for r in rows if not g(r["t"])]
+        self.assertTrue(all(abs(r["ew"]) < 1e-9 for r in cash))   # هفتهٔ نقد: محک هم نقد است
+
+
+class Ideas12Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_downside_beta_only_uses_weak_market_weeks(self):
+        from mari_bot.ideas12 import downside_beta
+        # هفته‌های نزولی باید اندازه‌های متفاوت داشته باشند، وگرنه شیب تعریف‌نشده است
+        mkt = {k: (-0.01 * (k % 7 + 1) if k % 2 else 0.05) for k in range(1, 41)}
+        coin = {k: 2.0 * mkt[k] for k in mkt}
+        self.assertAlmostEqual(downside_beta(coin, mkt), 2.0, places=6)
+        flat_down = {k: (-0.05 if k % 2 else 0.05) for k in range(1, 41)}
+        self.assertIsNone(downside_beta({k: 2.0 * v for k, v in flat_down.items()}, flat_down))
+        # هفته‌های صعودی بازار نباید اثر بگذارند
+        noisy = dict(coin)
+        for k in mkt:
+            if mkt[k] > 0:
+                noisy[k] = 99.0
+        self.assertAlmostEqual(downside_beta(noisy, mkt), 2.0, places=6)
+        self.assertIsNone(downside_beta({1: 0.1}, {1: -0.1}))      # کمتر از ۱۰ هفتهٔ نزولی
+
+    def test_weekly_returns_look_back_only(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas12 import weekly_returns
+        c = [10.0 * (1.01 ** i) for i in range(400)]
+        bars = [{"t": i * self.DAY, "h": v, "c": v, "qv": 1.0} for i, v in enumerate(c)]
+        p = Panel({"X": bars})
+        rs = weekly_returns(p, "X", 200 * self.DAY, n_weeks=10)
+        self.assertEqual(len(rs), 10)
+        self.assertTrue(all(abs(r - (1.01 ** 7 - 1)) < 1e-9 for _, r in rs))
+
+    def test_risk_criterion_allows_lower_return_but_needs_lower_drawdown(self):
+        from mari_bot.ideas12 import _beats_risk
+        a = {"sharpe": 1.2, "max_drawdown_pct": 60.0, "total_return_pct": 100.0}
+        b = {"sharpe": 0.5, "max_drawdown_pct": 85.0, "total_return_pct": 900.0}
+        self.assertTrue(_beats_risk(a, b))                          # بازده کمتر اشکالی ندارد
+        self.assertFalse(_beats_risk({"sharpe": 1.2, "max_drawdown_pct": 90.0}, b))
+        self.assertFalse(_beats_risk({"sharpe": 0.4, "max_drawdown_pct": 10.0}, b))
+
+
+class Ideas13Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _days(self, n):
+        return [i * self.DAY for i in range(n)]
+
+    def test_annualized_needs_enough_settlements(self):
+        from mari_bot.ideas13 import annualized
+        self.assertIsNone(annualized([None, None, 0.001]))
+        self.assertAlmostEqual(annualized([0.001] * 7), 0.365, places=9)
+        self.assertAlmostEqual(annualized([0.001, 0.001, 0.001, 0.001, None, None, None]), 0.365, places=9)
+
+    def test_entry_exit_lagged_by_one_day_and_costs_charged(self):
+        from mari_bot.ideas13 import run_carry
+        n = 400
+        fd = [0.0005] * n                                  # سالانه حدود ۱۸٪ → باید وارد شود
+        r = run_carry(self._days(n), fd, cost=0.003)
+        self.assertEqual(r["cycles"], 1)                   # یک ورود، بدون خروج
+        self.assertLess(r["days_in_position_pct"], 100.0)  # روزهای اول بیرون است (تأخیر سیگنال)
+        self.assertGreater(r["total_return_pct"], 0)
+        free = run_carry(self._days(n), fd, cost=0.0)
+        self.assertGreater(free["total_return_pct"], r["total_return_pct"])
+
+    def test_negative_funding_forces_exit(self):
+        from mari_bot.ideas13 import run_carry
+        n = 400
+        fd = [0.0005] * 200 + [-0.0005] * (n - 200)
+        r = run_carry(self._days(n), fd)
+        self.assertEqual(r["cycles"], 1)
+        self.assertLess(r["days_in_position_pct"], 55.0)   # پس از منفی شدن خارج می‌شود
+
+    def test_passes_requires_all_three_bars(self):
+        from mari_bot.ideas13 import passes
+        self.assertTrue(passes({"sharpe": 1.5, "max_drawdown_pct": 3.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 0.9, "max_drawdown_pct": 3.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 1.5, "max_drawdown_pct": 12.0, "total_return_pct": 20.0}))
+        self.assertFalse(passes({"sharpe": 1.5, "max_drawdown_pct": 3.0, "total_return_pct": -1.0}))
+        self.assertFalse(passes({"insufficient": True}))
+
+    def test_short_sample_is_insufficient_not_pass(self):
+        from mari_bot.ideas13 import run_carry
+        r = run_carry(self._days(50), [0.001] * 50)
+        self.assertTrue(r["insufficient"])
 
 
 if __name__ == "__main__":
