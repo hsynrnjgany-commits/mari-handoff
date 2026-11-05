@@ -407,3 +407,39 @@ def run_ideas5(daily: dict, start_ms: int, end_ms: int) -> dict:
             ok[hid] &= bool((st.get("sharpe") or -9) > s6 and st.get("max_drawdown_pct", 100) <= m6)
         out[sym] = {"T-006": t6, "H-MARI-E-030": el, "H-MARI-K-031": ka}
     return {"by_asset": out, "verdict": {k: "SUPPORTED_IN_TEST_RANGE" if v else "FALSIFIED" for k, v in ok.items()}}
+
+
+# ---------------------------------------------------------------- ایدهٔ ۱۱ (ثبت 2026-11-05T06:30Z)
+IDEA6_HYPOTHESES = {
+    "H-MARI-D-032": "چرخش: وقتی T-006 روشن است، ETH اگر ETH/BTC بالای SMA50 خودش، وگرنه BTC؛ خاموش = نقد. "
+                    "شارپ بیشتر و افت کمتر یا برابر T-006، در هر دو دورهٔ ۲۰۱۸-۲۰۲۲ و ۲۰۲۳-اکنون.",
+}
+
+
+def rotation_fn(k, ctx):
+    st, b, e = ctx["state"], ctx["c"]["BTCUSDT"], ctx["c"]["ETHUSDT"]
+    if k < 149:
+        return None
+    if not b[k] > _sma(b, k, 150):
+        want = "CASH"
+    else:
+        ratio = [e[i] / b[i] for i in range(k - 49, k + 1)]
+        want = "ETHUSDT" if ratio[-1] > sum(ratio) / 50 else "BTCUSDT"
+    if want != st.get("hold"):
+        st["hold"] = want
+        return {} if want == "CASH" else {want: 1.0}
+    return None
+
+
+def run_ideas6(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights
+    split = _ms("2023-01-01")
+    periods = {"2018-2022": (start_ms, split - DAY_MS), "2023-now": (split, end_ms)}
+    out, ok = {}, True
+    for name, (a, b) in periods.items():
+        t6, _, _ = run_weights({"BTCUSDT": daily["BTCUSDT"]}, ["BTCUSDT"], a, b, t006_for("BTCUSDT"))
+        ro, _, _ = run_weights(daily, ["BTCUSDT", "ETHUSDT"], a, b, rotation_fn)
+        ok &= bool((ro.get("sharpe") or -9) > (t6.get("sharpe") or 9)
+                   and ro.get("max_drawdown_pct", 100) <= t6.get("max_drawdown_pct", 0))
+        out[name] = {"T-006": t6, "H-MARI-D-032": ro}
+    return {"by_period": out, "verdict": {"H-MARI-D-032": "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"}}

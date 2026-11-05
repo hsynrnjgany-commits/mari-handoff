@@ -769,3 +769,37 @@ def run_ideas5_research(start: str = "2018-06-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "ideas5_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_ideas6_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۱۱: چرخش BTC/ETH با نسبت ETH/BTC، در دو دورهٔ جدا."""
+    from .ideas import IDEA6_HYPOTHESES, run_ideas6
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas6(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:30Z",
+              "hypotheses": IDEA6_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۲ می‌رسد.",
+                               "نسبت ETH/BTC جانشین دامیننس است، نه خود آن."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas6_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# صف ایده‌ها: چرخش بیت‌کوین و آلت‌کوین", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA6_HYPOTHESES[hid]}")
+    md += ["", "| دوره | روش | بازده کل ٪ | CAGR ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|---|---|"]
+    for per, x in res["by_period"].items():
+        for name, st in x.items():
+            md.append(f"| {per} | {name} | {st.get('total_return_pct')} | {st.get('cagr_pct')} | "
+                      f"{st.get('max_drawdown_pct')} | {st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas6_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

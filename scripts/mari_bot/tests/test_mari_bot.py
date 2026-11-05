@@ -874,5 +874,17 @@ class Ideas5Tests(unittest.TestCase):
             self.assertEqual(c1, c2)
 
 
+class Ideas6Tests(unittest.TestCase):
+    def test_rotation_picks_stronger_asset(self):
+        from mari_bot.ideas import _ms, rotation_fn, run_ideas6
+        days = [_ms("2018-01-01") + i * 86_400_000 for i in range(400)]
+        btc = [100 * 1.002 ** i for i in range(400)]
+        eth = [10 * 1.004 ** i for i in range(400)]                  # ETH قوی‌تر → نسبت صعودی
+        ctx = {"c": {"BTCUSDT": btc, "ETHUSDT": eth}, "state": {}, "days": days}
+        self.assertEqual(rotation_fn(200, ctx), {"ETHUSDT": 1.0})
+        mk = lambda c: [{"t": t, "o": x, "h": x, "l": x, "c": x, "v": 1, "qv": 1} for t, x in zip(days, c)]
+        self.assertIn("H-MARI-D-032", run_ideas6({"BTCUSDT": mk(btc), "ETHUSDT": mk(eth)}, days[160], days[-1])["verdict"])
+
+
 if __name__ == "__main__":
     unittest.main()

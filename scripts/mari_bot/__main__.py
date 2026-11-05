@@ -172,6 +172,12 @@ def cmd_ideas5(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas6(a):
+    from .research import run_ideas6_research
+    r = run_ideas6_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -256,6 +262,10 @@ def main(argv=None):
     i5.add_argument("--start", default="2018-06-01")
     i5.add_argument("--out", default="research_out")
     i5.set_defaults(fn=cmd_ideas5)
+    i6 = sub.add_parser("ideas6", help="صف ایده‌ها: چرخش BTC/ETH")
+    i6.add_argument("--start", default="2018-06-01")
+    i6.add_argument("--out", default="research_out")
+    i6.set_defaults(fn=cmd_ideas6)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)
