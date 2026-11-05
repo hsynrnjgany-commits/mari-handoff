@@ -1,0 +1,79 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T20:00Z",
+ "hypotheses": {
+  "H-MARI-Y-057": "کری دلتا-نیوترال فاندینگ (ورود وقتی میانگین ۷ روزهٔ فاندینگ سالانه‌شده > ۱۰٪، خروج زیر ۰٪): شارپ بیشتر از ۱٫۰، بیشترین افت کمتر از ۱۰٪ و بازده کل مثبت پس از هزینه — روی BTC و ETH هر دو."
+ },
+ "sources": {
+  "BTCUSDT": {
+   "used": "binance_archive",
+   "rows": 7092,
+   "settled_days": 2344,
+   "failed_before": {
+    "binance": "دریافت ناموفق /fapi/v1/fundingRate (HTTP_451)"
+   }
+  },
+  "ETHUSDT": {
+   "used": "binance_archive",
+   "rows": 7092,
+   "settled_days": 2344,
+   "failed_before": {
+    "binance": "دریافت ناموفق /fapi/v1/fundingRate (HTTP_451)"
+   }
+  }
+ },
+ "period": {
+  "from": "2020-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۷ می‌رسد.",
+  "پوشش کامل فرض شده: اختلاف قیمت اسپات و دائمی (basis)، هزینهٔ مارجین و خطر لیکویید شدن مدل نشده‌اند. نتیجه سقف خوش‌بینانه است، نه بازده واقعی.",
+  "بدون اهرم: درآمد روی همان سرمایه حساب شده (مقاله‌ها معمولاً اهرم دارند).",
+  "هزینه: ۴ پا در هر چرخه، مجموعاً ۰٫۶٪ (۰٫۳٪ ورود + ۰٫۳٪ خروج).",
+  "فاندینگ تاریخی بایننس از ۲۰۲۰-۰۱؛ پیش از آن داده نیست."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "H-MARI-Y-057": {
+     "n_days": 2348,
+     "cycles": 10,
+     "total_return_pct": 76.36,
+     "max_drawdown_pct": 1.46,
+     "sharpe": 9.31,
+     "days_in_position_pct": 57.8
+    },
+    "ALWAYS_ON_INFO": {
+     "n_days": 2348,
+     "cycles": 1,
+     "total_return_pct": 106.19,
+     "max_drawdown_pct": 0.41,
+     "sharpe": 10.9,
+     "days_in_position_pct": 99.8
+    }
+   },
+   "ETHUSDT": {
+    "H-MARI-Y-057": {
+     "n_days": 2348,
+     "cycles": 9,
+     "total_return_pct": 100.64,
+     "max_drawdown_pct": 0.83,
+     "sharpe": 8.83,
+     "days_in_position_pct": 56.1
+    },
+    "ALWAYS_ON_INFO": {
+     "n_days": 2348,
+     "cycles": 1,
+     "total_return_pct": 126.99,
+     "max_drawdown_pct": 1.77,
+     "sharpe": 9.51,
+     "days_in_position_pct": 99.8
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-Y-057": "SUPPORTED_IN_TEST_RANGE"
+  }
+ }
+}
