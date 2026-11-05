@@ -5,6 +5,7 @@
 # اسرار لازم (Settings → Secrets and variables → Actions):
 #   MARI_TELEGRAM_TOKEN    توکن ربات تلگرام (از BotFather)
 #   MARI_TELEGRAM_CHAT_ID  شناسهٔ عددی چت شما (از userinfobot)
+#   MARI_TELEGRAM_CHANNEL_ID  (اختیاری) کانال عمومی، مثل @mari_honest — ربات باید ادمین کانال باشد
 # بدون این دو، ربات کار می‌کند ولی پیام تلگرام نمی‌فرستد.
 
 name: mari-bot
@@ -12,6 +13,8 @@ name: mari-bot
 on:
   schedule:
     - cron: "7 * * * *"      # هر ساعت، دقیقهٔ ۷ (پس از بسته‌شدن کندل ساعتی)
+    - cron: "37 * * * *"     # پشتیبان: گیت‌هاب گاهی اجرای زمان‌بندی‌شده را جا می‌اندازد.
+                             # اجرای اضافه بی‌خطر است: کندل تکراری پردازش نمی‌شود (last_ts) و concurrency جلوی هم‌پوشانی را می‌گیرد.
   workflow_dispatch: {}      # دکمهٔ اجرای دستی
 
 permissions:
@@ -24,7 +27,7 @@ concurrency:
 jobs:
   cycle:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
 
@@ -52,7 +55,21 @@ jobs:
         env:
           MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
           MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
-        run: python -m mari_bot once --state ../state-wt
+          MARI_TELEGRAM_CHANNEL_ID: ${{ secrets.MARI_TELEGRAM_CHANNEL_ID }}
+        run: python -m mari_bot once --state ../state-wt --top 1000 --rotate 0
+
+      - name: Alert owner on failure
+        if: failure()
+        env:
+          MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
+          MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -n "$MARI_TELEGRAM_TOKEN" ] && [ -n "$MARI_TELEGRAM_CHAT_ID" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${MARI_TELEGRAM_TOKEN}/sendMessage" \
+              -d chat_id="$MARI_TELEGRAM_CHAT_ID" \
+              --data-urlencode text="🚨 اجرای ربات ماری با خطا تمام شد. جزئیات: $RUN_URL — این لینک را برای Claude بفرست. ⚠️ همه‌چیز تمرینی است — بدون سفارش واقعی" > /dev/null || true
+          fi
 
       - name: Save state
         if: always()

@@ -111,6 +111,43 @@ def cmd_momentum(a):
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_classics(a):
+    from .research import run_classics_research
+    r = run_classics_research(start=a.start, out_dir=a.out)
+    print(json.dumps({k: {kk: v.get(kk) for kk in ("verdict", "total_return_pct", "max_drawdown_pct", "sharpe")}
+                      if k != "D-010" else v for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
+
+
+def cmd_macro(a):
+    from .research import run_macro_research
+    r = run_macro_research(start=a.start, out_dir=a.out)
+    print(json.dumps({k: {kk: v.get(kk) for kk in ("verdict", "total_return_pct", "max_drawdown_pct", "sharpe")}
+                      for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
+
+
+def cmd_funding(a):
+    from .research import run_funding_research
+    r = run_funding_research(start=a.start, out_dir=a.out)
+    print(json.dumps({"verdict": r["results"]["verdict"], "sources": r["sources"]}, ensure_ascii=False, indent=2))
+
+
+def cmd_pattern(a):
+    from .research import run_pattern_research
+    r = run_pattern_research(out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
+def cmd_notify_research(a):
+    from .telegram import notify_research
+    notify_research(a.kind, a.dir, a.status == "success")
+
+
+def cmd_ict(a):
+    from .research import run_ict_research
+    r = run_ict_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -150,6 +187,30 @@ def main(argv=None):
     mo.add_argument("--start", default="", help="شروع YYYY-MM-DD (خالی = اکنون منهای years)")
     mo.add_argument("--end", default="", help="پایان YYYY-MM-DD (خالی = اکنون)")
     mo.set_defaults(fn=cmd_momentum)
+    cl = sub.add_parser("classics", help="روش‌های کلاسیک بزرگان + خرید پله‌ای (نیازمند اینترنت)")
+    cl.add_argument("--start", default="2018-06-01")
+    cl.add_argument("--out", default="research_out")
+    cl.set_defaults(fn=cmd_classics)
+    ma = sub.add_parser("macro", help="فیلترهای اقتصاد کلان آمریکا (FRED) روی BTC")
+    ma.add_argument("--start", default="2018-06-01")
+    ma.add_argument("--out", default="research_out")
+    ma.set_defaults(fn=cmd_macro)
+    ic = sub.add_parser("ict", help="آزمون شکار نقدینگی ICT روی BTC/ETH")
+    ic.add_argument("--start", default="2018-06-01")
+    ic.add_argument("--out", default="research_out")
+    ic.set_defaults(fn=cmd_ict)
+    fu = sub.add_parser("funding", help="آزمون نرخ فاندینگ روی BTC/ETH")
+    fu.add_argument("--start", default="2020-06-01")
+    fu.add_argument("--out", default="research_out")
+    fu.set_defaults(fn=cmd_funding)
+    pa = sub.add_parser("pattern", help="الگوی مشترک پنهان ارزهای صعودی")
+    pa.add_argument("--out", default="research_out")
+    pa.set_defaults(fn=cmd_pattern)
+    nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
+    nr.add_argument("--kind", required=True)
+    nr.add_argument("--dir", required=True)
+    nr.add_argument("--status", default="success")
+    nr.set_defaults(fn=cmd_notify_research)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

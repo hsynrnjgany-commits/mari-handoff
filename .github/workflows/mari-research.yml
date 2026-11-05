@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "breakout (ساعتی، فرضیه‌های B) یا momentum (روزانه، H-MARI-M-003)"
+        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان)"
         default: "breakout"
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
@@ -65,6 +65,27 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
+          if [ "${{ inputs.kind }}" = "pattern" ]; then
+            python -m mari_bot pattern --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "funding" ]; then
+            python -m mari_bot funding --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ict" ]; then
+            python -m mari_bot ict --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "macro" ]; then
+            python -m mari_bot macro --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "classics" ]; then
+            python -m mari_bot classics --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "momentum" ]; then
             python -m mari_bot momentum --years "${{ inputs.years }}" --top "${{ inputs.top }}" \
               --start "${{ inputs.start_date }}" --end "${{ inputs.end_date }}" \
@@ -82,3 +103,10 @@ jobs:
             git commit -q -m "research: $(date -u +%Y-%m-%dT%H:%MZ)"
             for i in 1 2 3; do git push origin mari-research && break; sleep $((i*5)); done
           fi
+      - name: Telegram summary
+        if: always()
+        working-directory: scripts
+        env:
+          MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
+          MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+        run: python -m mari_bot notify-research --kind "${{ inputs.kind }}" --dir "${RUN_DIR:-../out-wt}" --status "${{ job.status }}" || true

@@ -68,6 +68,121 @@ def fmt_report(bot) -> str:
         lines.append(f"🧯 فیوز ضرر فعال است تا {fa_time(bot.gate.s.fuse_until_ts)}")
     if bot.btc_state:
         lines.append(f"وضعیت بیت‌کوین: {STATES_FA.get(bot.btc_state, bot.btc_state)}")
+    lines += _btc_lines(getattr(bot, "btc_summary", None))
+    return _end(lines)
+
+
+def _btc_lines(b: dict | None) -> list[str]:
+    if not b or not b.get("position"):
+        return []
+    pos = "نگه‌داری بیت‌کوین 🟢" if b["position"] == "BTC" else "نقد (بیرون از بازار) ⚪"
+    return ["", "₿ <b>استراتژی روند بیت‌کوین (T-006)</b>",
+            f"وضعیت: {pos}",
+            f"قیمت: {fa(b['close'], 0)} — میانگین ۱۵۰روزه: {fa(b['sma150'], 0)}",
+            f"سرمایهٔ فرضی: {fa(b['equity'])} تتر ({fa(b['return_pct'], sign=True)}٪) — "
+            f"نگه‌داری سادهٔ BTC در همین مدت: {fa(b['btc_hold_return_pct'], sign=True)}٪"]
+
+
+def fmt_btc_event(ev: dict, summ: dict | None = None) -> str:
+    if ev["to"] == "BTC":
+        head = "🟢 <b>روند بیت‌کوین: خرید تمرینی</b>"
+        why = "قیمت بستهٔ روزانه بالای میانگین ۱۵۰روزه رفت."
+    else:
+        head = "⚪ <b>روند بیت‌کوین: فروش تمرینی و نقد شدن</b>"
+        why = "قیمت بستهٔ روزانه زیر میانگین ۱۵۰روزه آمد."
+    if ev.get("boot"):
+        head += " (شروع پیگیری)"
+    lines = [head, f"قیمت: {fa(ev['close'], 0)} — میانگین ۱۵۰روزه: {fa(ev['sma'], 0)}", f"چرا: {why}"]
+    if summ:
+        lines += [f"سرمایهٔ فرضی این استراتژی: {fa(summ['equity'])} تتر"]
+    lines += ["این تنها روشی است که آزمون ۸سالهٔ ماری را گذرانده؛ هنوز در حال اثبات روی دادهٔ زنده است."]
+    return _end(lines)
+
+
+def fmt_dca(b: dict | None) -> list[str]:
+    if not b or not b.get("position"):
+        return ["💰 یادآور خرید پله‌ای: دادهٔ روند بیت‌کوین هنوز آماده نیست."]
+    if b["position"] == "BTC":
+        act = "بیت‌کوین بالای میانگین ۱۵۰روزه است → طبق قانون، مبلغ ثابت این هفته‌ات را می‌شد بیت‌کوین خرید."
+    else:
+        act = ("بیت‌کوین زیر میانگین ۱۵۰روزه است → طبق قانون، مبلغ این هفته را نقد کنار بگذار "
+               "(و دارایی بیت‌کوین قبلی هم طبق قانون نقد می‌شد).")
+    return ["💰 <b>یادآور خرید پله‌ای هفتگی</b>", act,
+            "این فقط یادآوری قانون آزموده‌شده است، نه دستور خرید. فقط با پولی که از دست دادنش زندگی‌ات را تغییر نمی‌دهد."]
+
+
+def fmt_health(ok: bool, streak: int, why: str | None) -> str:
+    if ok:
+        return _end(["✅ <b>ربات ماری دوباره سالم است</b>", "دریافت داده و پردازش به حالت عادی برگشت."])
+    return _end(["🚨 <b>هشدار سلامت ربات ماری</b>",
+                 f"{fa(streak)} چرخهٔ پیاپی ناموفق بود — علت: {why or 'نامشخص'}.",
+                 "اگر تا چند ساعت دیگر پیام «دوباره سالم است» نیامد، زبانهٔ Actions گیت‌هاب را ببین یا به Claude بگو."])
+
+
+def fmt_daily_simple(bot, monday: bool = False) -> str:
+    """گزارش روزانهٔ ساده: فقط آنچه مهم است."""
+    b = getattr(bot, "btc_summary", None)
+    lines = ["☀️ <b>خلاصهٔ روزانهٔ ماری</b>", ""]
+    if b and b.get("position"):
+        pos = "🟢 نگه‌داری" if b["position"] == "BTC" else "⚪ نقد"
+        lines += ["₿ <b>روند بیت‌کوین (روش قبول‌شده)</b>",
+                  f"وضعیت: {pos} — قیمت {fa(b['close'], 0)} — میانگین ۱۵۰روزه {fa(b['sma150'], 0)}",
+                  f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ "
+                  f"(نگه‌داری سادهٔ BTC: {fa(b['btc_hold_return_pct'], sign=True)}٪)", ""]
+    snap = bot.snapshot or {}
+    if snap:
+        counts = {}
+        for v in snap.values():
+            counts[v["state"]] = counts.get(v["state"], 0) + 1
+        up = counts.get("A", 0) + counts.get("B", 0)
+        lines += ["📡 <b>رادار بازار</b>",
+                  f"{fa(len(snap))} ارز بررسی شد — روند صعودی: {fa(up)} — نزولی یا سقوط: "
+                  f"{fa(counts.get('E', 0) + counts.get('F', 0) + counts.get('G', 0))}"]
+        best = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])[:5]
+        if best:
+            lines.append("قوی‌ترین‌ها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+        lines.append("(فقط برای آگاهی — شکار آلت‌کوین در آزمون ۸ساله ضررده بود)")
+        lines.append("")
+    eq = bot.equity()
+    lines.append(f"🤖 ربات شکار تمرینی: {fa(eq)} تتر — موقعیت باز {fa(len(bot.positions))}")
+    if monday:
+        lines += [""] + fmt_dca(b)
+    return _end(lines)
+
+
+CHANNEL_DISCLAIMER = ("این کانال آموزشی است، نه توصیهٔ مالی. هیچ سودی تضمین نمی‌شود و ممکن است ضرر کنید. "
+                      "فقط با پولی کار کنید که از دست دادنش زندگی‌تان را تغییر نمی‌دهد. "
+                      "ما هرگز پول کسی را مدیریت نمی‌کنیم و هیچ سیگنال پولی نمی‌فروشیم.")
+
+
+def fmt_channel_event(ev: dict, summ: dict | None, ledger_url: str) -> str:
+    if ev["to"] == "BTC":
+        head = "🟢 <b>روند بیت‌کوین: وضعیت «نگه‌داری»</b>"
+        why = "قیمت بستهٔ روزانه بالای میانگین ۱۵۰روزه است."
+    else:
+        head = "⚪ <b>روند بیت‌کوین: وضعیت «نقد»</b>"
+        why = "قیمت بستهٔ روزانه زیر میانگین ۱۵۰روزه آمد."
+    lines = [head, f"قیمت: {fa(ev['close'], 0)} دلار — میانگین ۱۵۰روزه: {fa(ev['sma'], 0)}", f"قانون: {why}"]
+    if summ and summ.get("return_pct") is not None:
+        lines.append(f"نتیجهٔ تمرینی از شروع پیگیری: {fa(summ['return_pct'], sign=True)}٪ "
+                     f"(نگه‌داری سادهٔ BTC: {fa(summ['btc_hold_return_pct'], sign=True)}٪)")
+    lines += ["", f"🔍 دفتر ثبت قابل‌بررسی (همهٔ تصمیم‌ها، حتی ضررها): {ledger_url}",
+              "", f"ℹ️ {CHANNEL_DISCLAIMER}"]
+    return _end(lines)
+
+
+def fmt_channel_weekly(b: dict, ledger_url: str) -> str:
+    pos = "نگه‌داری بیت‌کوین" if b["position"] == "BTC" else "نقد"
+    lines = ["📅 <b>گزارش شفاف هفتگی — روند بیت‌کوین</b>",
+             f"وضعیت فعلی: {pos}",
+             f"قیمت: {fa(b['close'], 0)} — میانگین ۱۵۰روزه: {fa(b['sma150'], 0)}",
+             f"نتیجهٔ تمرینی از شروع: {fa(b['return_pct'], sign=True)}٪ — "
+             f"نگه‌داری سادهٔ BTC در همین مدت: {fa(b['btc_hold_return_pct'], sign=True)}٪",
+             f"تعداد تغییر وضعیت تا امروز: {fa(b['switches'])}",
+             "",
+             "این روش در آزمون ۸ساله (۲۰۱۸ تا ۲۰۲۶) ریزش‌های کوچک‌تری از نگه‌داری BTC داشت؛ "
+             "حالا روی دادهٔ زنده در حال سنجش است. نتیجه هر چه باشد، همین‌جا منتشر می‌شود.",
+             "", f"🔍 دفتر ثبت: {ledger_url}", "", f"ℹ️ {CHANNEL_DISCLAIMER}"]
     return _end(lines)
 
 
@@ -92,7 +207,7 @@ def fmt_trades(bot) -> str:
 
 def fmt_hunt(bot, top: int = 8) -> str:
     snap = bot.snapshot
-    lines = ["🔭 <b>گشت سایه‌وار بازار</b> (فقط مشاهده — در دفتر ثبت نمی‌شود)"]
+    lines = [f"🔭 <b>گشت سایه‌وار بازار</b> — {fa(len(bot.snapshot))} ارز بررسی شد (فقط مشاهده)"]
     if not snap:
         lines.append("هنوز اسکنی انجام نشده.")
         return _end(lines)
@@ -108,6 +223,7 @@ def fmt_hunt(bot, top: int = 8) -> str:
         lines.append(f"• {sym}: {STATES_FA[v['state']]} (امتیاز {fa(v['score'], 1)}، RSI {fa(v['rsi'], 0)}){tag}")
     lines.append("")
     lines.append("«سیگنال مشاهده‌شده» با «معامله» یکی نیست؛ ورود فقط با موتور خودکار و دروازهٔ ریسک.")
+    lines.append("یادآوری: شکار آلت‌کوین در آزمون منصفانهٔ ۸ساله ضررده بود؛ این فهرست فقط برای آگاهی است.")
     return _end(lines)
 
 
@@ -136,6 +252,9 @@ HELP = _end([
     "/report — کارنامهٔ تمرینی",
     "/trades — موقعیت‌های باز و ۵ نتیجهٔ آخر",
     "/hunt — برترین روندهای بازار (فقط مشاهده)",
+    "/btc — استراتژی روند بیت‌کوین",
+    "/dca — یادآور خرید پله‌ای",
+    "/daily — خلاصهٔ روزانه",
     "/council — شورای هوش مصنوعی",
     "/help — همین راهنما",
 ])
@@ -150,6 +269,8 @@ class Telegram:
         self.token = (os.environ.get("MARI_TELEGRAM_TOKEN") or os.environ.get("TELEGRAM_BOT_TOKEN") or "").strip()
         owner = (os.environ.get("MARI_TELEGRAM_CHAT_ID") or "").strip()
         self.owner = int(owner) if owner.lstrip("-").isdigit() else None
+        # کانال عمومی (اختیاری): مثل @mari_honest یا -100xxxxxxxxxx. فقط روش قبول‌شده آنجا منتشر می‌شود.
+        self.channel = (os.environ.get("MARI_TELEGRAM_CHANNEL_ID") or "").strip() or None
         self.path = store_path
         self.store = {"subscribers": [], "offset": 0, "last_daily": "", "hello_sent": False}
         self.diag = {"enabled": False, "token_ok": None, "sent_ok": 0, "sent_fail": 0, "fail_codes": [],
@@ -211,6 +332,48 @@ class Telegram:
             return 0
         return sum(self.send(c, text) for c in list(self.store["subscribers"]))
 
+    def post_channel(self, text: str) -> bool:
+        if not self.enabled or not self.channel:
+            return False
+        ok = self.send(self.channel, text)
+        self.diag["channel_posts"] = self.diag.get("channel_posts", 0) + int(ok)
+        return ok
+
+    def maybe_channel_intro(self, btc_summary: dict | None, ledger_url: str) -> bool:
+        """اولین بار که کانال تنظیم شد: معرفی کانال + وضعیت فعلی."""
+        if not self.enabled or not self.channel or self.store.get("channel_intro") or not btc_summary:
+            return False
+        pos = "نگه‌داری بیت‌کوین" if btc_summary.get("position") == "BTC" else "نقد"
+        text = _end([
+            "👋 <b>به کانال صادق ماری خوش آمدید</b>",
+            "اینجا فقط یک قانون ساده و آزموده‌شده دنبال می‌شود:",
+            "بیت‌کوین بالای میانگین ۱۵۰روزه → نگه‌داری؛ زیر آن → نقد.",
+            "",
+            "این قانون در آزمون ۸ساله ریزش‌های کوچک‌تری از نگه‌داری سادهٔ بیت‌کوین داشت. ۶ ایدهٔ دیگر ما رد شدند "
+            "و منتشر نمی‌شوند. هر تغییر وضعیت و یک گزارش هفتگی اینجا می‌آید، با برد و باخت.",
+            "",
+            f"وضعیت فعلی: {pos} — قیمت {fa(btc_summary.get('close'), 0)} — میانگین ۱۵۰روزه "
+            f"{fa(btc_summary.get('sma150'), 0)}",
+            "", f"🔍 دفتر ثبت: {ledger_url}", "", f"ℹ️ {CHANNEL_DISCLAIMER}"])
+        if self.post_channel(text):
+            self.store["channel_intro"] = True
+            self.save()
+            return True
+        return False
+
+    def maybe_weekly_channel(self, btc_summary: dict | None, ledger_url: str) -> bool:
+        """هر دوشنبه بعد از ساعت ۱۰ تهران: گزارش شفاف هفتگی در کانال."""
+        if not self.enabled or not self.channel or not btc_summary or not btc_summary.get("position"):
+            return False
+        now = datetime.now(TEHRAN)
+        week = now.strftime("%G-W%V")
+        if now.weekday() == 0 and now.hour >= 10 and self.store.get("last_weekly") != week:
+            if self.post_channel(fmt_channel_weekly(btc_summary, ledger_url)):
+                self.store["last_weekly"] = week
+                self.save()
+                return True
+        return False
+
     def handle_updates(self, bot, wait: int = 0) -> int:
         if not self.enabled:
             return 0
@@ -245,6 +408,13 @@ class Telegram:
                 self.send(chat, fmt_trades(bot))
             elif cmd == "/hunt":
                 self.send(chat, fmt_hunt(bot))
+            elif cmd == "/btc":
+                b = getattr(bot, "btc_summary", None)
+                self.send(chat, _end(_btc_lines(b)[1:] or ["هنوز داده‌ای برای روند بیت‌کوین ثبت نشده."]))
+            elif cmd == "/dca":
+                self.send(chat, _end(fmt_dca(getattr(bot, "btc_summary", None))))
+            elif cmd == "/daily":
+                self.send(chat, fmt_daily_simple(bot))
             elif cmd == "/council":
                 self.send(chat, COUNCIL)
             else:
@@ -281,8 +451,55 @@ class Telegram:
         now = datetime.now(TEHRAN)
         day = now.strftime("%Y-%m-%d")
         if now.hour >= hour and self.store.get("last_daily") != day:
-            if self.broadcast("☀️ <b>گزارش روزانه</b>\n\n" + fmt_report(bot)) > 0:
+            if self.broadcast(fmt_daily_simple(bot, monday=now.weekday() == 0)) > 0:
                 self.store["last_daily"] = day
                 self.save()
                 return True
         return False
+
+
+# ---------------------------------------------------------------- خلاصهٔ پژوهش برای صاحب ربات
+def _verdicts(obj, out: dict) -> dict:
+    """همهٔ حکم‌های «H-MARI-…» را از هر ساختار گزارشی بیرون می‌کشد."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.startswith("H-MARI"):
+                if isinstance(v, str) and v.isupper():
+                    out.setdefault(k, v)
+                elif isinstance(v, dict) and isinstance(v.get("verdict"), str):
+                    out.setdefault(k, v["verdict"])
+            _verdicts(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _verdicts(v, out)
+    return out
+
+
+def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
+    import glob
+    import html
+    if not ok:
+        return _end([f"⚠️ پژوهش «{html.escape(kind)}» کامل نشد.", "علت در گیت‌هاب ثبت شده و ربات اصلی آسیبی ندیده."])
+    found = {}
+    for p in sorted(glob.glob(os.path.join(run_dir, "*.json"))):
+        try:
+            with open(p, encoding="utf-8") as fh:
+                _verdicts(json.load(fh), found)
+        except (OSError, ValueError):
+            continue
+    lines = [f"🔬 پژوهش «{html.escape(kind)}» تمام شد."]
+    if not found:
+        lines.append("حکمی در گزارش پیدا نشد؛ گزارش کامل در برانچ mari-research است.")
+    for hid, v in found.items():
+        mark = "✅ قبول" if v.startswith("SUPPORTED") else ("❌ رد" if v == "FALSIFIED" else html.escape(v))
+        lines.append(f"{mark} — {html.escape(hid)}")
+    lines.append(f"گزارش کامل: برانچ mari-research، پوشهٔ {html.escape(os.path.basename(run_dir.rstrip('/')))}")
+    return _end(lines)
+
+
+def notify_research(kind: str, run_dir: str, ok: bool) -> bool:
+    tg = Telegram(os.path.join(run_dir, ".tg_tmp.json"))
+    if tg.owner is None:
+        print(fmt_research(kind, run_dir, ok))
+        return False
+    return tg.send(tg.owner, fmt_research(kind, run_dir, ok))

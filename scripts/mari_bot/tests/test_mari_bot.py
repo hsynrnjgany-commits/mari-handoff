@@ -428,6 +428,16 @@ class TestMomentum(unittest.TestCase):
         self.assertGreater(r["rebalances"], 200)        # تصمیم روزانه
         self.assertGreater(r["strategy"]["total_return_pct"], 0)
 
+    def test_signal_lag_changes_decisions(self):
+        from mari_bot.momentum import MomParams, run_momentum
+        d = {"BTCUSDT": self._daily(400, 0.0, 9)}
+        kw = dict(only_symbols=("BTCUSDT",), max_hold=1, sma=50, require_momentum=False,
+                  rebalance_weekday=-1, min_age_days=0)
+        a, b = d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"]
+        r0 = run_momentum(d, a, b, MomParams(**kw))
+        r1 = run_momentum(d, a, b, MomParams(signal_lag=1, **kw))
+        self.assertNotEqual(r0["strategy"]["total_return_pct"], r1["strategy"]["total_return_pct"])
+
     def test_monday_rebalance(self):
         from mari_bot.momentum import run_momentum
         from datetime import datetime, timezone
@@ -435,6 +445,167 @@ class TestMomentum(unittest.TestCase):
         r = run_momentum(d, d["BTCUSDT"][100]["t"], d["BTCUSDT"][-1]["t"])
         t = r["last_picks"]["t"]
         self.assertEqual(datetime.fromtimestamp(t / 1000, timezone.utc).weekday(), 0)
+
+
+class TestBtcTrendLive(unittest.TestCase):
+    def test_boot_no_replay_and_switch(self):
+        from mari_bot.btc_trend import BtcTrend
+        from mari_bot.telegram import fmt_btc_event
+        D_ = 86_400_000
+        up = [{"t": i * D_, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1, "qv": 1}
+              for i in range(200)]
+        with tempfile.TemporaryDirectory() as d:
+            bt = BtcTrend(os.path.join(d, "b.json"))
+            ev = bt.update(up)
+            self.assertEqual(len(ev), 1)                      # فقط آخرین روز، نه بازپخش
+            self.assertTrue(ev[0]["boot"])
+            self.assertEqual(bt.s["position"], "BTC")
+            crash = up + [{"t": 200 * D_, "o": 299, "h": 299, "l": 100, "c": 120, "v": 1, "qv": 1}]
+            ev = BtcTrend(os.path.join(d, "b.json")).update(crash)
+            self.assertEqual(ev[0]["to"], "CASH")
+            self.assertIn(LOCK_LINE, fmt_btc_event(ev[0]))
+            self.assertEqual(BtcTrend(os.path.join(d, "b.json")).update(crash), [])   # تکراری نه
+
+
+class TestChannel(unittest.TestCase):
+    def test_channel_posts_only_with_config_and_disclaimer(self):
+        from mari_bot.telegram import CHANNEL_DISCLAIMER, Telegram, fmt_channel_event, fmt_channel_weekly
+        ev = {"t": 0, "to": "CASH", "close": 70000.0, "sma": 72000.0, "boot": False, "equity": 990.0}
+        summ = {"position": "CASH", "equity": 990.0, "return_pct": -1.0, "btc_hold_return_pct": -3.0,
+                "close": 70000.0, "sma150": 72000.0, "switches": 2}
+        for m in (fmt_channel_event(ev, summ, "u"), fmt_channel_weekly(summ, "u")):
+            self.assertIn(CHANNEL_DISCLAIMER, m)
+            self.assertIn(LOCK_LINE, m)
+            self.assertNotRegex(m, "تضمین(ی)? (سود|می‌کنیم)")
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "7",
+                                             "MARI_TELEGRAM_CHANNEL_ID": ""}):
+            tg = Telegram(os.path.join(d, "t.json"))
+            with mock.patch.object(tg, "_call", return_value=({"ok": True}, 200)) as c:
+                self.assertFalse(tg.post_channel("x"))
+                c.assert_not_called()
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "x", "MARI_TELEGRAM_CHAT_ID": "7",
+                                             "MARI_TELEGRAM_CHANNEL_ID": "@mari_test"}):
+            tg = Telegram(os.path.join(d, "t.json"))
+            with mock.patch.object(tg, "_call", return_value=({"ok": True}, 200)) as c:
+                self.assertTrue(tg.post_channel("x"))
+                self.assertEqual(c.call_args[0][1]["chat_id"], "@mari_test")
+
+
+class TestClassics(unittest.TestCase):
+    def _d(self, n, drift, seed):
+        D_ = 86_400_000
+        bars = synth(n, drift, 0.02, seed=seed)
+        for i, b in enumerate(bars):
+            b["t"] = 1_600_000_000_000 // D_ * D_ + i * D_
+        return bars
+
+    def test_classics_run_and_dca(self):
+        from mari_bot.classics import dca, run_classics
+        d = {"BTCUSDT": self._d(700, 0.002, 1), "ETHUSDT": self._d(700, 0.001, 2)}
+        a, b = d["BTCUSDT"][260]["t"], d["BTCUSDT"][-1]["t"]
+        r = run_classics(d, a, b)
+        for k in ("H-MARI-C-007", "H-MARI-C-008", "H-MARI-C-009"):
+            self.assertIn(r[k]["verdict"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+            self.assertIn("sharpe", r[k])
+        x = dca(d, a, b, weekly_usd=10)
+        self.assertAlmostEqual(x["invested"], 10 * x["weeks"])
+        self.assertGreater(x["final_value"], 0)
+
+    def test_next_day_execution(self):
+        from mari_bot.classics import run_weights
+        d = {"BTCUSDT": self._d(30, 0.0, 3)}
+        calls = []
+
+        def fn(k, ctx):
+            calls.append(k)
+            return {"BTCUSDT": 1.0} if len(calls) == 1 else None
+        st, curve, _ = run_weights(d, ["BTCUSDT"], d["BTCUSDT"][0]["t"], d["BTCUSDT"][-1]["t"], fn)
+        self.assertEqual(curve[0], 1.0)          # روز اول هنوز اجرا نشده (اجرا فردا)
+        self.assertEqual(st["trades"], 1)
+
+
+class TestDailyAndHealth(unittest.TestCase):
+    def test_daily_simple_and_dca(self):
+        from mari_bot.telegram import fmt_daily_simple, fmt_dca
+        bot = run_backtest({"BTCUSDT": synth(300)})["bot"]
+        bot.btc_summary = {"position": "CASH", "equity": 990.0, "return_pct": -1.0, "btc_hold_return_pct": -3.0,
+                           "close": 70000.0, "sma150": 72000.0, "switches": 2}
+        m = fmt_daily_simple(bot, monday=True)
+        self.assertIn("خرید پله‌ای", m)
+        self.assertIn(LOCK_LINE, m)
+        self.assertNotIn("خرید پله‌ای", fmt_daily_simple(bot, monday=False))
+        self.assertIn("نقد", "\n".join(fmt_dca(bot.btc_summary)))
+
+    def test_health_alert_after_three_failures(self):
+        from mari_bot import live
+        with tempfile.TemporaryDirectory() as d, \
+                mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "", "TELEGRAM_BOT_TOKEN": ""}):
+            r = live.LiveRunner(d)
+            sent = []
+            with mock.patch.object(r.tg, "broadcast", side_effect=lambda t: sent.append(t) or 1):
+                for _ in range(2):
+                    r._health(False, "x")
+                self.assertEqual(sent, [])
+                r._health(False, "x")
+                self.assertEqual(len(sent), 1)
+                r._health(False, "x")
+                self.assertEqual(len(sent), 1)           # تکرار نمی‌شود
+                r._health(True, None)
+                self.assertEqual(len(sent), 2)           # پیام بهبود
+
+
+class TestMacro(unittest.TestCase):
+    def test_parse_and_lag(self):
+        from mari_bot.macro import Series, net_liquidity, parse_fred_csv
+        rows = parse_fred_csv("observation_date,DGS10\n2020-01-01,1.5\n2020-01-02,.\n2020-01-03,1.7\n")
+        self.assertEqual(len(rows), 2)
+        s = Series(rows, lag_days=1)
+        D_ = 86_400_000
+        self.assertIsNone(s.at(rows[0][0]))                  # تأخیر: همان روز هنوز منتشر نشده
+        self.assertEqual(s.at(rows[0][0] + D_), 1.5)
+        self.assertEqual(s.at(rows[1][0] + D_), 1.7)
+        liq = net_liquidity([(0, 8_000_000.0)], [(0, 500_000.0)], [(0, 1000.0)])
+        self.assertEqual(liq[0][1], 8_000_000 - 500_000 - 1_000_000)
+
+    def test_run_macro_shapes(self):
+        from mari_bot.macro import run_macro
+        D_ = 86_400_000
+        bars = synth(700, 0.002, 0.02, seed=1)
+        t0 = 1_600_000_000_000 // D_ * D_
+        for i, b in enumerate(bars):
+            b["t"] = t0 + i * D_
+        rows = [(t0 + i * D_, 100 + (i % 50)) for i in range(700)]
+        res = run_macro({"BTCUSDT": bars}, {"DGS10": rows, "DTWEXBGS": rows, "NETLIQ": rows[::7]},
+                        bars[260]["t"], bars[-1]["t"])
+        for k in ("H-MARI-X-011", "H-MARI-X-012", "H-MARI-X-013", "H-MARI-X-014"):
+            self.assertIn(res[k]["verdict"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+
+    def test_fred_only_allowed_path(self):
+        with self.assertRaises(D.DataError):
+            D.http_get_text("/other", base=D.FRED)
+
+
+class TestICT(unittest.TestCase):
+    def test_events_and_run(self):
+        from mari_bot.ict import events, run_ict
+        b = [{"t": 0, "o": 10, "h": 11, "l": 9, "c": 10},
+             {"t": 1, "o": 10, "h": 10.5, "l": 8.5, "c": 9.5},     # شکار کف
+             {"t": 2, "o": 9.5, "h": 11.2, "l": 9.4, "c": 10.0}]   # شکار سقف
+        ev = events(b)
+        self.assertEqual(ev["bull"], [1])
+        self.assertEqual(ev["bear"], [2])
+        D_ = 86_400_000
+        d = {}
+        for sym, seed in (("BTCUSDT", 1), ("ETHUSDT", 2)):
+            bars = synth(500, 0.001, 0.02, seed=seed)
+            for i, x in enumerate(bars):
+                x["t"] = 1_600_000_000_000 // D_ * D_ + i * D_
+            d[sym] = bars
+        r = run_ict(d, d["BTCUSDT"][30]["t"], d["BTCUSDT"][-1]["t"])
+        self.assertIn(r["verdict"]["H-MARI-ICT-015"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+        self.assertGreater(r["events"]["BTCUSDT"]["bull"]["n"], 10)
 
 
 class TestLiveBoot(unittest.TestCase):
@@ -458,6 +629,102 @@ class TestLiveBoot(unittest.TestCase):
             self.assertTrue(os.path.exists(os.path.join(d, "state.json")))
             r2 = live.LiveRunner(d)                              # بازیابی وضعیت
             self.assertEqual(r2.bot.last_ts, r.bot.last_ts)
+
+
+class FundingTests(unittest.TestCase):
+    def test_daily_sum_and_no_lookahead(self):
+        from mari_bot.funding import DAY_MS, crowding, daily_funding
+        days = [i * DAY_MS for i in range(400)]
+        rows = [(d + h * 3_600_000, 0.0001) for d in days for h in (0, 8, 16)]
+        df = daily_funding(rows, days)
+        self.assertAlmostEqual(df[5], 0.0003)
+        df2 = list(df)
+        df2[300] = 0.01                                   # جهش در روز ۳۰۰
+        p1, p2 = crowding(df), crowding(df2)
+        self.assertEqual(p1[:300], p2[:300])              # گذشته از آینده خبر ندارد
+        self.assertGreater(p2[300], 90)
+
+    def test_run_funding_synthetic(self):
+        import math
+        from mari_bot.funding import DAY_MS, run_funding
+        days = [1_577_836_800_000 + i * DAY_MS for i in range(900)]
+        daily = {}
+        for sym, a in (("BTCUSDT", 0.004), ("ETHUSDT", 0.006)):
+            px = [100 * math.exp(0.0008 * i + 0.3 * math.sin(i / 40)) for i in range(900)]
+            daily[sym] = [{"t": t, "o": p, "h": p * (1 + a), "l": p * (1 - a), "c": p, "v": 1, "qv": 1}
+                          for t, p in zip(days, px)]
+        funding = {s: [(t + h * 3_600_000, 0.0001 * math.sin(i / 25)) for i, t in enumerate(days) for h in (0, 8, 16)]
+                   for s in ("BTCUSDT", "ETHUSDT")}
+        r = run_funding(daily, funding, days[300], days[-1])
+        self.assertIn(r["verdict"]["H-MARI-F-017"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+        self.assertGreater(r["events"]["BTCUSDT"]["crowded_long"]["n"], 0)
+        self.assertEqual(r["coverage"]["BTCUSDT"]["days_with_funding_pct"], 100.0)
+
+    def test_funding_paths_allowed_and_readonly(self):
+        from mari_bot.data import _ALLOWED
+        for base, paths in _ALLOWED.items():
+            for p in paths:
+                self.assertNotIn("order", p.lower())
+
+
+class PatternTests(unittest.TestCase):
+    def _daily(self, planted: bool, n_sym=30, n_days=1400, seed=3):
+        import random
+        from mari_bot.pattern import DAY_MS
+        rnd = random.Random(seed)
+        t0 = 1_609_459_200_000                     # 2021-01-01
+        daily = {}
+        btc = [100.0]
+        for i in range(1, n_days):
+            btc.append(btc[-1] * (1 + 0.001 + rnd.gauss(0, 0.02)))
+        daily["BTCUSDT"] = [{"t": t0 + i * DAY_MS, "o": p, "h": p * 1.01, "l": p * .99, "c": p, "v": 1, "qv": 1e9}
+                            for i, p in enumerate(btc)]
+        for k in range(n_sym):
+            px, bars, regime = 50.0, [], rnd.choice((-1, 1))
+            for i in range(n_days):
+                vol_spike = rnd.random() < 0.1
+                if rnd.random() < 1 / 60:          # روند پایدار که هر ~۶۰ روز عوض می‌شود
+                    regime = -regime
+                drift = 0.006 * regime if planted else 0.0
+                px *= 1 + drift + rnd.gauss(0, 0.03)
+                q = 1e6 * (4 if vol_spike else 1) * (1 + k)
+                bars.append({"t": t0 + i * DAY_MS, "o": px, "h": px * 1.02, "l": px * .98, "c": px, "v": q / px, "qv": q})
+            daily[f"C{k}USDT"] = bars
+        return daily
+
+    def test_monday_and_spearman(self):
+        from mari_bot.pattern import DAY_MS, spearman
+        import datetime
+        t = int(datetime.datetime(2026, 11, 2, tzinfo=datetime.timezone.utc).timestamp() * 1000)
+        self.assertEqual((t // DAY_MS + 3) % 7, 0)
+        self.assertAlmostEqual(spearman(list(range(10)), list(range(10))), 1.0)
+
+    def test_finds_planted_pattern_not_noise(self):
+        from mari_bot.pattern import DAY_MS, run_pattern
+        t0 = 1_609_459_200_000
+        train, test = (t0 + 250 * DAY_MS, t0 + 800 * DAY_MS), (t0 + 801 * DAY_MS, t0 + 1390 * DAY_MS)
+        r = run_pattern(self._daily(True), train, test)
+        self.assertEqual(r["learned"]["ret30"]["sign"], 1)
+        self.assertEqual(r["verdict"]["H-MARI-P-019"], "SUPPORTED_IN_TEST_RANGE")
+        fp = sum(run_pattern(self._daily(False, seed=1000 + k), train, test)["verdict"]["H-MARI-P-019"]
+                 != "FALSIFIED" for k in range(10))
+        self.assertLessEqual(fp, 1)                     # نویز خالص: نرخ مثبت کاذب نزدیک ۲٫۵٪
+
+
+class ResearchNotifyTests(unittest.TestCase):
+    def test_summary_lists_verdicts_without_secrets(self):
+        import tempfile
+        from mari_bot.telegram import fmt_research
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "a_report.json"), "w", encoding="utf-8") as fh:
+            json.dump({"results": {"verdict": {"H-MARI-F-017": "FALSIFIED"}},
+                       "H-MARI-X-1": {"verdict": "SUPPORTED_IN_TEST_RANGE"}}, fh)
+        with mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "123:SECRET"}):
+            msg = fmt_research("funding", d, True)
+        self.assertIn("❌ رد — H-MARI-F-017", msg)
+        self.assertIn("✅ قبول — H-MARI-X-1", msg)
+        self.assertNotIn("SECRET", msg)
+        self.assertIn("کامل نشد", fmt_research("funding", d, False))
 
 
 if __name__ == "__main__":

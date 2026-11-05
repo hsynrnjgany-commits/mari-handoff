@@ -33,6 +33,7 @@ class MariBot:
         self.snapshot: dict[str, dict] = {}      # آخرین وضعیت روند هر نماد (برای /hunt و گزارش)
         self.btc_state: str | None = st.get("btc_state")
         self.new_events: list[dict] = []          # رویدادهای همین چرخه برای اطلاع‌رسانی تلگرام
+        self.btc_summary: dict | None = None      # وضعیت استراتژی تمرینی روند بیت‌کوین (T-006)
 
     # ------------------------------------------------------------------ وضعیت
     def equity(self) -> float:

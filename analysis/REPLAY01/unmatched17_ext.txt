@@ -1,0 +1,17 @@
+XAUTUSDT-1h-1792724400000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.095 lastCheck-exitTime(min) 671.3 createdAt-entryTime(min) 22.8
+GRAMUSDT-1h-1792724400000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.59 lastCheck-exitTime(min) 734.0 createdAt-entryTime(min) 22.8
+LTCUSDT-1h-1792767600000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.023 lastCheck-exitTime(min) 316.0 createdAt-entryTime(min) 11.3
+LINKUSDT-1h-1792771200000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.286 lastCheck-exitTime(min) 197.5 createdAt-entryTime(min) 14.0
+BTCUSDT-1h-1792785600000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.023 lastCheck-exitTime(min) 792.8 createdAt-entryTime(min) 7.5
+SOLUSDT-1h-1792785600000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.748 lastCheck-exitTime(min) 136.0 createdAt-entryTime(min) 17.5
+ETHUSDT-1h-1792796400000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.6 lastCheck-exitTime(min) 910.6 createdAt-entryTime(min) 6.0
+XRPUSDT-1h-1792807200000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.401 lastCheck-exitTime(min) 432.8 createdAt-entryTime(min) 33.0
+ADAUSDT-1h-1792807200000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.559 lastCheck-exitTime(min) 318.3 createdAt-entryTime(min) 33.0
+SOLUSDT-1h-1792810800000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.576 lastCheck-exitTime(min) 372.8 createdAt-entryTime(min) 49.2
+BTCUSDT-1h-1792836000000 SHORT beActive True trailActive False exitReason SL net 0.0 exitTime-entryTime(h) 1.0 mfe 1.733 lastCheck-exitTime(min) 311.5 createdAt-entryTime(min) 12.8
+ADAUSDT-1h-1792836000000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.977 lastCheck-exitTime(min) 250.6 createdAt-entryTime(min) 12.8
+SHIBUSDT-1h-1792836000000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.633 lastCheck-exitTime(min) 250.6 createdAt-entryTime(min) 12.8
+NEARUSDT-1h-1792857600000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.203 lastCheck-exitTime(min) 1033.9 createdAt-entryTime(min) 11.5
+NEOUSDT-1h-1792886400000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.562 lastCheck-exitTime(min) 503.9 createdAt-entryTime(min) 23.7
+ZECUSDT-1h-1792944000000 LONG beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.037 lastCheck-exitTime(min) 25.1 createdAt-entryTime(min) 21.4
+XLMUSDT-1h-1792944000000 SHORT beActive True trailActive False exitReason SL net -0.0 exitTime-entryTime(h) 1.0 mfe 1.298 lastCheck-exitTime(min) 337.6 createdAt-entryTime(min) 21.4
