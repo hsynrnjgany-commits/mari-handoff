@@ -233,3 +233,43 @@ def run_pattern(daily: dict, train: tuple, test: tuple) -> dict:
             "avg_universe_test": round(sum(len(cs["rows"]) for cs in te) / max(1, len(te)), 1),
             "verdict": {"H-MARI-P-019": "SUPPORTED_IN_TEST_RANGE" if ok19 else "FALSIFIED",
                         "H-MARI-P-020": "SUPPORTED_IN_TEST_RANGE" if ok20 else "FALSIFIED"}}
+
+
+# ---------------------------------------------------------------- فهرست ممنوعه (B-003)
+# علامت‌های منجمد از یادگیری ۲۰۲۱-۰۶..۲۰۲۳-۱۲ (اجرای 20261105T0448Z-pattern). دوباره تنظیم نمی‌شوند.
+FROZEN_SIGNS = {"ret7": -1, "ret30": -1, "vol_ratio": 1, "dist_high60": 1, "rs_btc30": -1, "volat20": -1}
+BLACKLIST_FRAC = 0.2
+
+
+def build_blacklist(daily: dict[str, list[dict]]) -> dict[int, set]:
+    """{زمان پایان بستهٔ دوشنبه (ms): مجموعهٔ نمادهای ۲۰٪ پایین امتیاز}. فقط دادهٔ تا همان بسته."""
+    p = Panel(daily)
+    signs = {f: {"sign": s} for f, s in FROZEN_SIGNS.items()}
+    out = {}
+    for i, t in enumerate(p.days):
+        if (t // DAY_MS + 3) % 7 != 0:
+            continue
+        rows = []
+        for s in p.c:
+            if s == "BTCUSDT" or i - p.first[s] < MIN_AGE or not p.ok(s, i, 60):
+                continue
+            f = p.features(s, i)
+            if f is not None:
+                rows.append((s, f, 0.0))
+        if len(rows) < 10:
+            continue
+        sc = score(rows, signs)
+        order = sorted(range(len(rows)), key=lambda k: sc[k])
+        out[t + DAY_MS] = {rows[k][0] for k in order[:max(1, int(len(rows) * BLACKLIST_FRAC))]}
+    return out
+
+
+def blacklist_fn(bl: dict[int, set]):
+    """تابع blocked(sym, ts): آخرین فهرستی که بسته‌اش ≤ ts تمام شده."""
+    import bisect
+    keys = sorted(bl)
+
+    def blocked(sym: str, ts: int) -> bool:
+        k = bisect.bisect_right(keys, ts) - 1
+        return k >= 0 and sym in bl[keys[k]]
+    return blocked

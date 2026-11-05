@@ -33,6 +33,7 @@ class MariBot:
         self.snapshot: dict[str, dict] = {}      # آخرین وضعیت روند هر نماد (برای /hunt و گزارش)
         self.btc_state: str | None = st.get("btc_state")
         self.new_events: list[dict] = []          # رویدادهای همین چرخه برای اطلاع‌رسانی تلگرام
+        self.blocked = None                       # اختیاری (فقط پژوهش): تابع (sym, ts) → فهرست ممنوعه
         self.btc_summary: dict | None = None      # وضعیت استراتژی تمرینی روند بیت‌کوین (T-006)
 
     # ------------------------------------------------------------------ وضعیت
@@ -168,6 +169,9 @@ class MariBot:
                                   "signal": bool(signal), "vol_ratio": round(vr, 2) if vr == vr else None,
                                   "rsi": round(s.rsi[i], 1) if s.rsi[i] == s.rsi[i] else None}
             if not signal:
+                continue
+            if self.blocked is not None and self.blocked(sym, ts):
+                self._emit("REJECT", ts=ts, symbol=sym, trend=tr.state, reasons=["BLACKLIST_Q1"])
                 continue
             q = quality.get(sym, {"ok": True, "issues": []})
             reasons = self.gate.check_entry(sym, ts, open_symbols=open_syms, btc_state=self.btc_state,

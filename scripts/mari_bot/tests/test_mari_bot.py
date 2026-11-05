@@ -320,6 +320,17 @@ class TestTelegramOwnerMode(unittest.TestCase):
             D.http_get_json("/api/v3/klines", base="https://evil.example")
 
 
+def _to_daily(bars):
+    out = {}
+    for b in bars:
+        d = b["t"] // 86_400_000 * 86_400_000
+        x = out.setdefault(d, {"t": d, "o": b["o"], "h": b["h"], "l": b["l"], "c": b["c"], "v": 0.0, "qv": 0.0})
+        x["h"], x["l"], x["c"] = max(x["h"], b["h"]), min(x["l"], b["l"]), b["c"]
+        x["v"] += b.get("v", 0)
+        x["qv"] += b.get("qv", 0)
+    return [out[k] for k in sorted(out)]
+
+
 class TestResearch(unittest.TestCase):
     def test_offline_research_pipeline(self):
         from mari_bot import research as R
@@ -328,7 +339,8 @@ class TestResearch(unittest.TestCase):
                 "ETHUSDT": synth(1500, -0.0005, seed=9)}
         with tempfile.TemporaryDirectory() as d, \
                 mock.patch.object(R, "pick_universe", return_value=list(data)), \
-                mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b: data[s]), \
+                mock.patch.object(R, "fetch_history", side_effect=lambda s, a, b, interval="1h":
+                                  data[s] if interval == "1h" else _to_daily(data[s])), \
                 mock.patch.object(R.time, "time", return_value=t_end / 1000):
             rep = R.run_research(months=1, top=3, out_dir=d)
             self.assertEqual(set(rep["results"]), set(R.HYPOTHESES))
@@ -725,6 +737,32 @@ class ResearchNotifyTests(unittest.TestCase):
         self.assertIn("✅ قبول — H-MARI-X-1", msg)
         self.assertNotIn("SECRET", msg)
         self.assertIn("کامل نشد", fmt_research("funding", d, False))
+
+
+class BlacklistTests(unittest.TestCase):
+    def test_blacklist_no_lookahead_and_timing(self):
+        from mari_bot.pattern import DAY_MS, blacklist_fn, build_blacklist
+        d = PatternTests()._daily(True, n_sym=20, n_days=300)
+        bl = build_blacklist(d)
+        self.assertTrue(bl)
+        keys = sorted(bl)
+        for k in keys:
+            self.assertEqual(((k - DAY_MS) // DAY_MS + 3) % 7, 0)      # پایان بستهٔ دوشنبه
+            self.assertEqual(len(bl[k]), 4)                            # ۲۰٪ از ۲۰
+        cut = keys[3]
+        d2 = {s: [dict(b, c=b["c"] * (5 if b["t"] >= cut else 1)) for b in bars] for s, bars in d.items()}
+        bl2 = build_blacklist(d2)
+        for k in keys[:4]:
+            self.assertEqual(bl[k], bl2[k])                            # آینده گذشته را عوض نمی‌کند
+        f = blacklist_fn(bl)
+        s0 = next(iter(bl[keys[0]]))
+        self.assertFalse(f(s0, keys[0] - 1))
+        self.assertTrue(f(s0, keys[0]))
+
+    def test_engine_respects_blocked(self):
+        from mari_bot.engine import MariBot
+        import inspect
+        self.assertIn("BLACKLIST_Q1", inspect.getsource(MariBot._scan))
 
 
 if __name__ == "__main__":

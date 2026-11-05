@@ -33,6 +33,13 @@ HYPOTHESES = {
         "risk_overrides": {},
         "status_before": "FALSIFIED on 2026-05-08..2026-11-04 (run 20261104T2009Z) — اینجا فقط گروه کنترل است",
     },
+    "H-MARI-B-003": {
+        "statement": "همان H-001، اما ارزهای ۲۰٪ پایین امتیاز الگوی P-019 (علامت‌های منجمد، دوشنبه‌ها) خریده نمی‌شوند.",
+        "risk_overrides": {},
+        "blacklist": True,
+        "status_before": "ثبت پیشاپیش 2026-11-05T05:20Z؛ دورهٔ دست‌نخورده 2025-05-09..2025-11-08. "
+                         "قبول فقط اگر معیار H-001 برقرار باشد و بازده خالص از گروه کنترل H-001 بیشتر باشد.",
+    },
     "H-MARI-B-002": {
         "statement": "همان H-001، اما ورود فقط وقتی BTC در وضعیت A یا B (صعودی) است.",
         "risk_overrides": {"require_btc_states": ("A", "B")},
@@ -79,9 +86,10 @@ def pick_universe_all() -> list[str]:
     return ["BTCUSDT"] + sorted(out - {"BTCUSDT"})
 
 
-def _run(series, quality, cfg, start_ts, end_ts, run_id):
+def _run(series, quality, cfg, start_ts, end_ts, run_id, blocked=None):
     led = Ledger(None, run_id, cfg.sha())
     bot = MariBot(cfg, led)
+    bot.blocked = blocked
     bot.last_ts = start_ts - 1
     bot.process(series, quality, until_ts=end_ts)
     add_counterfactuals(bot.trades, series)
@@ -118,18 +126,18 @@ def _verdict(full):
     return "FALSIFIED"
 
 
-def _evaluate(series, quality, cfg, start, end, tag):
-    full, trades = _run(series, quality, cfg, start, end, f"{tag}-FULL")
+def _evaluate(series, quality, cfg, start, end, tag, blocked=None):
+    full, trades = _run(series, quality, cfg, start, end, f"{tag}-FULL", blocked)
     costs = {}
     for fee in (0.0, 0.0005, 0.001, 0.002, 0.003):
         c = replace(cfg, cost=CostParams(fee_side=fee, slippage=cfg.cost.slippage))
-        m, _ = _run(series, quality, c, start, end, f"{tag}-FEE{fee}")
+        m, _ = _run(series, quality, c, start, end, f"{tag}-FEE{fee}", blocked)
         costs[f"fee_side_{fee * 100:.2f}pct"] = {k: m[k] for k in ("trades", "net_return_pct", "profit_factor",
                                                                     "win_rate_pct", "max_drawdown_pct")}
     folds, a = [], start
     while a < end:
         b = min(a + 30 * DAY_MS, end)
-        m, _ = _run(series, quality, cfg, a, b, f"{tag}-FOLD{len(folds)}")
+        m, _ = _run(series, quality, cfg, a, b, f"{tag}-FOLD{len(folds)}", blocked)
         btc = _bh(series, "BTCUSDT", a, b)
         regime = "BULL" if btc is not None and btc > 10 else "BEAR" if btc is not None and btc < -10 else "FLAT"
         folds.append({"from": datetime.fromtimestamp(a / 1000, timezone.utc).strftime("%Y-%m-%d"),
@@ -146,6 +154,7 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out", 
                  hypotheses: list[str] | None = None) -> dict:
     base = BotConfig()
     hyps = hypotheses or list(HYPOTHESES)
+    hyps = sorted(hyps, key=lambda h: bool(HYPOTHESES[h].get("blacklist")))   # گروه کنترل پیش از فهرست ممنوعه
     t_fetch = datetime.now(timezone.utc).isoformat(timespec="seconds")
     end = (end_ms or int(time.time() * 1000)) // HOUR_MS * HOUR_MS
     warm = (base.trend.min_bars + 40) * HOUR_MS
@@ -168,11 +177,31 @@ def run_research(months: int = 6, top: int = 60, out_dir: str = "research_out", 
         if q["n"] >= base.trend.min_bars + 2:
             series[s] = SymbolSeries(s, q["clean"], base.trend)
 
+    blocked, bl_info = None, None
+    if any(HYPOTHESES[h].get("blacklist") for h in hyps):
+        from .pattern import blacklist_fn, build_blacklist
+        daily = {}
+        for s in series:
+            try:
+                daily[s] = quality_check(fetch_history(s, start - 120 * DAY_MS, end, interval="1d"),
+                                         interval_ms=DAY_MS)["clean"]
+            except DataError:
+                continue
+        bl = build_blacklist({k: v for k, v in daily.items() if v})
+        blocked = blacklist_fn(bl)
+        bl_info = {"weeks": len(bl), "avg_blocked": round(sum(len(v) for v in bl.values()) / max(1, len(bl)), 1)}
     results, all_trades = {}, {}
     for hid in hyps:
         h = HYPOTHESES[hid]
         cfg = replace(base, risk=replace(base.risk, **h["risk_overrides"]))
-        res, trades = _evaluate(series, quality, cfg, start, end, hid)
+        res, trades = _evaluate(series, quality, cfg, start, end, hid, blocked if h.get("blacklist") else None)
+        if h.get("blacklist"):
+            res["blacklist"] = bl_info
+            ctrl = results.get("H-MARI-B-001", {}).get("full_period", {}).get("net_return_pct")
+            if res["verdict"] == "SUPPORTED_IN_TEST_RANGE" and ctrl is not None \
+                    and res["full_period"]["net_return_pct"] <= ctrl:
+                res["verdict"] = "FALSIFIED"
+                res["verdict_note"] = "معیار H-001 برقرار بود اما از گروه کنترل بهتر نبود."
         results[hid] = {"statement": h["statement"], "status_before": h["status_before"], **res}
         all_trades[hid] = trades
     bh_all = [r for r in (_bh(series, s, start, end) for s in series if s != "BTCUSDT") if r is not None]
