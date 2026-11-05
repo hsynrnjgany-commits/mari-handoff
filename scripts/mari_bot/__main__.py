@@ -250,6 +250,12 @@ def cmd_ideas15(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas16(a):
+    from .research import run_ideas16_research
+    r = run_ideas16_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -401,6 +407,10 @@ def main(argv=None):
     i15.add_argument("--start", default="2020-06-01")
     i15.add_argument("--out", default="research_out")
     i15.set_defaults(fn=cmd_ideas15)
+    i16 = sub.add_parser("ideas16", help="فرمول ارزهای صعودی — نسخهٔ اصلاح‌شده")
+    i16.add_argument("--start", default="2018-01-01")
+    i16.add_argument("--out", default="research_out")
+    i16.set_defaults(fn=cmd_ideas16)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")

@@ -1277,7 +1277,8 @@ def run_ideas14_research(start: str = "2018-01-01", out_dir: str = "research_out
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "ideas14_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
-    r, md = res["rule"], ["# ideas14: فرمول مشترک ارزهای صعودی", "",
+    r = res["rule"]
+    md = ["# ideas14: فرمول مشترک ارزهای صعودی", "",
                           f"- آموزش: {report['period']['train']} — {r['n_train_events']} رویداد",
                           f"- آزمون: {report['period']['test']} — {res['n_test_events']} رویداد",
                           f"- برنده = بازده ۹۱ روزهٔ بعدی ≥ +۲۰۰٪. نرخ پایه در آموزش: {r['base_win_rate'] * 100:.2f}٪",
@@ -1363,6 +1364,76 @@ def run_ideas15_research(start: str = "2020-06-01", out_dir: str = "research_out
                   f"{b.get('min_pct')} | {b.get('max_pct')} |")
     md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
     with open(os.path.join(out_dir, "ideas15_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
+def run_ideas16_research(start: str = "2018-01-01", out_dir: str = "research_out") -> dict:
+    """ideas16: نسخهٔ اصلاح‌شدهٔ «فرمول ارزهای صعودی» — آستانهٔ توان و محک هم‌نقد."""
+    from .ideas16 import IDEA16_HYPOTHESES, MIN_EXPECTED_WINNERS, run_ideas16
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    tr_s, tr_e = ms(start), ms("2023-06-01")
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, tr_s - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas16(daily, tr_s, tr_e, tr_e, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T21:00Z",
+              "hypotheses": IDEA16_HYPOTHESES,
+              "period": {"train": f"{start} تا 2023-06-01",
+                         "test": f"2023-06-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
+              "fixes_from_ideas14": [
+                  f"آستانهٔ توان بر پایهٔ تعداد برندهٔ مورد انتظار (≥{MIN_EXPECTED_WINNERS}) است، نه تعداد سیگنال.",
+                  "محک هم‌نقد: در همان هفته‌ها و با همان تعداد ارز در بازار، ارزها تصادفی از همان جهان.",
+                  "قاعدهٔ گسترده با دو ویژگی (به‌جای سه) تا سیگنال کافی تولید شود."],
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۲ می‌رسد.",
+                               "قاعدهٔ دو-ویژگی‌ای از همان دادهٔ آموزش ideas14 آمده؛ دورهٔ آزمون همان دورهٔ"
+                               " آزمون ideas14 است و یک بار دیده شده. پس قبولی اینجا هم به تکرار نیاز دارد.",
+                               "پنجره‌های ۹۱ روزه هم‌پوشانی دارند؛ بوت‌استرپ بلوکی روی تاریخ‌ها.",
+                               "دادهٔ ارزش بازار و زنجیره در دسترس نیست."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas16_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    r = res["rule"]
+    pw, ci, cm = res["power"], res["test"] or {}, res["cash_matched"]
+    md = ["# ideas16: فرمول ارزهای صعودی — نسخهٔ اصلاح‌شده", "",
+          f"- آموزش: {report['period']['train']}؛ آزمون: {report['period']['test']}",
+          f"- دو ویژگی انتخاب‌شده: {'، '.join(r['picked'])}",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA16_HYPOTHESES[hid]}")
+    md += ["", "## آزمون توان (ایراد ۱ که اصلاح شد)", "",
+           "| دوره | سیگنال | نرخ پایه ٪ | برندهٔ مورد انتظار بی‌اثر | برندهٔ واقعی | قابل آزمون؟ |",
+           "|---|---|---|---|---|---|"]
+    for lbl, x in (("آموزش", res["train_power_info"]), ("**آزمون**", pw)):
+        md.append(f"| {lbl} | {x['n_fired']} | {x['base_win_rate'] * 100:.2f} | "
+                  f"{x['expected_winners_if_no_effect']} | {x['observed_winners']} | "
+                  f"{'بله' if x['testable'] else '**نه**'} |")
+    md += ["", "## Z-061: نرخ برنده‌شدن روی دادهٔ آزمون", "",
+           f"- نرخ سیگنال: {(ci.get('fired_win_rate') or 0) * 100:.2f}٪ | نرخ پایه: {(ci.get('base_win_rate') or 0) * 100:.2f}٪",
+           f"- اختلاف: {ci.get('diff_pct')}٪ [CI95: {ci.get('ci95_low')} تا {ci.get('ci95_high')}]", ""]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    md += ["## Z-062: در برابر محک هم‌نقد (ایراد ۲ که اصلاح شد)", "",
+           "| | بازده ٪ / افت ٪ / شارپ |", "|---|---|",
+           f"| سبد قاعده | {f(cm['portfolio'])} |",
+           f"| میانهٔ {(cm.get('benchmark_median_random') or {}).get('n_draws')} سبد تصادفی هم‌نقد | {f(cm.get('benchmark_median_random') or {})} |",
+           "",
+           f"- هفته‌های در بازار: {cm.get('weeks_in_market')} از {cm.get('weeks')}",
+           f"- درصد قرعه‌های تصادفی که سبد از آن‌ها بهتر بود: شارپ {cm.get('pct_random_draws_beaten_sharpe')}٪، بازده {cm.get('pct_random_draws_beaten_return')}٪",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas16_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
 

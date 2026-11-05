@@ -1586,5 +1586,38 @@ class Ideas15Tests(unittest.TestCase):
         self.assertAlmostEqual(b["mean_pct"], 1.0, places=3)
 
 
+class ReportBuilderTests(unittest.TestCase):
+    """باگ ۲۰۲۶-۱۱-۰۵: در ساخت گزارش ideas14 متغیر r پیش از مقداردهی استفاده شده بود."""
+
+    def test_ideas14_markdown_builds_from_results(self):
+        import tempfile
+        from unittest import mock
+        from mari_bot import research
+        rule = {"base_win_rate": 0.05, "n_train_events": 10,
+                "by_feature": {n: {"edges": [0, 1, 2, 3], "rates": [{"n": 300, "win_rate": 0.05}] * 5,
+                                   "best_bucket": 0, "separation": 0.01} for n in ("a", "b", "c")},
+                "picked": ["a", "b", "c"]}
+        res = {"rule": rule, "n_test_events": 5,
+               "train_in_sample_info": {"n_fired": 3, "fired_win_rate": 0.3, "base_win_rate": 0.05,
+                                        "diff_pct": 25.0, "ci95_low": 1.0, "ci95_high": 40.0},
+               "test": {"n_fired": 2, "fired_win_rate": 0.0, "base_win_rate": 0.01, "diff_pct": -1.0,
+                        "ci95_low": -2.0, "ci95_high": 0.0},
+               "tradeable": {"portfolio": {"total_return_pct": 1.0, "max_drawdown_pct": 2.0, "sharpe": 0.1},
+                             "benchmark": {"total_return_pct": -1.0, "max_drawdown_pct": 9.0, "sharpe": -0.1},
+                             "weeks": 7, "verdict": "FALSIFIED"},
+               "verdict": {"H-MARI-Z-058": "FALSIFIED", "H-MARI-Z-059": "FALSIFIED"}}
+        d = tempfile.mkdtemp()
+        with mock.patch.object(research, "pick_universe_all", return_value=["BTCUSDT"]), \
+             mock.patch.object(research, "fetch_history", return_value=[{"t": 0, "o": 1, "h": 1, "l": 1, "c": 1, "qv": 1}]), \
+             mock.patch.object(research, "quality_check", return_value={"n": 1, "clean": [{"t": 0, "c": 1.0, "h": 1.0, "qv": 1.0}]}), \
+             mock.patch("mari_bot.ideas14.run_ideas14", return_value=res):
+            rep = research.run_ideas14_research(start="2024-01-01", out_dir=d)
+        self.assertEqual(rep["results"]["verdict"]["H-MARI-Z-058"], "FALSIFIED")
+        with open(os.path.join(d, "ideas14_report_fa.md"), encoding="utf-8") as fh:
+            md = fh.read()
+        self.assertIn("فرمول مشترک", md)
+        self.assertIn("Z-059", md)
+
+
 if __name__ == "__main__":
     unittest.main()
