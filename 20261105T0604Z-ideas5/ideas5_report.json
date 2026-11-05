@@ -1,0 +1,105 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T06:20Z",
+ "hypotheses": {
+  "H-MARI-E-030": "صفحهٔ سه‌گانهٔ الدر (EMA13 هفتگی صعودی، شاخص نیروی منفی، ورود با شکست سقف دیروز): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+  "H-MARI-K-031": "KAMA کافمن (۱۰، ۲، ۳۰): نگه‌داری بالای KAMA. شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۱ می‌رسد."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-E-030": {
+     "total_return_pct": 885.76,
+     "cagr_pct": 31.17,
+     "max_drawdown_pct": 54.79,
+     "sharpe": 0.88,
+     "weekly_bootstrap": {
+      "mean_pct": 0.68,
+      "ci95_low": 0.17,
+      "ci95_high": 1.225
+     },
+     "trades": 56,
+     "time_in_cash_pct": 53.9
+    },
+    "H-MARI-K-031": {
+     "total_return_pct": 244.16,
+     "cagr_pct": 15.78,
+     "max_drawdown_pct": 66.03,
+     "sharpe": 0.56,
+     "weekly_bootstrap": {
+      "mean_pct": 0.467,
+      "ci95_low": -0.104,
+      "ci95_high": 1.051
+     },
+     "trades": 444,
+     "time_in_cash_pct": 49.4
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-E-030": {
+     "total_return_pct": 1130.62,
+     "cagr_pct": 34.67,
+     "max_drawdown_pct": 74.23,
+     "sharpe": 0.84,
+     "weekly_bootstrap": {
+      "mean_pct": 0.859,
+      "ci95_low": 0.143,
+      "ci95_high": 1.592
+     },
+     "trades": 56,
+     "time_in_cash_pct": 58.3
+    },
+    "H-MARI-K-031": {
+     "total_return_pct": 1477.56,
+     "cagr_pct": 38.7,
+     "max_drawdown_pct": 60.68,
+     "sharpe": 0.86,
+     "weekly_bootstrap": {
+      "mean_pct": 0.973,
+      "ci95_low": 0.189,
+      "ci95_high": 1.782
+     },
+     "trades": 400,
+     "time_in_cash_pct": 52.5
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-E-030": "FALSIFIED",
+   "H-MARI-K-031": "FALSIFIED"
+  }
+ }
+}
