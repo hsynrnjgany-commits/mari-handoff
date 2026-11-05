@@ -1672,5 +1672,47 @@ class Ideas16And17Tests(unittest.TestCase):
         self.assertEqual(r["verdict"]["H-MARI-Z-064"], "SUPPORTED_IN_TEST_RANGE")
 
 
+class ResearchNotifyVerdictCoverageTests(unittest.TestCase):
+    """باگ ۲۰۲۶-۱۱-۰۶: حکم UNTESTABLE_LOW_POWER در فهرست شناخته‌شده‌ها نبود،
+    پس در پیام تلگرام ideas16 بی‌صدا حذف شد و گزارش فقط قبولی را نشان داد."""
+
+    def _msg(self, payload):
+        import tempfile
+        from mari_bot.telegram import fmt_research
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "r_report.json"), "w", encoding="utf-8") as fh:
+            json.dump(payload, fh)
+        with mock.patch.dict(os.environ, {}, clear=True):
+            return fmt_research("ideas16", d, True)
+
+    def test_untestable_and_insufficient_are_shown(self):
+        msg = self._msg({"hypotheses": {"H-MARI-Z-061": "الگو هست؟: شرح",
+                                        "H-MARI-Z-062": "سود می‌دهد؟: شرح"},
+                         "results": {"verdict": {"H-MARI-Z-061": "UNTESTABLE_LOW_POWER",
+                                                 "H-MARI-Z-062": "SUPPORTED_IN_TEST_RANGE"}}})
+        self.assertIn("H-MARI-Z-061", msg)
+        self.assertIn("آزمون‌ناپذیر", msg)
+        self.assertIn("✅ قبول — H-MARI-Z-062", msg)
+        msg2 = self._msg({"hypotheses": {"H-MARI-A-1": "x: y"},
+                          "results": {"verdict": {"H-MARI-A-1": "INSUFFICIENT_DATA"}}})
+        self.assertIn("داده کافی نیست", msg2)
+
+    def test_hypothesis_without_verdict_is_flagged_not_dropped(self):
+        msg = self._msg({"hypotheses": {"H-MARI-Z-070": "ادعا: شرح",
+                                        "H-MARI-Z-071": "ادعای دوم: شرح"},
+                         "results": {"verdict": {"H-MARI-Z-070": "FALSIFIED"}}})
+        self.assertIn("بدون حکم در گزارش", msg)
+        self.assertIn("H-MARI-Z-071", msg)
+
+    def test_snippet_does_not_cut_mid_word_and_expands_short_heads(self):
+        from mari_bot.telegram import _snippet
+        self.assertEqual(_snippet("عنوان کوتاه: ادامه", 90), "عنوان کوتاه — ادامه")
+        long = "در همان دوره: " + "کلمه " * 40
+        out = _snippet(long, 90)
+        self.assertTrue(out.endswith("…"))
+        self.assertLessEqual(len(out), 91)
+        self.assertFalse(out[:-1].endswith("کل"))      # مرز کلمه
+
+
 if __name__ == "__main__":
     unittest.main()

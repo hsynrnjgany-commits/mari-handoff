@@ -576,7 +576,12 @@ class Telegram:
 
 
 # ---------------------------------------------------------------- خلاصهٔ پژوهش برای صاحب ربات
-_VERDICTS = ("SUPPORTED_IN_TEST_RANGE", "FALSIFIED", "INCONCLUSIVE")
+_VERDICTS = ("SUPPORTED_IN_TEST_RANGE", "FALSIFIED", "INCONCLUSIVE",
+             "UNTESTABLE_LOW_POWER", "INSUFFICIENT_DATA")
+# نشانهٔ هر حکم. حکم‌های «نمی‌دانیم» باید دیده شوند، وگرنه گزارش فقط قبولی‌ها را نشان می‌دهد.
+_MARKS = {"SUPPORTED_IN_TEST_RANGE": "✅ قبول", "FALSIFIED": "❌ رد",
+          "INCONCLUSIVE": "⚠️ بی‌نتیجه", "UNTESTABLE_LOW_POWER": "⚠️ آزمون‌ناپذیر (توان کم)",
+          "INSUFFICIENT_DATA": "⚠️ داده کافی نیست"}
 
 
 def _verdicts(obj, out: dict) -> dict:
@@ -593,6 +598,18 @@ def _verdicts(obj, out: dict) -> dict:
         for v in obj:
             _verdicts(v, out)
     return out
+
+
+def _snippet(text: str, limit: int = 90) -> str:
+    """توضیح کوتاه و خوانا: تا اولین دونقطه، و اگر بلند بود در مرز کلمه بریده می‌شود."""
+    head = text.split(":")[0].strip()
+    if len(head) < 25 and ":" in text:        # بخش اول خیلی کوتاه بود؛ کمی بیشتر بردار
+        head = text.replace(":", " —", 1).strip()
+    if len(head) <= limit:
+        return head
+    cut = head[:limit]
+    sp = cut.rfind(" ")
+    return (cut[:sp] if sp > limit // 2 else cut).rstrip("،, ") + "…"
 
 
 def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
@@ -614,11 +631,13 @@ def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
     if not found:
         lines.append("حکمی در گزارش پیدا نشد؛ گزارش کامل در برانچ mari-research است.")
     for hid, v in found.items():
-        mark = "✅ قبول" if v.startswith("SUPPORTED") else ("❌ رد" if v == "FALSIFIED" else html.escape(v))
+        mark = _MARKS.get(v, html.escape(v))
         lines.append(f"{mark} — {html.escape(hid)}")
         if hid in about:                      # توضیح ساده برای صاحب پروژه
-            txt = about[hid].split(":")[0].strip()
-            lines.append(f"   ({html.escape(txt[:90])})")
+            lines.append(f"   ({html.escape(_snippet(about[hid]))})")
+    missing = [h for h in about if h not in found]
+    if missing:                               # هیچ فرضیه‌ای بی‌صدا حذف نشود
+        lines.append("⚠️ بدون حکم در گزارش: " + "، ".join(html.escape(h) for h in missing))
     lines.append(f"گزارش کامل: برانچ mari-research، پوشهٔ {html.escape(os.path.basename(run_dir.rstrip('/')))}")
     return _end(lines)
 
