@@ -1,0 +1,73 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T17:20Z",
+ "hypotheses": {
+  "H-MARI-P-044": "سبد روند ۵۰/۵۰ BTC و ETH (هر کدام فقط بالای SMA150 خودش): شارپ بیشتر و افت کمتر یا برابر T-006 تنهای BTC، در هر دو دوره."
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۴ می‌رسد."
+ ],
+ "results": {
+  "by_period": {
+   "2018-06-01..2022-05-31": {
+    "T-006_BTC": {
+     "total_return_pct": 595.69,
+     "cagr_pct": 62.41,
+     "max_drawdown_pct": 44.42,
+     "sharpe": 1.21,
+     "weekly_bootstrap": {
+      "mean_pct": 1.199,
+      "ci95_low": 0.231,
+      "ci95_high": 2.257
+     },
+     "trades": 26,
+     "time_in_cash_pct": 49.2
+    },
+    "H-MARI-P-044": {
+     "total_return_pct": 1132.71,
+     "cagr_pct": 87.38,
+     "max_drawdown_pct": 54.09,
+     "sharpe": 1.41,
+     "weekly_bootstrap": {
+      "mean_pct": 1.537,
+      "ci95_low": 0.422,
+      "ci95_high": 2.656
+     },
+     "trades": 179,
+     "time_in_cash_pct": 42.1
+    }
+   },
+   "2022-06-01..now": {
+    "T-006_BTC": {
+     "total_return_pct": 217.29,
+     "cagr_pct": 29.78,
+     "max_drawdown_pct": 27.29,
+     "sharpe": 0.94,
+     "weekly_bootstrap": {
+      "mean_pct": 0.608,
+      "ci95_low": 0.003,
+      "ci95_high": 1.217
+     },
+     "trades": 39,
+     "time_in_cash_pct": 43.8
+    },
+    "H-MARI-P-044": {
+     "total_return_pct": 143.17,
+     "cagr_pct": 22.21,
+     "max_drawdown_pct": 29.1,
+     "sharpe": 0.74,
+     "weekly_bootstrap": {
+      "mean_pct": 0.487,
+      "ci95_low": -0.11,
+      "ci95_high": 1.079
+     },
+     "trades": 195,
+     "time_in_cash_pct": 41.2
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-P-044": "FALSIFIED"
+  }
+ }
+}
