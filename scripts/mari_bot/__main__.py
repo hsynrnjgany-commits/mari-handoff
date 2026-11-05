@@ -256,6 +256,12 @@ def cmd_ideas16(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas17(a):
+    from .research import run_ideas17_research
+    r = run_ideas17_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -411,6 +417,10 @@ def main(argv=None):
     i16.add_argument("--start", default="2018-01-01")
     i16.add_argument("--out", default="research_out")
     i16.set_defaults(fn=cmd_ideas16)
+    i17 = sub.add_parser("ideas17", help="آزمون سوم ایدهٔ صاحب پروژه (جابه‌جایی زمان)")
+    i17.add_argument("--start", default="2018-01-01")
+    i17.add_argument("--out", default="research_out")
+    i17.set_defaults(fn=cmd_ideas17)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")

@@ -1619,5 +1619,58 @@ class ReportBuilderTests(unittest.TestCase):
         self.assertIn("Z-059", md)
 
 
+class Ideas16And17Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_power_check_uses_expected_winners_not_signal_count(self):
+        from mari_bot.ideas16 import power_check
+        rule = {"picked": ["x"], "by_feature": {"x": {"edges": [1, 2, 3, 4], "best_bucket": 4}}}
+        many_weak = [{"t": i, "f": {"x": 9.0}, "win": False} for i in range(300)]
+        many_weak += [{"t": 300 + i, "f": {"x": 0.0}, "win": i < 3} for i in range(300)]
+        pw = power_check(many_weak, rule)
+        self.assertEqual(pw["n_fired"], 300)              # سیگنال زیاد
+        self.assertLess(pw["expected_winners_if_no_effect"], 10)
+        self.assertFalse(pw["testable"])                   # ولی توان کم
+        rich = [{"t": i, "f": {"x": 9.0}, "win": i % 5 == 0} for i in range(300)]
+        self.assertTrue(power_check(rich, rule)["testable"])
+
+    def test_wide_rule_picks_two_features(self):
+        from mari_bot.ideas16 import wide_rule
+        import random
+        rnd = random.Random(3)
+        from mari_bot.ideas14 import FEATURES
+        ev = [{"t": i // 10, "f": {n: rnd.random() for n in FEATURES}, "win": rnd.random() < 0.05}
+              for i in range(3000)]
+        r = wide_rule(ev)
+        self.assertEqual(len(r["picked"]), 2)
+        self.assertEqual(r["n_features"], 2)
+
+    def test_ideas17_requires_95pct_of_random_draws(self):
+        from mari_bot import ideas17
+        from unittest import mock
+        cm = {"portfolio": {}, "pct_random_draws_beaten_sharpe": 90.0,
+              "pct_random_draws_beaten_return": 99.0, "verdict": "SUPPORTED_IN_TEST_RANGE"}
+        pw = {"n_fired": 100, "base_win_rate": 0.2, "expected_winners_if_no_effect": 20.0,
+              "observed_winners": 30, "testable": True}
+        with mock.patch.object(ideas17, "Panel", lambda d: object()), \
+             mock.patch.object(ideas17, "collect", return_value=[]), \
+             mock.patch.object(ideas17, "wide_rule", return_value={"picked": ["a", "b"]}), \
+             mock.patch.object(ideas17, "power_check", return_value=pw), \
+             mock.patch.object(ideas17, "block_ci", return_value={"ci95_low": 1.0}), \
+             mock.patch.object(ideas17, "cash_matched", return_value=cm):
+            r = ideas17.run_ideas17({}, 0, 1, 2, 3)
+        self.assertEqual(r["verdict"]["H-MARI-Z-063"], "FALSIFIED")   # ۹۰٪ کافی نیست
+        cm["pct_random_draws_beaten_sharpe"] = 96.0
+        with mock.patch.object(ideas17, "Panel", lambda d: object()), \
+             mock.patch.object(ideas17, "collect", return_value=[]), \
+             mock.patch.object(ideas17, "wide_rule", return_value={"picked": ["a", "b"]}), \
+             mock.patch.object(ideas17, "power_check", return_value=pw), \
+             mock.patch.object(ideas17, "block_ci", return_value={"ci95_low": 1.0}), \
+             mock.patch.object(ideas17, "cash_matched", return_value=cm):
+            r = ideas17.run_ideas17({}, 0, 1, 2, 3)
+        self.assertEqual(r["verdict"]["H-MARI-Z-063"], "SUPPORTED_IN_TEST_RANGE")
+        self.assertEqual(r["verdict"]["H-MARI-Z-064"], "SUPPORTED_IN_TEST_RANGE")
+
+
 if __name__ == "__main__":
     unittest.main()

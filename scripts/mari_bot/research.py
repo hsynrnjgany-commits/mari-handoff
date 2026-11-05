@@ -1438,6 +1438,78 @@ def run_ideas16_research(start: str = "2018-01-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas17_research(start: str = "2018-01-01", out_dir: str = "research_out") -> dict:
+    """ideas17: آزمون سوم ایدهٔ صاحب پروژه با جابه‌جایی زمان (یادگیری از داده تازه، آزمون روی قدیم)."""
+    from .ideas17 import BEAT_FRAC, IDEA17_HYPOTHESES, run_ideas17
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    te_s, te_e = ms(start), ms("2021-06-01")
+    le_s = ms("2021-06-01")
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, te_s - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas17(daily, le_s, end, te_s, te_e)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T21:30Z",
+              "hypotheses": IDEA17_HYPOTHESES,
+              "period": {"learn": f"2021-06-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}",
+                         "test": f"{start} تا 2021-06-01 (دست‌نخورده برای این ایده)"},
+              "design": [f"شرط سخت‌گیر: بهتر از ≥{BEAT_FRAC}٪ قرعه‌های محک هم‌نقد، هم شارپ و هم بازده.",
+                         "جابه‌جایی زمان: یادگیری از دادهٔ تازه، آزمون روی دادهٔ قدیم.",
+                         "آستانهٔ توان: برندهٔ مورد انتظار ≥۱۰، وگرنه «آزمون‌ناپذیر»."],
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۴ می‌رسد.",
+                               "دورهٔ ۲۰۱۸-۲۰۲۱ ارزهای کمتری دارد؛ جهان کوچک‌تر و نرخ پایه متفاوت است.",
+                               "دورهٔ ۲۰۲۰-۲۰۲۱ یک بازار صعودی تاریخی بود؛ نرخ برنده‌شدن پایه در آن بالاست"
+                               " و محک هم‌نقد تصادفی هم قوی است — این آزمون سخت‌تر از دورهٔ نزولی است.",
+                               "یادگیری روی دادهٔ تازه‌ای انجام می‌شود که در ideas14/16 دیده شده بود؛ اما"
+                               " دورهٔ آزمون برای این ایده کاملاً تازه است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas17_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    r = res["rule"]
+    pw, ci, cm = res["power"], res["test"] or {}, res["cash_matched"]
+    md = ["# ideas17: آزمون سوم ایدهٔ صاحب پروژه (جابه‌جایی زمان، شرط ۹۵٪)", "",
+          f"- یادگیری: {report['period']['learn']}",
+          f"- **آزمون: {report['period']['test']}**",
+          f"- دو ویژگی انتخاب‌شده: {'، '.join(r['picked'])}",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA17_HYPOTHESES[hid]}")
+    md += ["", "## آزمون توان", "",
+           "| دوره | سیگنال | نرخ پایه ٪ | برندهٔ مورد انتظار بی‌اثر | برندهٔ واقعی | قابل آزمون؟ |",
+           "|---|---|---|---|---|---|"]
+    for lbl, x in (("یادگیری", res["learn_power_info"]), ("**آزمون**", pw)):
+        md.append(f"| {lbl} | {x['n_fired']} | {x['base_win_rate'] * 100:.2f} | "
+                  f"{x['expected_winners_if_no_effect']} | {x['observed_winners']} | "
+                  f"{'بله' if x['testable'] else '**نه**'} |")
+    md += ["", "## Z-064: نرخ برنده‌شدن", "",
+           f"- نرخ سیگنال: {(ci.get('fired_win_rate') or 0) * 100:.2f}٪ | نرخ پایه: {(ci.get('base_win_rate') or 0) * 100:.2f}٪",
+           f"- اختلاف: {ci.get('diff_pct')}٪ [CI95: {ci.get('ci95_low')} تا {ci.get('ci95_high')}]", ""]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    md += ["## Z-063: در برابر محک هم‌نقد، با شرط ۹۵٪", "",
+           "| | بازده ٪ / افت ٪ / شارپ |", "|---|---|",
+           f"| سبد قاعده | {f(cm['portfolio'])} |",
+           f"| میانهٔ {(cm.get('benchmark_median_random') or {}).get('n_draws')} قرعهٔ تصادفی | {f(cm.get('benchmark_median_random') or {})} |",
+           "",
+           f"- هفته‌های در بازار: {cm.get('weeks_in_market')} از {cm.get('weeks')}",
+           f"- **بهتر از قرعه‌ها: شارپ {cm.get('pct_random_draws_beaten_sharpe')}٪، بازده {cm.get('pct_random_draws_beaten_return')}٪** (شرط: ≥{res['beat_threshold_pct']}٪)",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas17_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
