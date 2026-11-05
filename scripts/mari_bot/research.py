@@ -1243,6 +1243,73 @@ def run_ideas13_research(start: str = "2020-06-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas14_research(start: str = "2018-01-01", out_dir: str = "research_out") -> dict:
+    """ideas14: «فرمول مشترک ارزهای صعودی» — یادگیری روی دادهٔ تا ۲۰۲۳-۰۵، آزمون روی دادهٔ بعد از آن."""
+    from .ideas14 import IDEA14_HYPOTHESES, run_ideas14
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    tr_s, tr_e, te_s = ms(start), ms("2023-06-01"), ms("2023-06-01")
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, tr_s - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas14(daily, tr_s, tr_e, te_s, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T20:05Z",
+              "hypotheses": IDEA14_HYPOTHESES,
+              "period": {"train": f"{start} تا 2023-06-01", "test": f"2023-06-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۹ می‌رسد.",
+                               "پنجره‌های ۹۱ روزه هم‌پوشانی دارند؛ به همین دلیل بوت‌استرپ بلوکی روی تاریخ‌ها استفاده شده.",
+                               "ارزهایی که پیش از حذف هیچ داده‌ای در API عمومی ندارند دیده نمی‌شوند؛ پس بخشی از"
+                               " بازندگان واقعی غایب‌اند و نرخ برنده‌شدن کمی خوش‌بینانه است.",
+                               "دادهٔ ارزش بازار و زنجیره در دسترس نیست؛ ویژگی‌ها فقط قیمت و حجم‌اند.",
+                               "دورهٔ آزمون بیشتر بازار نزولی/خنثی بوده؛ نرخ برنده‌شدن پایه در آن کم است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas14_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    r, md = res["rule"], ["# ideas14: فرمول مشترک ارزهای صعودی", "",
+                          f"- آموزش: {report['period']['train']} — {r['n_train_events']} رویداد",
+                          f"- آزمون: {report['period']['test']} — {res['n_test_events']} رویداد",
+                          f"- برنده = بازده ۹۱ روزهٔ بعدی ≥ +۲۰۰٪. نرخ پایه در آموزش: {r['base_win_rate'] * 100:.2f}٪",
+                          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA14_HYPOTHESES[hid]}")
+    md += ["", "## جداسازی هر ویژگی روی دادهٔ آموزش (نرخ بهترین پنجک منهای نرخ پایه)", "",
+           "| ویژگی | جداسازی (واحد درصد) | بهترین پنجک | نرخ برنده در آن پنجک ٪ | تعداد |", "|---|---|---|---|---|"]
+    for name in sorted(r["by_feature"], key=lambda n: -r["by_feature"][n]["separation"]):
+        x = r["by_feature"][name]
+        b = x["rates"][x["best_bucket"]]
+        md.append(f"| {name} | {x['separation'] * 100:.2f} | {x['best_bucket'] + 1} از ۵ | "
+                  f"{b['win_rate'] * 100:.2f} | {b['n']} |")
+    md += ["", f"**سه ویژگی انتخاب‌شده (مکانیکی):** {'، '.join(r['picked'])}", ""]
+    ti, te = res["train_in_sample_info"] or {}, res["test"] or {}
+    md += ["## Z-058: نرخ برنده‌شدن قاعده", "",
+           "| دوره | سیگنال | نرخ برنده سیگنال ٪ | نرخ پایه ٪ | اختلاف ٪ [CI95] |", "|---|---|---|---|---|",
+           f"| آموزش (درون‌نمونه، اطلاعی) | {ti.get('n_fired')} | {(ti.get('fired_win_rate') or 0) * 100:.2f} | "
+           f"{(ti.get('base_win_rate') or 0) * 100:.2f} | {ti.get('diff_pct')} [{ti.get('ci95_low')}, {ti.get('ci95_high')}] |",
+           f"| **آزمون (دیده‌نشده)** | {te.get('n_fired')} | {(te.get('fired_win_rate') or 0) * 100:.2f} | "
+           f"{(te.get('base_win_rate') or 0) * 100:.2f} | {te.get('diff_pct')} [{te.get('ci95_low')}, {te.get('ci95_high')}] |"]
+    t = res["tradeable"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    md += ["", "## Z-059: سبد قابل معامله در دورهٔ آزمون", "",
+           "| سبد: بازده ٪ / افت ٪ / شارپ | محک وزن برابر: بازده ٪ / افت ٪ / شارپ | هفته |", "|---|---|---|",
+           f"| {f(t['portfolio'])} | {f(t['benchmark'])} | {t['weeks']} |",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas14_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

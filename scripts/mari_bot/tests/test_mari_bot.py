@@ -1367,5 +1367,81 @@ class Ideas13Tests(unittest.TestCase):
         self.assertTrue(r["insufficient"])
 
 
+class Ideas14Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _panel(self, n_syms=60, days=900, seed=14, planted=False):
+        """ارزهای تصادفی. با planted=True ارزهایی که نوسان کم و حجم فزاینده دارند جهش می‌کنند."""
+        import random
+        rnd, d = random.Random(seed), {}
+        t0 = 1_514_764_800_000 + 4 * self.DAY            # دوشنبه‌دار
+        for j in range(n_syms):
+            c, bars = 10.0, []
+            boost_from = (300 + (j * 37) % 400) if (planted and j % 3 == 0) else None
+            for i in range(days):
+                sd = 0.01 if (planted and j % 3 == 0) else 0.05
+                mu = 0.0
+                if boost_from and i >= boost_from:
+                    mu = 0.02 if i < boost_from + 91 else 0.0
+                c *= max(0.2, 1 + mu + rnd.gauss(0, sd))
+                qv = 1e6 * (1 + (0.01 * i if (planted and j % 3 == 0) else 0))
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.02, "l": c * 0.98, "c": c, "qv": qv})
+            d[f"S{j}USDT"] = bars
+        from mari_bot.ideas10 import Panel
+        return Panel(d), t0
+
+    def test_features_use_only_past_and_reject_young_or_illiquid(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas14 import features
+        bars = [{"t": i * self.DAY, "o": 1, "h": 1.0, "l": 1, "c": 1.0, "qv": 1e6} for i in range(400)]
+        bars[399] = dict(bars[399], c=5.0, h=5.0)         # جهش در آخرین روز
+        p = Panel({"X": bars})
+        f = features(p, "X", 300 * self.DAY)
+        self.assertIsNone(f)                               # نوسان صفر → رد
+        self.assertIsNone(features(p, "X", 50 * self.DAY))  # خیلی جوان
+        thin = [{"t": i * self.DAY, "o": 1, "h": 1 + 0.01 * (i % 3), "l": 1, "c": 1 + 0.01 * (i % 3),
+                 "qv": 10.0} for i in range(400)]
+        self.assertIsNone(features(Panel({"Y": thin}), "Y", 300 * self.DAY))   # نقدشوندگی کم
+
+    def test_forward_return_of_delisted_uses_last_price(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas14 import forward_return
+        bars = [{"t": i * self.DAY, "h": 1.0, "c": 10.0} for i in range(100)]
+        bars.append({"t": 100 * self.DAY, "h": 1.0, "c": 1.0})
+        p = Panel({"X": bars})
+        self.assertAlmostEqual(forward_return(p, "X", 50 * self.DAY), -0.9, places=6)
+
+    def test_bucket_and_quintiles(self):
+        from mari_bot.ideas14 import bucket, quintile_edges
+        e = quintile_edges(list(range(100)))
+        self.assertEqual(len(e), 4)
+        self.assertEqual(bucket(-5, e), 0)
+        self.assertEqual(bucket(999, e), 4)
+
+    def test_rule_learned_on_noise_does_not_survive_out_of_sample(self):
+        from mari_bot.ideas14 import run_ideas14
+        p, t0 = self._panel(seed=21)
+        d = {s: [{"t": t, **{k: p.sym[s][k][i] for k in ("c", "h")}, "qv": 1e6}
+                 for i, t in enumerate(p.sym[s]["ts"])] for s in p.sym}
+        r = run_ideas14(d, t0 + 150 * self.DAY, t0 + 600 * self.DAY, t0 + 600 * self.DAY, t0 + 899 * self.DAY)
+        self.assertIn(r["verdict"]["H-MARI-Z-058"], ("FALSIFIED", "INSUFFICIENT_DATA"))
+        self.assertEqual(len(r["rule"]["picked"]), 3)
+
+    def test_learn_rule_picks_the_separating_feature(self):
+        from mari_bot.ideas14 import learn_rule
+        import random
+        rnd = random.Random(5)
+        ev = []
+        for i in range(3000):
+            v = rnd.random()
+            f = {n: rnd.random() for n in ("age_days", "ret_30d", "ret_90d", "dd_from_ath", "qv_trend",
+                                           "tightness_30d", "log_qv_30d", "px_vs_sma150")}
+            f["vol_30d"] = v
+            ev.append({"t": i // 20, "sym": "X", "f": f, "fwd": 0.0, "win": v > 0.8 and rnd.random() < 0.9})
+        r = learn_rule(ev)
+        self.assertEqual(r["by_feature"]["vol_30d"]["best_bucket"], 4)
+        self.assertIn("vol_30d", r["picked"])
+
+
 if __name__ == "__main__":
     unittest.main()
