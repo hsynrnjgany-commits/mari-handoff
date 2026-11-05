@@ -737,6 +737,7 @@ class ResearchNotifyTests(unittest.TestCase):
         self.assertIn("❌ رد — H-MARI-F-017", msg)
         self.assertIn("✅ قبول — H-MARI-X-1", msg)
         self.assertNotIn("SECRET", msg)
+        self.assertIn("(ادعای IC &gt; ۰ در CI95 و BTC بالای SMA150)", msg)
         self.assertIn("کامل نشد", fmt_research("funding", d, False))
 
 
@@ -1038,6 +1039,76 @@ class OITests(unittest.TestCase):
         self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(1), "d": mk(-1)}, pool), "SUPPORTED_IN_TEST_RANGE")
         self.assertEqual(pooled_verdict({"a": mk(1), "b": mk(1), "c": mk(-1), "d": mk(-1)}, pool), "FALSIFIED")
         self.assertEqual(pooled_verdict({}, {"surge": {"n": 5}, "rest_minus_surge": None}), "INSUFFICIENT_DATA")
+
+
+class Ideas8Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _ctx(self, closes):
+        return {"c": {"X": closes}, "state": {}, "days": [i * self.DAY for i in range(len(closes))]}
+
+    def test_parse_fng_and_no_lookahead(self):
+        from mari_bot.ideas8 import Series, parse_fng
+        pts = parse_fng({"data": [{"value": "15", "timestamp": str(2 * 86400)},
+                                  {"value": "80", "timestamp": str(1 * 86400)},
+                                  {"value": "bad", "timestamp": "x"}]})
+        self.assertEqual(pts, [(self.DAY, 80), (2 * self.DAY, 15)])
+        s = Series(pts)
+        self.assertIsNone(s.at(0))                      # پیش از اولین مقدار: نامعلوم
+        self.assertEqual(s.at(self.DAY + 5), 80)        # مقدار فردا دیده نمی‌شود
+        self.assertIsNone(s.at(10 * self.DAY))          # دادهٔ کهنه
+
+    def test_fng_strategy_buys_fear_sells_greed(self):
+        from mari_bot.ideas8 import Series, fng_for
+        s = Series([(0, 50), (self.DAY, 18), (2 * self.DAY, 40), (3 * self.DAY, 76)])
+        fn, ctx = fng_for("X", s), self._ctx([1, 1, 1, 1])
+        self.assertEqual([fn(k, ctx) for k in range(4)], [None, {"X": 1.0}, None, {}])
+
+    def test_winter_months(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas8 import is_winter
+        ms = lambda m: int(datetime(2024, m, 15, tzinfo=timezone.utc).timestamp() * 1000)
+        self.assertTrue(all(is_winter(ms(m)) for m in (11, 12, 1, 2, 3, 4)))
+        self.assertFalse(any(is_winter(ms(m)) for m in (5, 6, 7, 8, 9, 10)))
+
+    def test_halloween_detects_planted_effect(self):
+        from mari_bot.ideas8 import halloween_test
+        import random
+        rnd, c, bars = random.Random(3), 100.0, []
+        for i in range(1500):
+            t = 1_514_764_800_000 + i * self.DAY            # از ۲۰۱۸-۰۱-۰۱
+            from mari_bot.ideas8 import is_winter
+            c *= 1 + rnd.gauss(0.004 if is_winter(t) else -0.004, 0.01)
+            bars.append({"t": t, "c": c})
+        r = halloween_test(bars, bars[0]["t"], bars[-1]["t"])
+        self.assertGreater(r["winter_minus_summer"]["ci95_low"], 0)
+
+    def test_trailing_stop_exits_and_waits_for_fresh_cross(self):
+        from mari_bot.ideas8 import trail_for
+        closes = [100.0] * 149 + [110, 120, 130, 105, 125, 130, 90, 120]
+        fn, ctx = trail_for("X", trail=0.15, n=150), self._ctx(closes)
+        sig = {k: fn(k, ctx) for k in range(len(closes))}
+        self.assertEqual(sig[149], {"X": 1.0})          # ورود بالای میانگین
+        self.assertEqual(sig[152], {})                   # ۱۰۵ ≤ ۱۳۰×۰٫۸۵ → خروج با حد ضرر
+        self.assertIsNone(sig[153])                      # هنوز بالای میانگین: ورود دوباره ممنوع
+        self.assertIsNone(sig[155])                      # زیر میانگین: فقط مسلح می‌شود
+        self.assertEqual(sig[156], {"X": 1.0})          # تقاطع تازه → ورود
+
+    def test_run_ideas8_on_synthetic(self):
+        from mari_bot.ideas8 import run_ideas8
+        import random
+        rnd, daily = random.Random(5), {}
+        t0 = 1_514_764_800_000
+        for sym in ("BTCUSDT", "ETHUSDT"):
+            c, bars = 100.0, []
+            for i in range(900):
+                c *= 1 + rnd.gauss(0.0005, 0.03)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99, "c": c, "v": 1})
+            daily[sym] = bars
+        fng = [(t0 + i * self.DAY, 10 + (i * 7) % 85) for i in range(900)]
+        r = run_ideas8(daily, fng, t0 + 300 * self.DAY, t0 + 899 * self.DAY)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-F-044", "H-MARI-S-045", "H-MARI-K-046"})
+        self.assertGreater(r["by_asset"]["BTCUSDT"]["H-MARI-F-044"]["trades"], 0)
 
 
 if __name__ == "__main__":

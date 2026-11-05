@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان) یا ideas / ideas2 / ideas3 / ideas4 / ideas5 / ideas6 / ideas7 (صف ایده‌ها) یا oi (جهش موقعیت‌های باز)"
+        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان) یا ideas / ideas2 / ideas3 / ideas4 / ideas5 / ideas6 / ideas7 / ideas8 (صف ایده‌ها) یا oi (جهش موقعیت‌های باز)"
         default: "breakout"
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
@@ -71,6 +71,10 @@ jobs:
             for d in $(echo "${{ inputs.variants }}" | tr ',' ' '); do SAMPLES="$SAMPLES${SAMPLES:+,}../out-wt/$d/trades.json"; done
             POOL=""; [ "${{ inputs.kind }}" = "oi43" ] && POOL="--pooled"
             python -m mari_bot oi --samples "$SAMPLES" $POOL --out "$RUN_DIR"
+            exit 0
+          fi
+          if [ "${{ inputs.kind }}" = "ideas8" ]; then
+            python -m mari_bot ideas8 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0
           fi
           if [ "${{ inputs.kind }}" = "ideas7" ]; then

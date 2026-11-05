@@ -488,11 +488,14 @@ def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
     import html
     if not ok:
         return _end([f"⚠️ پژوهش «{html.escape(kind)}» کامل نشد.", "علت در گیت‌هاب ثبت شده و ربات اصلی آسیبی ندیده."])
-    found = {}
+    found, about = {}, {}
     for p in sorted(glob.glob(os.path.join(run_dir, "*.json"))):
         try:
             with open(p, encoding="utf-8") as fh:
-                _verdicts(json.load(fh), found)
+                rep = json.load(fh)
+            _verdicts(rep, found)
+            if isinstance(rep, dict) and isinstance(rep.get("hypotheses"), dict):
+                about.update({k: v for k, v in rep["hypotheses"].items() if isinstance(v, str)})
         except (OSError, ValueError):
             continue
     lines = [f"🔬 پژوهش «{html.escape(kind)}» تمام شد."]
@@ -501,6 +504,9 @@ def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
     for hid, v in found.items():
         mark = "✅ قبول" if v.startswith("SUPPORTED") else ("❌ رد" if v == "FALSIFIED" else html.escape(v))
         lines.append(f"{mark} — {html.escape(hid)}")
+        if hid in about:                      # توضیح ساده برای صاحب پروژه
+            txt = about[hid].split(":")[0].strip()
+            lines.append(f"   ({html.escape(txt[:90])})")
     lines.append(f"گزارش کامل: برانچ mari-research، پوشهٔ {html.escape(os.path.basename(run_dir.rstrip('/')))}")
     return _end(lines)
 

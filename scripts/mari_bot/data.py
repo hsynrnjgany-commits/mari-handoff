@@ -30,6 +30,8 @@ _ALLOWED = {
     "https://fapi.binance.com": ("/fapi/v1/fundingRate",),
     "https://api.bybit.com": ("/v5/market/funding/history",),
     "https://www.bitmex.com": ("/api/v1/funding",),
+    # شاخص ترس و طمع (alternative.me) — عمومی، بدون کلید، فقط برای پژوهش
+    "https://api.alternative.me": ("/fng/",),
 }
 BINANCE_ARCHIVE = "https://data.binance.vision"     # بایگانی عمومی فایل‌های ماهانه (بدون محدودیت جغرافیایی)
 _ARCHIVE_PREFIX = "/data/futures/um/monthly/fundingRate/"

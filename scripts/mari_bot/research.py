@@ -953,6 +953,51 @@ def run_ideas7_research(start: str = "2018-06-01", out_dir: str = "research_out"
     return report
 
 
+def run_ideas8_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """ideas8: ترس و طمع (F-044)، اثر هالووین (S-045)، حد ضرر متحرک روی T-006 (K-046)."""
+    from .ideas8 import IDEA8_HYPOTHESES, fetch_fng, run_ideas8
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    fng = fetch_fng()
+    res = run_ideas8(daily, fng, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:15Z",
+              "hypotheses": IDEA8_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۶ می‌رسد.",
+                               "شاخص ترس و طمع یک شاخص برای کل بازار است (بیشتر بر پایهٔ BTC)؛ ETH تکرار مستقل کامل نیست.",
+                               "K-046 به T-006 وابسته است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas8_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas8: ترس و طمع، اثر هالووین، حد ضرر متحرک", "",
+          f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- دادهٔ ترس و طمع: {res['fng_points']} روز از {res['fng_first']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA8_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("BUY_HOLD", "T-006", "H-MARI-F-044", "H-MARI-K-046", "WINTER_ONLY_INFO"):
+            st = x[name]
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "## S-045: بازده روزانه، زمستان (نوامبر-آوریل) در برابر تابستان", "",
+           "| دارایی | روز زمستان | روز تابستان | میانگین زمستان ٪ | میانگین تابستان ٪ | اختلاف ٪ [CI95] |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        t = x["H-MARI-S-045"]
+        ci = t["winter_minus_summer"] or {}
+        md.append(f"| {sym} | {t['n_winter']} | {t['n_summer']} | {t['winter_mean_pct']} | {t['summer_mean_pct']} | "
+                  f"{ci.get('diff_pct')} [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas8_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
