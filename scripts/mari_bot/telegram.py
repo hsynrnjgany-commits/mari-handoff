@@ -145,6 +145,22 @@ def fmt_carry_event(ev: dict) -> str:
                  "یادآوری: مدل «پوشش کامل» فرض می‌کند؛ خطر لیکویید شدن، اختلاف قیمت و مسدودی حساب در آن نیست."])
 
 
+def _savings_lines(x: dict | None) -> list[str]:
+    if not x or not x.get("weeks"):
+        return ["🐷 صندوق پس‌انداز هوشمند: از اولین دوشنبه شروع می‌شود."]
+    pos = "بیت‌کوین 🟢" if x["position"] == "BTC" else "نقد ⚪ (بیت‌کوین زیر میانگین ۱۵۰روزه)"
+    return [f"🐷 <b>صندوق پس‌انداز هوشمند</b> (هفته‌ای {fa(x['weekly_usd'])} دلار، فرضی)",
+            f"هفته‌ها: {fa(x['weeks'])} — کنار گذاشته‌شده: {fa(x['invested'])} دلار — ارزش اکنون: {fa(x['value'])} دلار"
+            f" ({fa(x['gain_pct'], sign=True)}٪)",
+            f"وضعیت: {pos} — بیشترین افت در مسیر: {fa(x['max_dd_pct'])}٪"]
+
+
+def fmt_savings_week(ev: dict) -> str:
+    return _end(["🐷 <b>یک هفتهٔ دیگر پس‌انداز (تمرینی)</b>"] + _savings_lines(ev)[1:] +
+                ["", "اگر روزی خواستی واقعی‌اش کنی: فقط مبلغی که نبودنش زندگی‌ات را سخت نکند، فقط بیت‌کوین، "
+                 "بدون اهرم، و فقط در صرافی‌ای که قانوناً کاربر ایرانی را می‌پذیرد."])
+
+
 def fmt_scorecard(bot) -> list[str]:
     """کارنامهٔ هفتگی روش‌های تمرینی زنده، از روز شروع پیگیری هر کدام."""
     rows = []
@@ -166,6 +182,9 @@ def fmt_scorecard(bot) -> list[str]:
         out.append(f"• {name}: {fa(r, sign=True)}٪ — بیشترین افت {fa(dd)}٪ — {fa(days or 0)} روز")
     if hold is not None:
         out.append(f"• مرجع، نگه‌داری سادهٔ بیت‌کوین: {fa(hold, sign=True)}٪")
+    sv = getattr(bot, "savings_summary", None)
+    if sv and sv.get("weeks"):
+        out += _savings_lines(sv)
     out.append("داوری جدی فقط پس از ۳ تا ۶ ماه داده؛ چند هفته کافی نیست.")
     return out
 
@@ -344,6 +363,7 @@ HELP = _end([
     "/dca — یادآور خرید پله‌ای",
     "/daily — خلاصهٔ روزانه",
     "/score — کارنامهٔ روش‌های تمرینی",
+    "/savings — صندوق پس‌انداز هوشمند",
     "/status — سلامت ربات",
     "/council — شورای هوش مصنوعی",
     "/help — همین راهنما",
@@ -505,6 +525,8 @@ class Telegram:
                 self.send(chat, _end(fmt_dca(getattr(bot, "btc_summary", None))))
             elif cmd == "/status":
                 self.send(chat, fmt_status(bot, getattr(bot, "status_info", None)))
+            elif cmd == "/savings":
+                self.send(chat, _end(_savings_lines(getattr(bot, "savings_summary", None))))
             elif cmd == "/score":
                 sc = fmt_scorecard(bot)
                 self.send(chat, _end(sc or ["هنوز داده‌ای برای کارنامه نیست."]))

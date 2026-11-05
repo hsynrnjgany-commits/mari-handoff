@@ -695,6 +695,36 @@ class TestScorecardStatus(unittest.TestCase):
             self.assertGreater(bt.summary()["max_dd_pct"], 0)
 
 
+class TestSavingsPlan(unittest.TestCase):
+    def test_weekly_saving_and_trend_rule(self):
+        from mari_bot.savings_live import SavingsPlan
+        from mari_bot.telegram import fmt_savings_week
+        D_ = 86_400_000
+        mon0 = 4 * D_                                         # 1970-01-05 دوشنبه بود
+        up = [{"t": mon0 + i * D_, "o": 100 + i, "h": 101 + i, "l": 99 + i, "c": 100 + i, "v": 1, "qv": 1}
+              for i in range(160)]
+        with tempfile.TemporaryDirectory() as d:
+            p = os.path.join(d, "s.json")
+            sp = SavingsPlan(p, weekly_usd=5)
+            sp.update(up)                                     # شروع: بدون بازپخش
+            self.assertEqual(sp.s["weeks"], 0)
+            more = up + [{"t": mon0 + (160 + j) * D_, "o": 260 + j, "h": 261 + j, "l": 259 + j, "c": 260 + j,
+                          "v": 1, "qv": 1} for j in range(14)]
+            evs = SavingsPlan(p, weekly_usd=5).update(more)
+            sp = SavingsPlan(p, weekly_usd=5)
+            self.assertEqual(sp.s["weeks"], 2)                # دو دوشنبه
+            self.assertAlmostEqual(sp.s["invested"], 10.0)
+            self.assertEqual(sp.s["position"], "BTC")
+            self.assertEqual(sp.s["cash"], 0.0)               # روند صعودی: همه به بیت‌کوین
+            self.assertEqual(len(evs), 2)
+            self.assertIn(LOCK_LINE, fmt_savings_week(evs[-1]))
+            crash = more + [{"t": mon0 + 174 * D_, "o": 100, "h": 100, "l": 50, "c": 60, "v": 1, "qv": 1}]
+            sp = SavingsPlan(p, weekly_usd=5)
+            sp.update(crash)
+            self.assertEqual(sp.s["position"], "CASH")
+            self.assertEqual(sp.s["units"], 0.0)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

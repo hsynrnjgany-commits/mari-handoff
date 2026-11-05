@@ -17,8 +17,9 @@ from .engine import MariBot
 from .ledger import Ledger
 from .btc_trend import DAY_MS, BtcTrend
 from .funding_live import FundingCarry, fetch_recent
+from .savings_live import SavingsPlan
 from .telegram import (Telegram, fmt_btc_event, fmt_carry_event, fmt_channel_event, fmt_event, fmt_health,
-                       fmt_turtle_event)
+                       fmt_savings_week, fmt_turtle_event)
 
 LEDGER_URL = "https://github.com/hsynrnjgany-commits/mari-handoff/blob/mari-bot-state/ledger.jsonl"
 from .trend import SymbolSeries
@@ -62,6 +63,7 @@ class LiveRunner:
         self.btc = BtcTrend(os.path.join(state_dir, "btc_trend.json"))
         self.turtle = BtcTrend(os.path.join(state_dir, "btc_turtle.json"), mode="turtle")
         self.carry = FundingCarry(os.path.join(state_dir, "funding_carry.json"))
+        self.savings = SavingsPlan(os.path.join(state_dir, "savings_plan.json"))
         self.bot.btc_summary = self.btc.summary() if self.btc.s["position"] else None
 
     # ---------------------------------------------------------------- انتخاب نمادها
@@ -138,6 +140,10 @@ class LiveRunner:
                     self.tg.broadcast(fmt_turtle_event(ev, self.turtle.summary()))
             self.bot.btc_summary = self.btc.summary()
             self.bot.turtle_summary = self.turtle.summary()
+            for ev in self.savings.update(daily) if quality_check(daily, interval_ms=DAY_MS)["ok"] else []:
+                self.ledger.write("SAVINGS_WEEK", ts=ev["t"], **{k: v for k, v in ev.items() if k != "t"})
+                self.tg.broadcast(fmt_savings_week(ev))
+            self.bot.savings_summary = self.savings.summary()
         except DataError as e:
             self.ledger.write("BTC_TREND_DATA_FAIL", error=str(e)[:200])
         try:
@@ -185,7 +191,8 @@ class LiveRunner:
             states[v["state"]] = states.get(v["state"], 0) + 1
         market["trend_states_scanned"] = dict(sorted(states.items()))
         summary = {"btc_trend": self.bot.btc_summary, "btc_turtle": getattr(self.bot, "turtle_summary", None),
-                   "funding_carry": getattr(self.bot, "carry_summary", None), "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
+                   "funding_carry": getattr(self.bot, "carry_summary", None),
+                   "savings_plan": getattr(self.bot, "savings_summary", None), "market": market, "sources": src.counts(), "ok": True, "symbols": len(series), "failed": len(failed), "last_ts": self.bot.last_ts,
                    "open": len(self.bot.positions), "events": len(self.bot.new_events),
                    "equity": round(self.bot.equity(), 2), "btc": self.bot.btc_state,
                    "seconds": round(time.time() - t0, 1), "telegram_sent": sent, "telegram": self.tg.diag}

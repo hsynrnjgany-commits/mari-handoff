@@ -56,6 +56,7 @@ jobs:
           MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
           MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
           MARI_TELEGRAM_CHANNEL_ID: ${{ secrets.MARI_TELEGRAM_CHANNEL_ID }}
+          MARI_SAVINGS_WEEKLY_USD: ${{ vars.MARI_SAVINGS_WEEKLY_USD }}
         run: |
           # زمان‌بندی گیت‌هاب گاهی ساعت‌ها اجرا نمی‌شود؛ پس خود اجرا هر ساعت یک چرخه می‌زند.
           END=$(( $(date +%s) + 330*60 ))

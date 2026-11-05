@@ -38,6 +38,7 @@ class MariBot:
         self.turtle_summary: dict | None = None   # وضعیت روش لاک‌پشت‌ها (C-007)
         self.carry_summary: dict | None = None    # کری فاندینگ تمرینی (Y-057)
         self.status_info: dict | None = None      # سلامت آخرین چرخه برای /status
+        self.savings_summary: dict | None = None  # صندوق پس‌انداز هوشمند تمرینی
 
     # ------------------------------------------------------------------ وضعیت
     def equity(self) -> float:
