@@ -1,0 +1,125 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T17:40Z",
+ "hypotheses": {
+  "H-MARI-G-053": "انتخاب ارز روی دروازهٔ BTC: سبد پنجک بالای سقف ۵۲ هفته با دروازهٔ BTC، هم بازده مرکب و هم شارپ بیشتر از وزن برابر با همان دروازه، در کل دوره و در هر دو نیمه.",
+  "H-MARI-X-054": "MAX مومنتوم (دهک بالای بیشترین بازده روزانهٔ ۳۰ روز گذشته): هم بازده مرکب و هم شارپ بیشتر از وزن برابر، در کل دوره و در هر دو نیمه."
+ },
+ "period": {
+  "from": "2020-06-01",
+  "to": "2026-11-05"
+ },
+ "data": {
+  "symbols_listed_incl_delisted": 700,
+  "symbols_with_data": 697,
+  "failed": 0
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۴ می‌رسد.",
+  "G-053 از سرنخی آمد که در ideas10 پس از دیدن نتیجه دیده شد؛ پرسش اینجا عوض شده (آیا انتخاب ارز روی دروازه چیزی اضافه می‌کند؟) اما همان دوره است، پس قبولی آن نیاز به تکرار روی دورهٔ تازه دارد.",
+  "فقط خرید؛ مقالهٔ MAX بازده خرید-فروش گزارش می‌کند."
+ ],
+ "results": {
+  "by_hypothesis": {
+   "H-MARI-G-053": {
+    "portfolio": {
+     "full": {
+      "total_return_pct": 4626.2,
+      "max_drawdown_pct": 63.1,
+      "sharpe": 1.19,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 5132.7,
+      "max_drawdown_pct": 52.4,
+      "sharpe": 1.93,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -9.7,
+      "max_drawdown_pct": 63.1,
+      "sharpe": 0.21,
+      "weeks": 167
+     }
+    },
+    "benchmark": {
+     "full": {
+      "total_return_pct": 8760.3,
+      "max_drawdown_pct": 84.8,
+      "sharpe": 0.5,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 20124.8,
+      "max_drawdown_pct": 57.8,
+      "sharpe": 0.72,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -56.2,
+      "max_drawdown_pct": 84.8,
+      "sharpe": -0.07,
+      "weeks": 167
+     }
+    },
+    "weeks": 334,
+    "verdict": "FALSIFIED"
+   },
+   "H-MARI-X-054": {
+    "portfolio": {
+     "full": {
+      "total_return_pct": 173.3,
+      "max_drawdown_pct": 99.8,
+      "sharpe": 0.39,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 34685.0,
+      "max_drawdown_pct": 78.8,
+      "sharpe": 0.57,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -99.2,
+      "max_drawdown_pct": 99.7,
+      "sharpe": -1.57,
+      "weeks": 167
+     }
+    },
+    "benchmark": {
+     "full": {
+      "total_return_pct": 1342.1,
+      "max_drawdown_pct": 96.6,
+      "sharpe": 0.46,
+      "weeks": 334
+     },
+     "first_half": {
+      "total_return_pct": 5437.4,
+      "max_drawdown_pct": 85.1,
+      "sharpe": 0.68,
+      "weeks": 167
+     },
+     "second_half": {
+      "total_return_pct": -74.0,
+      "max_drawdown_pct": 92.3,
+      "sharpe": -0.18,
+      "weeks": 167
+     }
+    },
+    "weeks": 334,
+    "verdict": "FALSIFIED",
+    "low_max_decile_info": {
+     "total_return_pct": 181.0,
+     "max_drawdown_pct": 90.6,
+     "sharpe": 0.57,
+     "weeks": 334
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-G-053": "FALSIFIED",
+   "H-MARI-X-054": "FALSIFIED"
+  },
+  "mondays": 335
+ }
+}
