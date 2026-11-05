@@ -138,9 +138,14 @@ def fmt_daily_simple(bot, monday: bool = False) -> str:
         lines += ["📡 <b>رادار بازار</b>",
                   f"{fa(len(snap))} ارز بررسی شد — روند صعودی: {fa(up)} — نزولی یا سقوط: "
                   f"{fa(counts.get('E', 0) + counts.get('F', 0) + counts.get('G', 0))}"]
-        best = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])[:5]
+        from .config import is_tradfi
+        strong = sorted((kv for kv in snap.items() if kv[1]["state"] == "A"), key=lambda kv: -kv[1]["score"])
+        best = [kv for kv in strong if not is_tradfi(kv[0])][:5]
+        trad = [kv for kv in strong if is_tradfi(kv[0])][:3]
         if best:
-            lines.append("قوی‌ترین‌ها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+            lines.append("قوی‌ترین ارزها: " + "، ".join(s.replace("USDT", "") for s, _ in best))
+        if trad:
+            lines.append("دارایی سنتی توکنی (سهام/طلا، نه کریپتو): " + "، ".join(s.replace("USDT", "") for s, _ in trad))
         lines.append("(فقط برای آگاهی — شکار آلت‌کوین در آزمون ۸ساله ضررده بود)")
         lines.append("")
     eq = bot.equity()

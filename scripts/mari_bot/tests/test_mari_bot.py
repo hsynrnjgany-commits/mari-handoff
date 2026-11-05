@@ -941,5 +941,16 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(len(daily_sessions(bars)), 2)
 
 
+class TradfiTests(unittest.TestCase):
+    def test_tokenized_stocks_excluded_real_crypto_kept(self):
+        from mari_bot.config import is_tradfi, tradable_symbol
+        for s in ("IAUONUSDT", "GLDXUSDT", "TSLAONUSDT", "NVDABUSDT", "QQQXUSDT", "SPCXXUSDT"):
+            self.assertTrue(is_tradfi(s), s)
+            self.assertFalse(tradable_symbol(s), s)
+        for s in ("TONUSDT", "TRXUSDT", "IMXUSDT", "ONUSDT", "SOONUSDT", "FLUXUSDT", "DYDXUSDT", "BTCUSDT"):
+            self.assertFalse(is_tradfi(s), s)
+            self.assertTrue(tradable_symbol(s), s)
+
+
 if __name__ == "__main__":
     unittest.main()
