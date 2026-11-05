@@ -832,3 +832,39 @@ def run_replication_research(start: str = "2018-06-01", out_dir: str = "research
     with open(os.path.join(out_dir, "replication_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_market_research(start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """روند بلندمدت روی ۱۰ ارز بزرگ: T-033، V-034، T-035."""
+    from .ideas import LARGE_CAPS, MARKET_HYPOTHESES, run_market
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT",) + LARGE_CAPS:
+        bars = fetch_history(s, start_ms - 200 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_market(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T06:55Z",
+              "hypotheses": MARKET_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["SURVIVORSHIP: ارزهای بزرگ امروز انتخاب شدند (به نفع نتیجه).",
+                               "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۷ می‌رسد."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "market_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# روند بلندمدت روی ۱۰ ارز بزرگ", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- T-006 بهتر از نگه‌داری: {res['wins']['T-033']} از ۱۰؛ کنترل نوسان بهتر از T-006: {res['wins']['V-034']} از ۱۰", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {MARKET_HYPOTHESES[hid]}")
+    md += ["", "| ارز | نگه‌داری: بازده ٪ / افت ٪ / شارپ | T-006: بازده ٪ / افت ٪ / شارپ | کنترل نوسان: بازده ٪ / افت ٪ / شارپ |",
+           "|---|---|---|---|"]
+    def c(st):
+        return f"{st['total_return_pct']} / {st['max_drawdown_pct']} / {st['sharpe']}"
+    for sym, x in res["per_coin"].items():
+        md.append(f"| {sym} | {c(x['hold'])} | {c(x['T-006'])} | {c(x['voltarget'])} |")
+    md += ["", f"**سبد روند (۱۱ ارز):** {c(res['basket'])}", f"**T-006 روی BTC:** {c(res['btc_t006'])}",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "market_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

@@ -895,5 +895,17 @@ class ReplicationTests(unittest.TestCase):
         self.assertGreater(r["strategies"]["H-MARI-C-007-REP"]["trades"], 0)
 
 
+class MarketTests(unittest.TestCase):
+    def test_market_and_basket(self):
+        from mari_bot.ideas import LARGE_CAPS, basket_trend_fn, run_market
+        base = IdeasTests()._d()["BTCUSDT"]
+        d = {s: [dict(b) for b in base] for s in ("BTCUSDT",) + LARGE_CAPS}
+        r = run_market(d, base[300]["t"], base[-1]["t"])
+        self.assertEqual(set(r["verdict"]), {"H-MARI-T-033", "H-MARI-V-034", "H-MARI-T-035"})
+        ctx = {"c": {s: [x["c"] for x in base] for s in ("A", "B")}, "state": {}, "days": [x["t"] for x in base]}
+        w = basket_trend_fn(["A", "B"])(300, ctx)
+        self.assertTrue(w is None or all(abs(v - 0.5) < 1e-9 for v in w.values()))
+
+
 if __name__ == "__main__":
     unittest.main()

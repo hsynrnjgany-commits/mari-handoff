@@ -473,3 +473,57 @@ def run_replication(daily: dict, start_ms: int, end_ms: int) -> dict:
         res[hid] = st
         verdict[hid] = "SUPPORTED_IN_TEST_RANGE" if ok else "FALSIFIED"
     return {"strategies": res, "verdict": verdict}
+
+
+# ---------------------------------------------------------------- پوشش کل بازار (ثبت 2026-11-05T06:55Z)
+LARGE_CAPS = ("BNBUSDT", "XRPUSDT", "ADAUSDT", "DOGEUSDT", "LINKUSDT", "LTCUSDT", "TRXUSDT", "SOLUSDT",
+              "AVAXUSDT", "DOTUSDT")
+MARKET_HYPOTHESES = {
+    "H-MARI-T-033": "T-006 روی هر ارز بزرگ، شارپ بیشتر و افت کمتر از نگه‌داری همان ارز، دست‌کم ۸ از ۱۰.",
+    "H-MARI-V-034": "کنترل نوسان ۵۰٪، شارپ بیشتر و افت کمتر از T-006 همان ارز، دست‌کم ۷ از ۱۰.",
+    "H-MARI-T-035": "سبد وزن برابر BTC + ۱۰ ارز، هر کدام فقط بالای SMA150 خودش: شارپ بیشتر و افت کمتر یا برابر T-006 روی BTC.",
+}
+
+
+def basket_trend_fn(syms):
+    n = len(syms)
+
+    def fn(k, ctx):
+        st = ctx["state"]
+        if k < 149:
+            return None
+        on = tuple(s for s in syms if ctx["c"][s][k] > _sma(ctx["c"][s], k, 150))
+        monday = (ctx["days"][k] // DAY_MS + 3) % 7 == 0
+        if on != st.get("on") or monday:
+            st["on"] = on
+            return {s: 1.0 / n for s in on}
+        return None
+    return fn
+
+
+def run_market(daily: dict, start_ms: int, end_ms: int) -> dict:
+    from .classics import run_weights
+    per, n33, n34 = {}, 0, 0
+    for sym in LARGE_CAPS:
+        d = {sym: daily[sym]}
+
+        def hold(k, ctx, s=sym):
+            if not ctx["state"].get("done"):
+                ctx["state"]["done"] = True
+                return {s: 1.0}
+            return None
+        h, _, _ = run_weights(d, [sym], start_ms, end_ms, hold)
+        t6, _, _ = run_weights(d, [sym], start_ms, end_ms, t006_for(sym))
+        vt, _, _ = run_weights(d, [sym], start_ms, end_ms, voltarget_for(sym))
+        w33 = bool((t6.get("sharpe") or -9) > (h.get("sharpe") or 9) and t6["max_drawdown_pct"] < h["max_drawdown_pct"])
+        w34 = bool((vt.get("sharpe") or -9) > (t6.get("sharpe") or 9) and vt["max_drawdown_pct"] < t6["max_drawdown_pct"])
+        n33, n34 = n33 + w33, n34 + w34
+        per[sym] = {"hold": h, "T-006": t6, "voltarget": vt, "t006_beats_hold": w33, "vt_beats_t006": w34}
+    syms = ["BTCUSDT"] + list(LARGE_CAPS)
+    bk, _, _ = run_weights({s: daily[s] for s in syms}, syms, start_ms, end_ms, basket_trend_fn(syms))
+    bt, _, _ = run_weights({"BTCUSDT": daily["BTCUSDT"]}, ["BTCUSDT"], start_ms, end_ms, t006_for("BTCUSDT"))
+    ok35 = bool((bk.get("sharpe") or -9) > (bt.get("sharpe") or 9) and bk["max_drawdown_pct"] <= bt["max_drawdown_pct"])
+    return {"per_coin": per, "basket": bk, "btc_t006": bt, "wins": {"T-033": n33, "V-034": n34},
+            "verdict": {"H-MARI-T-033": "SUPPORTED_IN_TEST_RANGE" if n33 >= 8 else "FALSIFIED",
+                        "H-MARI-V-034": "SUPPORTED_IN_TEST_RANGE" if n34 >= 7 else "FALSIFIED",
+                        "H-MARI-T-035": "SUPPORTED_IN_TEST_RANGE" if ok35 else "FALSIFIED"}}
