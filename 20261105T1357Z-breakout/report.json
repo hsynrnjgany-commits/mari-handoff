@@ -1,0 +1,544 @@
+{
+ "falsified_if": "بازده خالص کل ≤ ۰ یا کران پایین بازهٔ اطمینان ۹۵٪ میانگین هر معامله < ۰ یا ضریب سود < ۱ در هزینهٔ پایه",
+ "registered_before_results": true,
+ "code": "MARI-BOT-1.0.0",
+ "fetched_utc": "2026-11-05T13:57:36+00:00",
+ "period": {
+  "from": "2024-11-13T00:00:00+00:00",
+  "to": "2025-05-12T00:00:00+00:00",
+  "months": 6
+ },
+ "source": "https://data-api.binance.vision/api/v3/klines (public, read-only)",
+ "universe": {
+  "requested_top": 60,
+  "used": 49,
+  "failed": [],
+  "quality_failed": [
+   "ASTERUSDT",
+   "BEBUSDT",
+   "GRAMUSDT",
+   "HUMAUSDT",
+   "HYPEUSDT",
+   "KORUBUSDT",
+   "PUMPUSDT",
+   "SNXXBUSDT",
+   "WLFIUSDT",
+   "XPLUSDT"
+  ]
+ },
+ "known_biases": [
+  "SURVIVORSHIP: نمادها با حجم امروز انتخاب شدند؛ نمادهای حذف‌شده در گذشته غایب‌اند (به نفع نتیجه).",
+  "VENUE: تاریخچه از بایننس است، اجرای زنده از تووبیت؛ قیمت‌ها نزدیک‌اند اما یکسان نیستند.",
+  "MULTIPLE_TESTS: تعداد فرضیه‌های آزموده‌شده تا این اجرا: 3."
+ ],
+ "baseline": {
+  "btc_buy_hold_pct": 18.38,
+  "equal_weight_buy_hold_pct": 6.78
+ },
+ "results": {
+  "H-MARI-B-001": {
+   "statement": "ورود در شکست سقف ۲۰ کندل در روند A/B با حجم بالا، همراه با مدیریت خروج پله‌ای دکترین، پس از هزینه‌های فرضی بازده مثبت دارد.",
+   "status_before": "FALSIFIED on 2026-05-08..2026-11-04 (run 20261104T2009Z) — اینجا فقط گروه کنترل است",
+   "config_sha": "da7e02f14273dc44",
+   "verdict": "FALSIFIED",
+   "full_period": {
+    "trades": 430,
+    "win_rate_pct": 31.2,
+    "profit_factor": 0.93,
+    "net_return_pct": -8.849,
+    "max_drawdown_pct": 32.581,
+    "avg_winner_pct": 5.29,
+    "avg_loser_pct": -2.622,
+    "profit_capture_ratio": 0.36,
+    "avg_giveback_pct": 6.139,
+    "early_exit_rate_pct": 23.5,
+    "avg_held_h": 10.4,
+    "exit_reasons": {
+     "STOP_LOSS": 288,
+     "TRAIL_STOP": 139,
+     "EMERGENCY_CRASH": 3
+    },
+    "end_equity": 911.51,
+    "bootstrap": {
+     "mean_pct": -0.156,
+     "ci95_low": -0.654,
+     "ci95_high": 0.366
+    },
+    "open_at_end": 0
+   },
+   "cost_sensitivity": {
+    "fee_side_0.00pct": {
+     "trades": 434,
+     "net_return_pct": -8.639,
+     "profit_factor": 0.93,
+     "win_rate_pct": 30.4,
+     "max_drawdown_pct": 30.184
+    },
+    "fee_side_0.05pct": {
+     "trades": 433,
+     "net_return_pct": -1.256,
+     "profit_factor": 0.99,
+     "win_rate_pct": 31.2,
+     "max_drawdown_pct": 29.622
+    },
+    "fee_side_0.10pct": {
+     "trades": 430,
+     "net_return_pct": -8.849,
+     "profit_factor": 0.93,
+     "win_rate_pct": 31.2,
+     "max_drawdown_pct": 32.581
+    },
+    "fee_side_0.20pct": {
+     "trades": 413,
+     "net_return_pct": -21.495,
+     "profit_factor": 0.82,
+     "win_rate_pct": 29.5,
+     "max_drawdown_pct": 38.38
+    },
+    "fee_side_0.30pct": {
+     "trades": 414,
+     "net_return_pct": -30.096,
+     "profit_factor": 0.75,
+     "win_rate_pct": 28.7,
+     "max_drawdown_pct": 42.929
+    }
+   },
+   "folds": [
+    {
+     "from": "2024-11-13",
+     "to": "2024-12-13",
+     "btc_return_pct": 13.79,
+     "regime": "BULL",
+     "trades": 95,
+     "net_return_pct": -0.592,
+     "profit_factor": 0.98,
+     "win_rate_pct": 28.4,
+     "max_drawdown_pct": 11.781
+    },
+    {
+     "from": "2024-12-13",
+     "to": "2025-01-12",
+     "btc_return_pct": -5.55,
+     "regime": "FLAT",
+     "trades": 68,
+     "net_return_pct": -8.332,
+     "profit_factor": 0.58,
+     "win_rate_pct": 32.4,
+     "max_drawdown_pct": 9.157
+    },
+    {
+     "from": "2025-01-12",
+     "to": "2025-02-11",
+     "btc_return_pct": 3.36,
+     "regime": "FLAT",
+     "trades": 55,
+     "net_return_pct": -13.572,
+     "profit_factor": 0.27,
+     "win_rate_pct": 21.8,
+     "max_drawdown_pct": 16.495
+    },
+    {
+     "from": "2025-02-11",
+     "to": "2025-03-13",
+     "btc_return_pct": -14.35,
+     "regime": "BEAR",
+     "trades": 58,
+     "net_return_pct": -6.345,
+     "profit_factor": 0.68,
+     "win_rate_pct": 25.9,
+     "max_drawdown_pct": 10.602
+    },
+    {
+     "from": "2025-03-13",
+     "to": "2025-04-12",
+     "btc_return_pct": -0.37,
+     "regime": "FLAT",
+     "trades": 71,
+     "net_return_pct": -3.919,
+     "profit_factor": 0.8,
+     "win_rate_pct": 36.6,
+     "max_drawdown_pct": 5.778
+    },
+    {
+     "from": "2025-04-12",
+     "to": "2025-05-12",
+     "btc_return_pct": 24.81,
+     "regime": "BULL",
+     "trades": 89,
+     "net_return_pct": 22.46,
+     "profit_factor": 1.91,
+     "win_rate_pct": 37.1,
+     "max_drawdown_pct": 10.28
+    }
+   ],
+   "tail_removal_top5pct": {
+    "removed": 21,
+    "net_pnl_all": -88.49,
+    "net_pnl_without_top": -658.67,
+    "net_pct_without_top": -65.87
+   }
+  }
+ },
+ "lineage": {
+  "BTCUSDT": {
+   "bars": 4520,
+   "sha": "bd1631f4b40f1b7f",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ETHUSDT": {
+   "bars": 4520,
+   "sha": "b39622787f716af5",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "SOLUSDT": {
+   "bars": 4520,
+   "sha": "01014120de7ecf22",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ZECUSDT": {
+   "bars": 4520,
+   "sha": "69e34f94ff137bb6",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "XRPUSDT": {
+   "bars": 4520,
+   "sha": "e0010a824d6d8da2",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "BNBUSDT": {
+   "bars": 4520,
+   "sha": "7bbb8706c0213168",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "NEARUSDT": {
+   "bars": 4520,
+   "sha": "219020e33d415009",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "UNIUSDT": {
+   "bars": 4520,
+   "sha": "d4bf760471fb457d",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "PEPEUSDT": {
+   "bars": 4520,
+   "sha": "ad9d44051ff6f3f2",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "HYPEUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "TRUMPUSDT": {
+   "bars": 2704,
+   "sha": "68c794d52de6a092",
+   "first": 1737273600000,
+   "last": 1747004400000
+  },
+  "SUIUSDT": {
+   "bars": 4520,
+   "sha": "ff2100625238afb9",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "DOGEUSDT": {
+   "bars": 4520,
+   "sha": "9a930bf98e3dc3c5",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ENAUSDT": {
+   "bars": 4520,
+   "sha": "0620bfd4060c6fe0",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "WLDUSDT": {
+   "bars": 4520,
+   "sha": "e3959a0c79ea8af5",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "LINKUSDT": {
+   "bars": 4520,
+   "sha": "bb0be4ad395c5dd9",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "TRXUSDT": {
+   "bars": 4520,
+   "sha": "9daa279c4783985b",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ADAUSDT": {
+   "bars": 4520,
+   "sha": "d5c767e9580014d5",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "PUMPUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "AAVEUSDT": {
+   "bars": 4520,
+   "sha": "155346f10c52919e",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "INJUSDT": {
+   "bars": 4520,
+   "sha": "79e2b7739ad5f465",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "AVAXUSDT": {
+   "bars": 4520,
+   "sha": "25f8fcb95d9562ef",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "KORUBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "LTCUSDT": {
+   "bars": 4520,
+   "sha": "d2adb185e597e1f1",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "QNTUSDT": {
+   "bars": 4520,
+   "sha": "86578ee098044c7d",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "TAOUSDT": {
+   "bars": 4520,
+   "sha": "201a591c214e3b44",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "WLFIUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "ONDOUSDT": {
+   "bars": 730,
+   "sha": "f5add0a018f6906f",
+   "first": 1744380000000,
+   "last": 1747004400000
+  },
+  "BCHUSDT": {
+   "bars": 4520,
+   "sha": "81e165cac2010130",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "BEBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "XLMUSDT": {
+   "bars": 4520,
+   "sha": "481c4b64ca8cceb4",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "CELOUSDT": {
+   "bars": 4520,
+   "sha": "911179ba17534d62",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ASTERUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "ARBUSDT": {
+   "bars": 4520,
+   "sha": "f59baecb46455d7e",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "FETUSDT": {
+   "bars": 4520,
+   "sha": "66e09f0aa098ef0c",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "HUMAUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "BMTUSDT": {
+   "bars": 1305,
+   "sha": "e2c73f5206d0a895",
+   "first": 1742310000000,
+   "last": 1747004400000
+  },
+  "BEAMXUSDT": {
+   "bars": 4520,
+   "sha": "7fa5d64b6d4eeb07",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "TONUSDT": {
+   "bars": 4520,
+   "sha": "dfd7c4db64d1fbf5",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "ZROUSDT": {
+   "bars": 4520,
+   "sha": "423d4d20ef773efd",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "HBARUSDT": {
+   "bars": 4520,
+   "sha": "9cb3552264a57855",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "FILUSDT": {
+   "bars": 4520,
+   "sha": "29c31b945edfa0c7",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "SNXXBUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "LSKUSDT": {
+   "bars": 4520,
+   "sha": "b965a195409923d6",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "XPLUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "POLUSDT": {
+   "bars": 4520,
+   "sha": "f6dbbc2ebf8d8fbc",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "GRAMUSDT": {
+   "bars": 0,
+   "sha": "4f53cda18c2baa0c",
+   "first": null,
+   "last": null
+  },
+  "RUNEUSDT": {
+   "bars": 4520,
+   "sha": "8dcb1092565d2b6e",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "1000CATUSDT": {
+   "bars": 3495,
+   "sha": "c8b0897cfec82263",
+   "first": 1734426000000,
+   "last": 1747004400000
+  },
+  "INITUSDT": {
+   "bars": 421,
+   "sha": "bcf411366eea36b5",
+   "first": 1745492400000,
+   "last": 1747004400000
+  },
+  "APTUSDT": {
+   "bars": 4520,
+   "sha": "69eef8c631a71050",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "RAYUSDT": {
+   "bars": 4520,
+   "sha": "71bc01d38e061baf",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "STRKUSDT": {
+   "bars": 4520,
+   "sha": "509bf5ee99f90ff6",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "DASHUSDT": {
+   "bars": 4520,
+   "sha": "44cf4981a6713046",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "DOTUSDT": {
+   "bars": 4520,
+   "sha": "4bc7f89dacb863a2",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "SXTUSDT": {
+   "bars": 83,
+   "sha": "227d9d9c7fcd6dfc",
+   "first": 1746709200000,
+   "last": 1747004400000
+  },
+  "XTZUSDT": {
+   "bars": 4520,
+   "sha": "5290c34280729cbd",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "PENDLEUSDT": {
+   "bars": 4520,
+   "sha": "5f9e13ce0e43d17d",
+   "first": 1730736000000,
+   "last": 1747004400000
+  },
+  "THEUSDT": {
+   "bars": 3974,
+   "sha": "fdf192591244e3b3",
+   "first": 1732701600000,
+   "last": 1747004400000
+  },
+  "NFPUSDT": {
+   "bars": 4520,
+   "sha": "d1ad7a8236d5550b",
+   "first": 1730736000000,
+   "last": 1747004400000
+  }
+ }
+}
