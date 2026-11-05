@@ -131,6 +131,12 @@ def cmd_funding(a):
     print(json.dumps({"verdict": r["results"]["verdict"], "sources": r["sources"]}, ensure_ascii=False, indent=2))
 
 
+def cmd_pattern(a):
+    from .research import run_pattern_research
+    r = run_pattern_research(out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -192,6 +198,9 @@ def main(argv=None):
     fu.add_argument("--start", default="2020-06-01")
     fu.add_argument("--out", default="research_out")
     fu.set_defaults(fn=cmd_funding)
+    pa = sub.add_parser("pattern", help="الگوی مشترک پنهان ارزهای صعودی")
+    pa.add_argument("--out", default="research_out")
+    pa.set_defaults(fn=cmd_pattern)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

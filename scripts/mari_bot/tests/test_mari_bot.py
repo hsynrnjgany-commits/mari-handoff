@@ -667,5 +667,49 @@ class FundingTests(unittest.TestCase):
                 self.assertNotIn("order", p.lower())
 
 
+class PatternTests(unittest.TestCase):
+    def _daily(self, planted: bool, n_sym=30, n_days=1400, seed=3):
+        import random
+        from mari_bot.pattern import DAY_MS
+        rnd = random.Random(seed)
+        t0 = 1_609_459_200_000                     # 2021-01-01
+        daily = {}
+        btc = [100.0]
+        for i in range(1, n_days):
+            btc.append(btc[-1] * (1 + 0.001 + rnd.gauss(0, 0.02)))
+        daily["BTCUSDT"] = [{"t": t0 + i * DAY_MS, "o": p, "h": p * 1.01, "l": p * .99, "c": p, "v": 1, "qv": 1e9}
+                            for i, p in enumerate(btc)]
+        for k in range(n_sym):
+            px, bars, regime = 50.0, [], rnd.choice((-1, 1))
+            for i in range(n_days):
+                vol_spike = rnd.random() < 0.1
+                if rnd.random() < 1 / 60:          # روند پایدار که هر ~۶۰ روز عوض می‌شود
+                    regime = -regime
+                drift = 0.006 * regime if planted else 0.0
+                px *= 1 + drift + rnd.gauss(0, 0.03)
+                q = 1e6 * (4 if vol_spike else 1) * (1 + k)
+                bars.append({"t": t0 + i * DAY_MS, "o": px, "h": px * 1.02, "l": px * .98, "c": px, "v": q / px, "qv": q})
+            daily[f"C{k}USDT"] = bars
+        return daily
+
+    def test_monday_and_spearman(self):
+        from mari_bot.pattern import DAY_MS, spearman
+        import datetime
+        t = int(datetime.datetime(2026, 11, 2, tzinfo=datetime.timezone.utc).timestamp() * 1000)
+        self.assertEqual((t // DAY_MS + 3) % 7, 0)
+        self.assertAlmostEqual(spearman(list(range(10)), list(range(10))), 1.0)
+
+    def test_finds_planted_pattern_not_noise(self):
+        from mari_bot.pattern import DAY_MS, run_pattern
+        t0 = 1_609_459_200_000
+        train, test = (t0 + 250 * DAY_MS, t0 + 800 * DAY_MS), (t0 + 801 * DAY_MS, t0 + 1390 * DAY_MS)
+        r = run_pattern(self._daily(True), train, test)
+        self.assertEqual(r["learned"]["ret30"]["sign"], 1)
+        self.assertEqual(r["verdict"]["H-MARI-P-019"], "SUPPORTED_IN_TEST_RANGE")
+        fp = sum(run_pattern(self._daily(False, seed=1000 + k), train, test)["verdict"]["H-MARI-P-019"]
+                 != "FALSIFIED" for k in range(10))
+        self.assertLessEqual(fp, 1)                     # نویز خالص: نرخ مثبت کاذب نزدیک ۲٫۵٪
+
+
 if __name__ == "__main__":
     unittest.main()

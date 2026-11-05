@@ -501,3 +501,60 @@ def run_funding_research(start: str = "2020-06-01", out_dir: str = "research_out
     with open(os.path.join(out_dir, "funding_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_pattern_research(out_dir: str = "research_out") -> dict:
+    """الگوی مشترک پنهان (P-019، P-020): یادگیری ۲۰۲۱-۰۶..۲۰۲۳-۱۲، آزمون ۲۰۲۴-۰۱..اکنون."""
+    from .pattern import PATTERN_HYPOTHESES, run_pattern
+
+    def ms(d):
+        return int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    train, test = (ms("2021-06-01"), ms("2023-12-31")), (ms("2024-01-01"), end)
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, train[0] - 220 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_pattern(daily, train, test)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T04:25Z",
+              "hypotheses": PATTERN_HYPOTHESES,
+              "period": {"train": "2021-06-01..2023-12-31",
+                         "test": "2024-01-01.." + datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "universe": {"symbols_listed_ever": len(syms), "with_data": len(daily), "failed": len(failed)},
+              "known_biases": ["SURVIVORSHIP: ارزهایی که پیش از دسترس‌پذیری بایگانی حذف شده‌اند در داده نیستند.",
+                               "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۰ می‌رسد.",
+                               "ارزی که وسط هفته بی‌داده شود با آخرین قیمت معلوم نقد فرض می‌شود (خوش‌بینانه)."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "pattern_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# الگوی مشترک پنهان ارزهای صعودی", "",
+          f"- یادگیری: {report['period']['train']} ({res['train_weeks']} هفته)",
+          f"- آزمون دست‌نخورده: {report['period']['test']} ({res['test_weeks']} هفته، "
+          f"میانگین {res['avg_universe_test']} ارز در هفته)", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {PATTERN_HYPOTHESES[hid]}")
+    md += ["", "## آنچه از دورهٔ یادگیری آموخته شد", "", "| ویژگی | IC میانگین | علامت | CI95 ٪ |", "|---|---|---|---|"]
+    for f, x in res["learned"].items():
+        ci = x["ci"] or {}
+        md.append(f"| {f} | {x['mean_ic']} | {x['sign']:+d} | [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    ic = res["test_ic"]
+    ci = ic["ci"] or {}
+    md += ["", f"## آزمون: IC میانگین {ic['mean_ic']}، CI95٪ [{ci.get('ci95_low')}, {ci.get('ci95_high')}], "
+           f"هفته‌های مثبت {ic['hit_weeks_pct']}٪", "",
+           "| روش (دورهٔ آزمون) | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله |", "|---|---|---|---|---|"]
+    for name, st in (("۵ ارز برتر + فیلتر BTC", res["strategy_test"]), ("T-006", res["t006_test"])):
+        md.append(f"| {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | {st.get('sharpe')} | "
+                  f"{st.get('trades')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "pattern_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
