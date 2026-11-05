@@ -554,6 +554,13 @@ def run_pattern_research(out_dir: str = "research_out") -> dict:
     for name, st in (("۵ ارز برتر + فیلتر BTC", res["strategy_test"]), ("T-006", res["t006_test"])):
         md.append(f"| {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | {st.get('sharpe')} | "
                   f"{st.get('trades')} |")
+    dg = res["diagnostics_post_hoc"]
+    md += ["", "## تشخیص پس از نتیجه (حکم را تغییر نمی‌دهد)", "",
+           "بازده میانگین ۷ روز بعد هر پنجک امتیاز (Q1 بدترین، Q5 بهترین): " +
+           "، ".join(f"{k}: {v}٪" for k, v in dg["quintile_mean_fwd7_pct"].items()),
+           f"۵ ارز برتر: میانگین {dg['top5_mean_fwd7_pct']}٪، میانه {dg['top5_median_fwd7_pct']}٪", "",
+           "| ارز پرتکرار در ۵ برتر | هفته | بازده میانگین ٪ |", "|---|---|---|"]
+    md += [f"| {x['sym']} | {x['weeks']} | {x['mean_fwd7_pct']} |" for x in dg["most_picked"]]
     md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
     with open(os.path.join(out_dir, "pattern_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")

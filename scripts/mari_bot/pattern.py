@@ -189,6 +189,32 @@ def run_strategy(p: Panel, signs, start_ms: int, end_ms: int) -> dict:
     return st
 
 
+def diagnostics(test: list[dict], signs) -> dict:
+    """تشخیص پس از نتیجه (حکم را تغییر نمی‌دهد): بازده پنجک‌ها و ارزهای پرتکرار در پنجک بالا."""
+    q = {k: [] for k in range(5)}
+    top_count, top_ret, top5 = {}, {}, []
+    for cs in test:
+        rows = cs["rows"]
+        sc = score(rows, signs)
+        order = sorted(range(len(rows)), key=lambda k: sc[k])
+        n = len(order)
+        for qi in range(5):
+            part = order[qi * n // 5:(qi + 1) * n // 5]
+            q[qi].append(sum(rows[k][2] for k in part) / len(part))
+        best = order[-TOP_K:]
+        top5.append(sum(rows[k][2] for k in best) / len(best))
+        for k in best:
+            s = rows[k][0]
+            top_count[s] = top_count.get(s, 0) + 1
+            top_ret.setdefault(s, []).append(rows[k][2])
+    freq = sorted(top_count.items(), key=lambda x: -x[1])[:12]
+    return {"quintile_mean_fwd7_pct": {f"Q{k + 1}": round(sum(v) / len(v) * 100, 3) for k, v in q.items() if v},
+            "top5_mean_fwd7_pct": round(sum(top5) / len(top5) * 100, 3) if top5 else None,
+            "top5_median_fwd7_pct": round(sorted(top5)[len(top5) // 2] * 100, 3) if top5 else None,
+            "most_picked": [{"sym": s, "weeks": c, "mean_fwd7_pct": round(sum(top_ret[s]) / c * 100, 2)}
+                            for s, c in freq]}
+
+
 def run_pattern(daily: dict, train: tuple, test: tuple) -> dict:
     from .classics import run_weights
     from .macro import t006_fn
@@ -202,6 +228,7 @@ def run_pattern(daily: dict, train: tuple, test: tuple) -> dict:
     ok19 = bool(ic["ci"] and ic["ci"]["ci95_low"] > 0)
     ok20 = bool((strat.get("sharpe") or -9) > (t6.get("sharpe") or 9) and ci and ci["ci95_low"] > 0)
     return {"train_weeks": len(tr), "test_weeks": len(te), "learned": signs, "test_ic": ic,
+            "diagnostics_post_hoc": diagnostics(te, signs),
             "strategy_test": strat, "t006_test": t6,
             "avg_universe_test": round(sum(len(cs["rows"]) for cs in te) / max(1, len(te)), 1),
             "verdict": {"H-MARI-P-019": "SUPPORTED_IN_TEST_RANGE" if ok19 else "FALSIFIED",
