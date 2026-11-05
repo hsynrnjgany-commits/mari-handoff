@@ -65,6 +65,10 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          if [ "${{ inputs.kind }}" = "ict" ]; then
+            python -m mari_bot ict --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "macro" ]; then
             python -m mari_bot macro --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0

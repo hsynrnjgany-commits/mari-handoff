@@ -587,6 +587,27 @@ class TestMacro(unittest.TestCase):
             D.http_get_text("/other", base=D.FRED)
 
 
+class TestICT(unittest.TestCase):
+    def test_events_and_run(self):
+        from mari_bot.ict import events, run_ict
+        b = [{"t": 0, "o": 10, "h": 11, "l": 9, "c": 10},
+             {"t": 1, "o": 10, "h": 10.5, "l": 8.5, "c": 9.5},     # شکار کف
+             {"t": 2, "o": 9.5, "h": 11.2, "l": 9.4, "c": 10.0}]   # شکار سقف
+        ev = events(b)
+        self.assertEqual(ev["bull"], [1])
+        self.assertEqual(ev["bear"], [2])
+        D_ = 86_400_000
+        d = {}
+        for sym, seed in (("BTCUSDT", 1), ("ETHUSDT", 2)):
+            bars = synth(500, 0.001, 0.02, seed=seed)
+            for i, x in enumerate(bars):
+                x["t"] = 1_600_000_000_000 // D_ * D_ + i * D_
+            d[sym] = bars
+        r = run_ict(d, d["BTCUSDT"][30]["t"], d["BTCUSDT"][-1]["t"])
+        self.assertIn(r["verdict"]["H-MARI-ICT-015"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+        self.assertGreater(r["events"]["BTCUSDT"]["bull"]["n"], 10)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

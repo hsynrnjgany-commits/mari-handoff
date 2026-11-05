@@ -125,6 +125,12 @@ def cmd_macro(a):
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_ict(a):
+    from .research import run_ict_research
+    r = run_ict_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -172,6 +178,10 @@ def main(argv=None):
     ma.add_argument("--start", default="2018-06-01")
     ma.add_argument("--out", default="research_out")
     ma.set_defaults(fn=cmd_macro)
+    ic = sub.add_parser("ict", help="آزمون شکار نقدینگی ICT روی BTC/ETH")
+    ic.add_argument("--start", default="2018-06-01")
+    ic.add_argument("--out", default="research_out")
+    ic.set_defaults(fn=cmd_ict)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)
