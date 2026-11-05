@@ -868,3 +868,45 @@ def run_market_research(start: str = "2021-01-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "market_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_sessions_research(start: str = "2021-01-01", out_dir: str = "research_out") -> dict:
+    """خوشهٔ B سند مادر: AMD و سشن‌ها روی کندل ساعتی BTC و ETH."""
+    from .sessions import SESSION_HYPOTHESES, run_sessions
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    hourly = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 70 * DAY_MS, end, interval="1h")
+        hourly[s] = quality_check(bars)["clean"]
+    res = run_sessions(hourly, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T07:05Z",
+              "hypotheses": SESSION_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۹ می‌رسد.",
+                               "روزهایی که یکی از سشن‌ها ساعت گمشده دارد کنار گذاشته می‌شوند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "sessions_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# خوشهٔ B: AMD و سشن‌ها", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {SESSION_HYPOTHESES[hid]}")
+    md += ["", "## S-036: بازده نیویورک پس از شکار محدودهٔ آسیا", "",
+           "| دارایی | روز | میانگین نیویورک ٪ | شکار کف: تعداد / اختلاف ٪ [CI95] | شکار سقف: تعداد / اختلاف ٪ [CI95] |",
+           "|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        a = x["S-036"]
+        def cell(e):
+            v = e["vs_all"] or {}
+            return f"{e['n']} / {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}]"
+        md.append(f"| {sym} | {a['n_days']} | {a['mean_ny_pct']} | {cell(a['bull'])} | {cell(a['bear'])} |")
+    md += ["", "## S-037: نرخ درستی «نیویورک خلاف لندن» پس از آسیای آرام", "",
+           "| دارایی | تعداد | نرخ درستی ٪ | CI95 ٪ |", "|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        h = x["S-037"]["hit"] or {}
+        md.append(f"| {sym} | {h.get('n')} | {h.get('rate_pct')} | [{h.get('ci95_low')}, {h.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "sessions_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

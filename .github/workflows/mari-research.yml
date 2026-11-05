@@ -66,6 +66,10 @@ jobs:
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
           echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
+          if [ "${{ inputs.kind }}" = "sessions" ]; then
+            python -m mari_bot sessions --start "${{ inputs.start_date || '2021-01-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "market" ]; then
             python -m mari_bot market --start "${{ inputs.start_date || '2021-01-01' }}" --out "$RUN_DIR"
             exit 0

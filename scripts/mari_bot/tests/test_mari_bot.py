@@ -907,5 +907,39 @@ class MarketTests(unittest.TestCase):
         self.assertTrue(w is None or all(abs(v - 0.5) < 1e-9 for v in w.values()))
 
 
+class SessionTests(unittest.TestCase):
+    def _hourly(self, planted, days=400, seed=4):
+        import random
+        rnd = random.Random(seed)
+        t0, px, out = 1_609_459_200_000, 100.0, []
+        for d in range(days):
+            sweep = planted and rnd.random() < 0.3
+            for h in range(24):
+                t = t0 + d * 86_400_000 + h * 3_600_000
+                o = px
+                drift = 0.0
+                if sweep and 8 <= h < 13:
+                    drift = -0.004 if h < 11 else 0.006                # لندن: پایین سپس برگشت
+                if sweep and 13 <= h < 21:
+                    drift = 0.003                                       # نیویورک: صعود
+                px *= 1 + drift + rnd.gauss(0, 0.002)
+                out.append({"t": t, "o": o, "h": max(o, px) * 1.001, "l": min(o, px) * 0.999, "c": px, "v": 1, "qv": 1})
+        return out
+
+    def test_session_split_and_planted_sweep(self):
+        from mari_bot.sessions import daily_sessions, s036
+        days = daily_sessions(self._hourly(True))
+        self.assertEqual(len(days), 400)
+        r = s036(days)
+        self.assertGreater(r["bull"]["n"], 50)
+        self.assertGreater(r["bull"]["vs_all"]["ci95_low"], 0)
+
+    def test_missing_hour_drops_day(self):
+        from mari_bot.sessions import daily_sessions
+        bars = self._hourly(False, days=3)
+        del bars[24 + 15]                                              # روز دوم، ساعت ۱۵
+        self.assertEqual(len(daily_sessions(bars)), 2)
+
+
 if __name__ == "__main__":
     unittest.main()

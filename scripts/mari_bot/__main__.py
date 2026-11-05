@@ -190,6 +190,12 @@ def cmd_market(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_sessions(a):
+    from .research import run_sessions_research
+    r = run_sessions_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -286,6 +292,10 @@ def main(argv=None):
     mk.add_argument("--start", default="2021-01-01")
     mk.add_argument("--out", default="research_out")
     mk.set_defaults(fn=cmd_market)
+    se = sub.add_parser("sessions", help="خوشهٔ B: AMD و سشن‌ها")
+    se.add_argument("--start", default="2021-01-01")
+    se.add_argument("--out", default="research_out")
+    se.set_defaults(fn=cmd_sessions)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)
