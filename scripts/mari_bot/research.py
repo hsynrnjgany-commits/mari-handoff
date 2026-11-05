@@ -1277,7 +1277,8 @@ def run_ideas14_research(start: str = "2018-01-01", out_dir: str = "research_out
     os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "ideas14_report.json"), "w", encoding="utf-8") as fh:
         json.dump(report, fh, ensure_ascii=False, indent=1)
-    r, md = res["rule"], ["# ideas14: فرمول مشترک ارزهای صعودی", "",
+    r = res["rule"]
+    md = ["# ideas14: فرمول مشترک ارزهای صعودی", "",
                           f"- آموزش: {report['period']['train']} — {r['n_train_events']} رویداد",
                           f"- آزمون: {report['period']['test']} — {res['n_test_events']} رویداد",
                           f"- برنده = بازده ۹۱ روزهٔ بعدی ≥ +۲۰۰٪. نرخ پایه در آموزش: {r['base_win_rate'] * 100:.2f}٪",
