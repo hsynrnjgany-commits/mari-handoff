@@ -202,6 +202,12 @@ def cmd_ideas7(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_oi(a):
+    from .research import run_oi_research
+    r = run_oi_research(samples=a.samples, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -306,6 +312,10 @@ def main(argv=None):
     i7.add_argument("--start", default="2018-06-01")
     i7.add_argument("--out", default="research_out")
     i7.set_defaults(fn=cmd_ideas7)
+    oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
+    oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
+    oi.add_argument("--out", default="research_out")
+    oi.set_defaults(fn=cmd_oi)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)

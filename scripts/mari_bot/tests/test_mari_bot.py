@@ -983,5 +983,54 @@ class Ideas7Tests(unittest.TestCase):
         self.assertGreater(r["tom_minus_rest"]["ci95_low"], 0)
 
 
+class OITests(unittest.TestCase):
+    def _zip(self, rows):
+        import io, zipfile
+        b = io.BytesIO()
+        with zipfile.ZipFile(b, "w") as z:
+            z.writestr("m.csv", "create_time,symbol,sum_open_interest,sum_open_interest_value\n" + "\n".join(rows))
+        return b.getvalue()
+
+    def test_oi_change_uses_only_past(self):
+        from mari_bot.oi import oi_change
+        H = 3_600_000
+        rows = [(i * 300_000, 100.0 if i * 300_000 < 30 * H else 300.0) for i in range(int(48 * H / 300_000))]
+        self.assertAlmostEqual(oi_change(rows, 25 * H), 0.0)            # جهش بعد از ورود دیده نمی‌شود
+        self.assertAlmostEqual(oi_change(rows, 40 * H), 2.0)
+        self.assertIsNone(oi_change(rows, 10 * H))                       # ۲۴ ساعت پیش داده ندارد
+
+    def test_collect_and_planted_effect(self):
+        from mari_bot.oi import collect, evaluate
+        DAY = 86_400_000
+        t0 = 1_746_000_000_000 // DAY * DAY
+        def getter(path):
+            sym = path.split("/")[-2]
+            if sym == "SPOTONLYUSDT":
+                return None
+            d = path.rsplit("-metrics-", 1)[1][:10]
+            from datetime import datetime, timezone
+            base = int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+            rows = []
+            for i in range(288):
+                t = base + i * 300_000
+                hot = sym.startswith("HOT") and t >= t0 + 10 * DAY
+                ts = datetime.fromtimestamp(t / 1000, timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+                rows.append(f"{ts},{sym},{200.0 if hot else 100.0},1")
+            return self._zip(rows)
+        trades = []
+        for i in range(30):
+            trades.append({"symbol": "HOTUSDT", "entry_ts": t0 + 10 * DAY + 12 * 3_600_000 + i,
+                           "pnl_pct": -3.0 - (i % 3), "pnl_usdt": -5, "exit_reason": "STOP_LOSS"})
+            trades.append({"symbol": "CALMUSDT", "entry_ts": t0 + 10 * DAY + 12 * 3_600_000,
+                           "pnl_pct": 1.0 + (i % 3), "pnl_usdt": 3, "exit_reason": "TP"})
+        trades.append({"symbol": "SPOTONLYUSDT", "entry_ts": t0 + 10 * DAY, "pnl_pct": 1, "pnl_usdt": 1, "exit_reason": "TP"})
+        tro, cov = collect(trades, getter=getter, pause=0)
+        self.assertEqual(cov["with_oi"], 60)
+        self.assertEqual(cov["symbols_without_futures"], ["SPOTONLYUSDT"])
+        r = evaluate(tro)
+        self.assertEqual(r["surge"]["n"], 30)
+        self.assertEqual(r["verdict"], "SUPPORTED_IN_TEST_RANGE")
+
+
 if __name__ == "__main__":
     unittest.main()

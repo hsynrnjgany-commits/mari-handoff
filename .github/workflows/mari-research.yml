@@ -8,13 +8,13 @@ on:
   workflow_dispatch:
     inputs:
       kind:
-        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان) یا ideas / ideas2 / ideas3 / ideas4 / ideas5 / ideas6 / ideas7 (صف ایده‌ها)"
+        description: "breakout (ساعتی) یا momentum (روزانه) یا classics (روش‌های بزرگان + DCA) یا macro (اقتصاد کلان آمریکا) یا ict یا funding (نرخ فاندینگ) یا pattern (الگوی پنهان) یا ideas / ideas2 / ideas3 / ideas4 / ideas5 / ideas6 / ideas7 (صف ایده‌ها) یا oi (جهش موقعیت‌های باز)"
         default: "breakout"
       years:
         description: "فقط برای momentum: تعداد سال تاریخچه"
         default: "5"
       variants:
-        description: "فقط momentum: نسخه‌ها، جداشده با کاما (خالی = M-003,M-004)"
+        description: "momentum: نسخه‌ها (خالی = M-003,M-004) — oi: پوشه‌های نمونه در mari-research، جداشده با کاما"
         default: ""
       start_date:
         description: "فقط momentum: شروع دوره YYYY-MM-DD (خالی = اکنون منهای years)"
@@ -66,6 +66,12 @@ jobs:
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
           echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
+          if [ "${{ inputs.kind }}" = "oi" ]; then
+            SAMPLES=""
+            for d in $(echo "${{ inputs.variants }}" | tr ',' ' '); do SAMPLES="$SAMPLES${SAMPLES:+,}../out-wt/$d/trades.json"; done
+            python -m mari_bot oi --samples "$SAMPLES" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "ideas7" ]; then
             python -m mari_bot ideas7 --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0

@@ -951,3 +951,44 @@ def run_ideas7_research(start: str = "2018-06-01", out_dir: str = "research_out"
     with open(os.path.join(out_dir, "ideas7_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_oi_research(samples: str, out_dir: str = "research_out") -> dict:
+    """O-042: جهش OI پیش از ورود شکارچی ساعتی، روی معامله‌های ثابت‌شدهٔ B-001 در دو نمونه."""
+    from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate
+    per, cov = {}, {}
+    for path in [p for p in samples.split(",") if p]:
+        with open(path, encoding="utf-8") as fh:
+            trades = json.load(fh)["H-MARI-B-001"]
+        name = os.path.basename(os.path.dirname(path))
+        tro, cov[name] = collect(trades)
+        per[name] = evaluate(tro, SURGE)
+        cov[name]["period"] = [datetime.fromtimestamp(min(t["entry_ts"] for t in trades) / 1000, timezone.utc).strftime("%Y-%m-%d"),
+                               datetime.fromtimestamp(max(t["entry_ts"] for t in trades) / 1000, timezone.utc).strftime("%Y-%m-%d")]
+    verdict = {"H-MARI-O-042": combine(per)}
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T14:10Z", "hypotheses": OI_HYPOTHESES,
+              "surge_threshold": SURGE, "coverage": cov,
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۲ می‌رسد.",
+                               "فقط ارزهای دارای قرارداد آتی بایننس پوشش داده می‌شوند."],
+              "results": {"per_sample": per, "verdict": verdict}}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "oi_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# O-042: جهش موقعیت‌های باز (OI) پیش از ورود شکارچی ساعتی", "",
+          f"- H-MARI-O-042: **{verdict['H-MARI-O-042']}** — {OI_HYPOTHESES['H-MARI-O-042']}", "",
+          "| نمونه | دوره | معامله / با OI | گروه جهش: تعداد / میانگین ٪ / برد ٪ / حد ضرر ٪ | بقیه: تعداد / میانگین ٪ / برد ٪ / حد ضرر ٪ | بقیه منهای جهش ٪ [CI95] | حکم |",
+          "|---|---|---|---|---|---|---|"]
+    for name, x in per.items():
+        c = cov[name]
+        def g(e):
+            return f"{e['n']} / {e['mean_pnl_pct']} / {e['win_rate_pct']} / {e['stop_loss_pct']}"
+        d = x["rest_minus_surge"] or {}
+        md.append(f"| {name} | {c['period'][0]} تا {c['period'][1]} | {c['trades_total']} / {c['with_oi']} | {g(x['surge'])} | "
+                  f"{g(x['rest'])} | {d.get('diff_pct')} [{d.get('ci95_low')}, {d.get('ci95_high')}] | {x['verdict']} |")
+    md += ["", "| نمونه | سود خالص همه (تتر) | بدون گروه جهش (تتر) | صدک‌های جهش OI ٪ (۱۰/۵۰/۹۰/۹۹) |", "|---|---|---|---|"]
+    for name, x in per.items():
+        md.append(f"| {name} | {x['info_net_pnl_all_usdt']} | {x['info_net_pnl_without_surge_usdt']} | {x['oi_change_percentiles_pct']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "oi_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
