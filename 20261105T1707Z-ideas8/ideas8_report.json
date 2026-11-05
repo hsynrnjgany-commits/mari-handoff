@@ -1,0 +1,185 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T17:05Z",
+ "hypotheses": {
+  "H-MARI-F-044": "ترس و طمع خلاف جمع (خرید ≤ ۲۰، فروش ≥ ۷۵): شارپ بیشتر از T-006 و از خرید-و-نگه‌داری، روی BTC و ETH.",
+  "H-MARI-S-045": "اثر هالووین: میانگین بازده روزانهٔ نوامبر-آوریل منهای مه-اکتبر، CI95 بالای صفر، روی BTC و ETH.",
+  "H-MARI-K-046": "حد ضرر متحرک ۱۵٪ روی T-006: شارپ بیشتر و بیشترین افت کمتر از T-006، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۶ می‌رسد.",
+  "شاخص ترس و طمع یک شاخص برای کل بازار است (بیشتر بر پایهٔ BTC)؛ ETH تکرار مستقل کامل نیست.",
+  "K-046 به T-006 وابسته است."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "BUY_HOLD": {
+     "total_return_pct": 952.13,
+     "cagr_pct": 32.19,
+     "max_drawdown_pct": 76.63,
+     "sharpe": 0.77,
+     "weekly_bootstrap": {
+      "mean_pct": 0.885,
+      "ci95_low": 0.142,
+      "ci95_high": 1.691
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "H-MARI-F-044": {
+     "total_return_pct": 68.67,
+     "cagr_pct": 6.4,
+     "max_drawdown_pct": 69.58,
+     "sharpe": 0.38,
+     "weekly_bootstrap": {
+      "mean_pct": 0.345,
+      "ci95_low": -0.273,
+      "ci95_high": 0.946
+     },
+     "trades": 16,
+     "time_in_cash_pct": 34.1
+    },
+    "WINTER_ONLY_INFO": {
+     "total_return_pct": 375.2,
+     "cagr_pct": 20.3,
+     "max_drawdown_pct": 57.58,
+     "sharpe": 0.64,
+     "weekly_bootstrap": {
+      "mean_pct": 0.552,
+      "ci95_low": -0.043,
+      "ci95_high": 1.152
+     },
+     "trades": 17,
+     "time_in_cash_pct": 52.8
+    },
+    "H-MARI-K-046": {
+     "total_return_pct": 314.93,
+     "cagr_pct": 18.38,
+     "max_drawdown_pct": 33.99,
+     "sharpe": 0.71,
+     "weekly_bootstrap": {
+      "mean_pct": 0.399,
+      "ci95_low": 0.027,
+      "ci95_high": 0.785
+     },
+     "trades": 65,
+     "time_in_cash_pct": 66.5
+    },
+    "H-MARI-S-045": {
+     "n_winter": 1454,
+     "n_summer": 1625,
+     "winter_mean_pct": 0.1698,
+     "summer_mean_pct": 0.0936,
+     "winter_minus_summer": {
+      "diff_pct": 0.0761,
+      "ci95_low": -0.1493,
+      "ci95_high": 0.3103
+     }
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "BUY_HOLD": {
+     "total_return_pct": 309.74,
+     "cagr_pct": 18.2,
+     "max_drawdown_pct": 86.48,
+     "sharpe": 0.62,
+     "weekly_bootstrap": {
+      "mean_pct": 0.927,
+      "ci95_low": -0.078,
+      "ci95_high": 1.981
+     },
+     "trades": 1,
+     "time_in_cash_pct": 0.0
+    },
+    "H-MARI-F-044": {
+     "total_return_pct": -69.81,
+     "cagr_pct": -13.24,
+     "max_drawdown_pct": 86.3,
+     "sharpe": 0.13,
+     "weekly_bootstrap": {
+      "mean_pct": 0.118,
+      "ci95_low": -0.699,
+      "ci95_high": 0.911
+     },
+     "trades": 16,
+     "time_in_cash_pct": 34.1
+    },
+    "WINTER_ONLY_INFO": {
+     "total_return_pct": 279.25,
+     "cagr_pct": 17.13,
+     "max_drawdown_pct": 78.42,
+     "sharpe": 0.57,
+     "weekly_bootstrap": {
+      "mean_pct": 0.606,
+      "ci95_low": -0.119,
+      "ci95_high": 1.378
+     },
+     "trades": 17,
+     "time_in_cash_pct": 52.8
+    },
+    "H-MARI-K-046": {
+     "total_return_pct": 964.83,
+     "cagr_pct": 32.38,
+     "max_drawdown_pct": 42.98,
+     "sharpe": 0.92,
+     "weekly_bootstrap": {
+      "mean_pct": 0.686,
+      "ci95_low": 0.183,
+      "ci95_high": 1.204
+     },
+     "trades": 70,
+     "time_in_cash_pct": 69.8
+    },
+    "H-MARI-S-045": {
+     "n_winter": 1454,
+     "n_summer": 1625,
+     "winter_mean_pct": 0.1929,
+     "summer_mean_pct": 0.0927,
+     "winter_minus_summer": {
+      "diff_pct": 0.1002,
+      "ci95_low": -0.1992,
+      "ci95_high": 0.4061
+     }
+    }
+   }
+  },
+  "fng_points": 3196,
+  "fng_first": "2018-02-01",
+  "verdict": {
+   "H-MARI-F-044": "FALSIFIED",
+   "H-MARI-S-045": "FALSIFIED",
+   "H-MARI-K-046": "FALSIFIED"
+  }
+ }
+}
