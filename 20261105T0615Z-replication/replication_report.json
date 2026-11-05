@@ -1,0 +1,59 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T06:45Z",
+ "hypotheses": {
+  "H-MARI-T-006-REP": "T-006 روی ETH: شارپ بیشتر و افت کمتر از نگه‌داری ETH، CI95 هفتگی > ۰.",
+  "H-MARI-C-007-REP": "لاک‌پشت (۵۵/۲۰) روی ETH: شارپ بیشتر و افت کمتر از نگه‌داری ETH، CI95 هفتگی > ۰."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "results": {
+  "strategies": {
+   "ETH_BUY_HOLD": {
+    "total_return_pct": 309.74,
+    "cagr_pct": 18.2,
+    "max_drawdown_pct": 86.48,
+    "sharpe": 0.62,
+    "weekly_bootstrap": {
+     "mean_pct": 0.927,
+     "ci95_low": -0.078,
+     "ci95_high": 1.981
+    },
+    "trades": 1,
+    "time_in_cash_pct": 0.0
+   },
+   "H-MARI-T-006-REP": {
+    "total_return_pct": 2668.53,
+    "cagr_pct": 48.26,
+    "max_drawdown_pct": 67.1,
+    "sharpe": 0.97,
+    "weekly_bootstrap": {
+     "mean_pct": 1.095,
+     "ci95_low": 0.316,
+     "ci95_high": 1.905
+    },
+    "trades": 69,
+    "time_in_cash_pct": 48.2
+   },
+   "H-MARI-C-007-REP": {
+    "total_return_pct": 1694.16,
+    "cagr_pct": 40.83,
+    "max_drawdown_pct": 58.3,
+    "sharpe": 0.97,
+    "weekly_bootstrap": {
+     "mean_pct": 0.885,
+     "ci95_low": 0.266,
+     "ci95_high": 1.558
+    },
+    "trades": 40,
+    "time_in_cash_pct": 64.2
+   }
+  },
+  "verdict": {
+   "H-MARI-T-006-REP": "SUPPORTED_IN_TEST_RANGE",
+   "H-MARI-C-007-REP": "SUPPORTED_IN_TEST_RANGE"
+  }
+ }
+}
