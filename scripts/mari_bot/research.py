@@ -627,3 +627,45 @@ def run_ideas_research(start: str = "2018-06-01", out_dir: str = "research_out")
     with open(os.path.join(out_dir, "ideas_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_ideas2_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """صف ایده‌ها ۳ و ۴: چرخهٔ هاوینگ و اثر روز هفته، روی BTC و ETH."""
+    from .ideas import IDEA2_HYPOTHESES, run_ideas2
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas2(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T05:45Z",
+              "hypotheses": IDEA2_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۵ می‌رسد.",
+                               "هاوینگ: فقط دو رویداد در دوره؛ توان آماری کم."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas2_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    days_fa = ["دوشنبه", "سه‌شنبه", "چهارشنبه", "پنجشنبه", "جمعه", "شنبه", "یکشنبه"]
+    md = ["# صف ایده‌ها: چرخهٔ هاوینگ و روز هفته", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA2_HYPOTHESES[hid]}")
+    md += ["", "## هاوینگ", "", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | زمان نقد ٪ |", "|---|---|---|---|---|---|"]
+    for sym, x in res["halving"].items():
+        for name, st in x.items():
+            md.append(f"| {sym} | {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                      f"{st['time_in_cash_pct']} |")
+    wb = res["weekday"]["BTCUSDT"]
+    md += ["", f"## روز هفته — روز برتر دورهٔ کشف: {days_fa[wb['best_day']]}", "",
+           "میانگین بازده روزانهٔ BTC در دورهٔ کشف: " +
+           "، ".join(f"{days_fa[int(w)]} {m}٪" for w, m in wb["discovery_means_pct"].items()), "",
+           "| دارایی | تعداد روز آزمون | اختلاف با میانگین ٪ [CI95] |", "|---|---|---|"]
+    for sym, w in res["weekday"].items():
+        v = w["test_vs_all"] or {}
+        md.append(f"| {sym} | {w['test_n']} | {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas2_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
