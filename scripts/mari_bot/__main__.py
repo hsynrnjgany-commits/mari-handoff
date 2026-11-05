@@ -137,6 +137,11 @@ def cmd_pattern(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_notify_research(a):
+    from .telegram import notify_research
+    notify_research(a.kind, a.dir, a.status == "success")
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -201,6 +206,11 @@ def main(argv=None):
     pa = sub.add_parser("pattern", help="الگوی مشترک پنهان ارزهای صعودی")
     pa.add_argument("--out", default="research_out")
     pa.set_defaults(fn=cmd_pattern)
+    nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
+    nr.add_argument("--kind", required=True)
+    nr.add_argument("--dir", required=True)
+    nr.add_argument("--status", default="success")
+    nr.set_defaults(fn=cmd_notify_research)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

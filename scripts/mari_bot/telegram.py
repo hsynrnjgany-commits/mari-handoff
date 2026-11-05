@@ -456,3 +456,50 @@ class Telegram:
                 self.save()
                 return True
         return False
+
+
+# ---------------------------------------------------------------- خلاصهٔ پژوهش برای صاحب ربات
+def _verdicts(obj, out: dict) -> dict:
+    """همهٔ حکم‌های «H-MARI-…» را از هر ساختار گزارشی بیرون می‌کشد."""
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            if isinstance(k, str) and k.startswith("H-MARI"):
+                if isinstance(v, str) and v.isupper():
+                    out.setdefault(k, v)
+                elif isinstance(v, dict) and isinstance(v.get("verdict"), str):
+                    out.setdefault(k, v["verdict"])
+            _verdicts(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _verdicts(v, out)
+    return out
+
+
+def fmt_research(kind: str, run_dir: str, ok: bool) -> str:
+    import glob
+    import html
+    if not ok:
+        return _end([f"⚠️ پژوهش «{html.escape(kind)}» کامل نشد.", "علت در گیت‌هاب ثبت شده و ربات اصلی آسیبی ندیده."])
+    found = {}
+    for p in sorted(glob.glob(os.path.join(run_dir, "*.json"))):
+        try:
+            with open(p, encoding="utf-8") as fh:
+                _verdicts(json.load(fh), found)
+        except (OSError, ValueError):
+            continue
+    lines = [f"🔬 پژوهش «{html.escape(kind)}» تمام شد."]
+    if not found:
+        lines.append("حکمی در گزارش پیدا نشد؛ گزارش کامل در برانچ mari-research است.")
+    for hid, v in found.items():
+        mark = "✅ قبول" if v.startswith("SUPPORTED") else ("❌ رد" if v == "FALSIFIED" else html.escape(v))
+        lines.append(f"{mark} — {html.escape(hid)}")
+    lines.append(f"گزارش کامل: برانچ mari-research، پوشهٔ {html.escape(os.path.basename(run_dir.rstrip('/')))}")
+    return _end(lines)
+
+
+def notify_research(kind: str, run_dir: str, ok: bool) -> bool:
+    tg = Telegram(os.path.join(run_dir, ".tg_tmp.json"))
+    if tg.owner is None:
+        print(fmt_research(kind, run_dir, ok))
+        return False
+    return tg.send(tg.owner, fmt_research(kind, run_dir, ok))

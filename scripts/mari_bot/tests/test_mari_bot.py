@@ -711,5 +711,21 @@ class PatternTests(unittest.TestCase):
         self.assertLessEqual(fp, 1)                     # نویز خالص: نرخ مثبت کاذب نزدیک ۲٫۵٪
 
 
+class ResearchNotifyTests(unittest.TestCase):
+    def test_summary_lists_verdicts_without_secrets(self):
+        import tempfile
+        from mari_bot.telegram import fmt_research
+        d = tempfile.mkdtemp()
+        with open(os.path.join(d, "a_report.json"), "w", encoding="utf-8") as fh:
+            json.dump({"results": {"verdict": {"H-MARI-F-017": "FALSIFIED"}},
+                       "H-MARI-X-1": {"verdict": "SUPPORTED_IN_TEST_RANGE"}}, fh)
+        with mock.patch.dict(os.environ, {"MARI_TELEGRAM_TOKEN": "123:SECRET"}):
+            msg = fmt_research("funding", d, True)
+        self.assertIn("❌ رد — H-MARI-F-017", msg)
+        self.assertIn("✅ قبول — H-MARI-X-1", msg)
+        self.assertNotIn("SECRET", msg)
+        self.assertIn("کامل نشد", fmt_research("funding", d, False))
+
+
 if __name__ == "__main__":
     unittest.main()

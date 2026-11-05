@@ -65,6 +65,7 @@ jobs:
         working-directory: scripts
         run: |
           RUN_DIR="../out-wt/$(date -u +%Y%m%dT%H%MZ)-${{ inputs.kind }}"
+          echo "RUN_DIR=$RUN_DIR" >> "$GITHUB_ENV"
           if [ "${{ inputs.kind }}" = "pattern" ]; then
             python -m mari_bot pattern --out "$RUN_DIR"
             exit 0
@@ -102,3 +103,10 @@ jobs:
             git commit -q -m "research: $(date -u +%Y-%m-%dT%H:%MZ)"
             for i in 1 2 3; do git push origin mari-research && break; sleep $((i*5)); done
           fi
+      - name: Telegram summary
+        if: always()
+        working-directory: scripts
+        env:
+          MARI_TELEGRAM_TOKEN: ${{ secrets.MARI_TELEGRAM_TOKEN }}
+          MARI_TELEGRAM_CHAT_ID: ${{ secrets.MARI_TELEGRAM_CHAT_ID }}
+        run: python -m mari_bot notify-research --kind "${{ inputs.kind }}" --dir "${RUN_DIR:-../out-wt}" --status "${{ job.status }}" || true
