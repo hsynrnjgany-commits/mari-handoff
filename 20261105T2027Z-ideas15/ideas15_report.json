@@ -1,0 +1,119 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T20:30Z",
+ "hypotheses": {
+  "H-MARI-Y-060": "کری دلتا-نیوترال با قیمت واقعی قرارداد دائمی و سرمایهٔ اسپات+مارجین (بدون اهرم): شارپ بیشتر از ۱٫۰، بیشترین افت کمتر از ۱۰٪ و بازده کل مثبت — روی BTC و ETH هر دو."
+ },
+ "sources": {
+  "BTCUSDT": {
+   "funding": "binance_archive",
+   "spot_days": 2358,
+   "perp_days": 2343,
+   "settled_days": 2344
+  },
+  "ETHUSDT": {
+   "funding": "binance_archive",
+   "spot_days": 2358,
+   "perp_days": 2343,
+   "settled_days": 2344
+  }
+ },
+ "period": {
+  "from": "2020-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۰ می‌رسد.",
+  "قیمت بستهٔ روزانه استفاده می‌شود؛ نوسان basis درون‌روز و خطر لیکویید شدن لحظه‌ای دیده نمی‌شود. پس حتی این نسخه هم کمی خوش‌بینانه است.",
+  "مارجین کامل فرض شده (بدون اهرم)؛ بازده واقعی با اهرم بیشتر و ریسک لیکویید شدن هم بیشتر است.",
+  "هزینهٔ تأمین مارجین و نرخ بهرهٔ وام مدل نشده است.",
+  "روزهایی که دادهٔ اسپات یا دائمی نیست، بیرون از موقعیت شمرده می‌شوند."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "H-MARI-Y-060": {
+     "n_days": 2348,
+     "skipped_days": 5,
+     "cycles": 10,
+     "total_return_pct": 71.11,
+     "max_drawdown_pct": 0.63,
+     "sharpe": 6.5,
+     "worst_day_pct": -0.119,
+     "days_in_position_pct": 57.8
+    },
+    "ZERO_BASIS_INFO": {
+     "n_days": 2348,
+     "skipped_days": 0,
+     "cycles": 10,
+     "total_return_pct": 70.69,
+     "max_drawdown_pct": 0.63,
+     "sharpe": 6.87,
+     "worst_day_pct": -0.038,
+     "days_in_position_pct": 57.8
+    },
+    "ALWAYS_ON_INFO": {
+     "n_days": 2348,
+     "skipped_days": 5,
+     "cycles": 1,
+     "total_return_pct": 189.73,
+     "max_drawdown_pct": 0.57,
+     "sharpe": 8.18,
+     "worst_day_pct": -0.16,
+     "days_in_position_pct": 99.7
+    },
+    "BASIS_INFO": {
+     "n": 2343,
+     "mean_pct": -0.0185,
+     "p01_pct": -0.076,
+     "p99_pct": 0.144,
+     "min_pct": -0.112,
+     "max_pct": 0.311
+    }
+   },
+   "ETHUSDT": {
+    "H-MARI-Y-060": {
+     "n_days": 2348,
+     "skipped_days": 5,
+     "cycles": 9,
+     "total_return_pct": 166.14,
+     "max_drawdown_pct": 1.18,
+     "sharpe": 5.25,
+     "worst_day_pct": -0.917,
+     "days_in_position_pct": 56.1
+    },
+    "ZERO_BASIS_INFO": {
+     "n_days": 2348,
+     "skipped_days": 0,
+     "cycles": 9,
+     "total_return_pct": 165.93,
+     "max_drawdown_pct": 1.2,
+     "sharpe": 5.72,
+     "worst_day_pct": -0.659,
+     "days_in_position_pct": 56.1
+    },
+    "ALWAYS_ON_INFO": {
+     "n_days": 2348,
+     "skipped_days": 5,
+     "cycles": 1,
+     "total_return_pct": 364.51,
+     "max_drawdown_pct": 1.96,
+     "sharpe": 7.25,
+     "worst_day_pct": -0.926,
+     "days_in_position_pct": 99.7
+    },
+    "BASIS_INFO": {
+     "n": 2343,
+     "mean_pct": -0.0133,
+     "p01_pct": -0.082,
+     "p99_pct": 0.181,
+     "min_pct": -0.254,
+     "max_pct": 0.361
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-Y-060": "SUPPORTED_IN_TEST_RANGE"
+  }
+ }
+}
