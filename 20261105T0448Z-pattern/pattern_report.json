@@ -1,0 +1,201 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T04:25Z",
+ "hypotheses": {
+  "H-MARI-P-019": "امتیاز ترکیبی ۶ ویژگی، رتبهٔ بازده ۷ روز بعد را در دورهٔ دست‌نخورده پیش‌بینی می‌کند (IC > ۰، CI95).",
+  "H-MARI-P-020": "۵ ارز برتر هفتگی، فقط وقتی BTC بالای SMA150؛ در دورهٔ آزمون شارپ > T-006 و CI95 هفتگی > ۰."
+ },
+ "period": {
+  "train": "2021-06-01..2023-12-31",
+  "test": "2024-01-01..2026-11-05"
+ },
+ "universe": {
+  "symbols_listed_ever": 726,
+  "with_data": 713,
+  "failed": 0
+ },
+ "known_biases": [
+  "SURVIVORSHIP: ارزهایی که پیش از دسترس‌پذیری بایگانی حذف شده‌اند در داده نیستند.",
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۰ می‌رسد.",
+  "ارزی که وسط هفته بی‌داده شود با آخرین قیمت معلوم نقد فرض می‌شود (خوش‌بینانه)."
+ ],
+ "results": {
+  "train_weeks": 134,
+  "test_weeks": 148,
+  "learned": {
+   "ret7": {
+    "mean_ic": -0.0294,
+    "sign": -1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": -2.936,
+     "ci95_low": -6.638,
+     "ci95_high": 0.823
+    }
+   },
+   "ret30": {
+    "mean_ic": -0.0394,
+    "sign": -1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": -3.936,
+     "ci95_low": -8.059,
+     "ci95_high": 0.054
+    }
+   },
+   "vol_ratio": {
+    "mean_ic": 0.0003,
+    "sign": 1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": 0.032,
+     "ci95_low": -3.374,
+     "ci95_high": 3.319
+    }
+   },
+   "dist_high60": {
+    "mean_ic": 0.0722,
+    "sign": 1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": 7.215,
+     "ci95_low": 3.351,
+     "ci95_high": 11.176
+    }
+   },
+   "rs_btc30": {
+    "mean_ic": -0.0394,
+    "sign": -1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": -3.936,
+     "ci95_low": -8.059,
+     "ci95_high": 0.054
+    }
+   },
+   "volat20": {
+    "mean_ic": -0.1461,
+    "sign": -1,
+    "weeks": 134,
+    "ci": {
+     "mean_pct": -14.612,
+     "ci95_low": -18.779,
+     "ci95_high": -10.396
+    }
+   }
+  },
+  "test_ic": {
+   "weeks": 148,
+   "mean_ic": 0.1341,
+   "ci": {
+    "mean_pct": 13.409,
+    "ci95_low": 9.949,
+    "ci95_high": 16.915
+   },
+   "hit_weeks_pct": 70.9
+  },
+  "diagnostics_post_hoc": {
+   "quintile_mean_fwd7_pct": {
+    "Q1": -1.831,
+    "Q2": -0.786,
+    "Q3": -0.606,
+    "Q4": -0.173,
+    "Q5": 0.046
+   },
+   "top5_mean_fwd7_pct": 0.052,
+   "top5_median_fwd7_pct": -0.752,
+   "most_picked": [
+    {
+     "sym": "TRXUSDT",
+     "weeks": 51,
+     "mean_fwd7_pct": 3.17
+    },
+    {
+     "sym": "ETHUSDT",
+     "weeks": 46,
+     "mean_fwd7_pct": -1.3
+    },
+    {
+     "sym": "LTCUSDT",
+     "weeks": 46,
+     "mean_fwd7_pct": -0.17
+    },
+    {
+     "sym": "BNBUSDT",
+     "weeks": 45,
+     "mean_fwd7_pct": 1.89
+    },
+    {
+     "sym": "XRPUSDT",
+     "weeks": 32,
+     "mean_fwd7_pct": 2.48
+    },
+    {
+     "sym": "ADAUSDT",
+     "weeks": 29,
+     "mean_fwd7_pct": -1.08
+    },
+    {
+     "sym": "LINKUSDT",
+     "weeks": 26,
+     "mean_fwd7_pct": -4.1
+    },
+    {
+     "sym": "DOGEUSDT",
+     "weeks": 24,
+     "mean_fwd7_pct": 2.29
+    },
+    {
+     "sym": "ARBUSDT",
+     "weeks": 22,
+     "mean_fwd7_pct": -3.01
+    },
+    {
+     "sym": "SUIUSDT",
+     "weeks": 21,
+     "mean_fwd7_pct": 0.64
+    },
+    {
+     "sym": "DOTUSDT",
+     "weeks": 20,
+     "mean_fwd7_pct": 3.56
+    },
+    {
+     "sym": "AVAXUSDT",
+     "weeks": 20,
+     "mean_fwd7_pct": 5.65
+    }
+   ]
+  },
+  "strategy_test": {
+   "total_return_pct": -73.34,
+   "cagr_pct": -37.18,
+   "max_drawdown_pct": 85.49,
+   "sharpe": -0.38,
+   "weekly_bootstrap": {
+    "mean_pct": -0.45,
+    "ci95_low": -1.944,
+    "ci95_high": 1.048
+   },
+   "trades": 98
+  },
+  "t006_test": {
+   "total_return_pct": 70.66,
+   "cagr_pct": 20.68,
+   "max_drawdown_pct": 27.29,
+   "sharpe": 0.72,
+   "weekly_bootstrap": {
+    "mean_pct": 0.462,
+    "ci95_low": -0.384,
+    "ci95_high": 1.34
+   },
+   "trades": 29,
+   "time_in_cash_pct": 41.2
+  },
+  "avg_universe_test": 39.9,
+  "verdict": {
+   "H-MARI-P-019": "SUPPORTED_IN_TEST_RANGE",
+   "H-MARI-P-020": "FALSIFIED"
+  }
+ }
+}
