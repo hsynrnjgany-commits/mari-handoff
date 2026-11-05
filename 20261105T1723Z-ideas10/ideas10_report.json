@@ -1,0 +1,127 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T17:22Z",
+ "hypotheses": {
+  "H-MARI-C-051": "عامل روند کریپتو (میانگین رتبهٔ قیمت/میانگین ۳ تا ۲۰۰ روزه، پنجک بالا از ۱۰۰ ارز پرحجم): بازده هفتگی اضافه بر وزن برابر، CI95 بالای صفر و مثبت در هر دو نیمهٔ دوره.",
+  "H-MARI-N-052": "نزدیکی به سقف ۵۲ هفته (پنجک بالا از ۱۰۰ ارز پرحجم): بازده هفتگی اضافه بر وزن برابر، CI95 بالای صفر و مثبت در هر دو نیمهٔ دوره."
+ },
+ "period": {
+  "from": "2020-06-01",
+  "to": "2026-11-05"
+ },
+ "data": {
+  "symbols_listed_incl_delisted": 700,
+  "symbols_with_data": 697,
+  "failed": 0,
+  "failed_sample": []
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۲ می‌رسد.",
+  "C-051 نسخهٔ ساده‌شدهٔ مقاله است (۷ میانگین قیمت به جای ۲۸ سیگنال و elastic net).",
+  "فقط خرید؛ مقاله‌ها بازده خرید-فروش را گزارش می‌کنند.",
+  "ارزهایی که پیش از حذف هیچ داده‌ای در API عمومی ندارند، دیده نمی‌شوند."
+ ],
+ "results": {
+  "by_hypothesis": {
+   "H-MARI-C-051": {
+    "excess_all": {
+     "mean_pct": 14.032,
+     "ci95_low": -0.833,
+     "ci95_high": 43.264,
+     "n_weeks": 334
+    },
+    "excess_first_half": {
+     "mean_pct": 28.716,
+     "ci95_low": -0.782,
+     "ci95_high": 86.997,
+     "n_weeks": 167
+    },
+    "excess_second_half": {
+     "mean_pct": -0.652,
+     "ci95_low": -1.289,
+     "ci95_high": -0.015,
+     "n_weeks": 167
+    },
+    "top": {
+     "total_return_pct": 1420.6,
+     "max_drawdown_pct": 99.4,
+     "sharpe": 0.4,
+     "weeks": 334
+    },
+    "ew": {
+     "total_return_pct": 1342.1,
+     "max_drawdown_pct": 96.6,
+     "sharpe": 0.46,
+     "weeks": 334
+    },
+    "avg_universe": 95.6,
+    "verdict": "FALSIFIED",
+    "delisted_exits": 57,
+    "haircut50_excess_all": {
+     "mean_pct": 14.02,
+     "ci95_low": -0.852,
+     "ci95_high": 43.252,
+     "n_weeks": 334
+    },
+    "btc_gated_info": {
+     "total_return_pct": 21142.4,
+     "max_drawdown_pct": 91.4,
+     "sharpe": 0.41,
+     "weeks": 334
+    }
+   },
+   "H-MARI-N-052": {
+    "excess_all": {
+     "mean_pct": -3.18,
+     "ci95_low": -10.614,
+     "ci95_high": 0.755,
+     "n_weeks": 334
+    },
+    "excess_first_half": {
+     "mean_pct": -6.602,
+     "ci95_low": -21.446,
+     "ci95_high": 1.149,
+     "n_weeks": 167
+    },
+    "excess_second_half": {
+     "mean_pct": 0.242,
+     "ci95_low": -0.385,
+     "ci95_high": 0.849,
+     "n_weeks": 167
+    },
+    "top": {
+     "total_return_pct": 436.3,
+     "max_drawdown_pct": 93.5,
+     "sharpe": 0.71,
+     "weeks": 334
+    },
+    "ew": {
+     "total_return_pct": 1342.1,
+     "max_drawdown_pct": 96.6,
+     "sharpe": 0.46,
+     "weeks": 334
+    },
+    "avg_universe": 95.6,
+    "verdict": "FALSIFIED",
+    "delisted_exits": 57,
+    "haircut50_excess_all": {
+     "mean_pct": -3.19,
+     "ci95_low": -10.638,
+     "ci95_high": 0.742,
+     "n_weeks": 334
+    },
+    "btc_gated_info": {
+     "total_return_pct": 4626.2,
+     "max_drawdown_pct": 63.1,
+     "sharpe": 1.19,
+     "weeks": 334
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-C-051": "FALSIFIED",
+   "H-MARI-N-052": "FALSIFIED"
+  },
+  "mondays": 335
+ }
+}
