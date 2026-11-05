@@ -964,7 +964,7 @@ def run_ideas8_research(start: str = "2018-06-01", out_dir: str = "research_out"
         daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
     fng = fetch_fng()
     res = run_ideas8(daily, fng, start_ms, end)
-    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:15Z",
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:05Z",
               "hypotheses": IDEA8_HYPOTHESES,
               "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
               "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۶ می‌رسد.",
