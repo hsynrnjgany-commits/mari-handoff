@@ -1206,5 +1206,64 @@ class Ideas10Tests(unittest.TestCase):
         self.assertEqual(r["verdict"]["H-MARI-C-051"], "SUPPORTED_IN_TEST_RANGE")
 
 
+class Ideas11Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_score_max_uses_only_past_30_days(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas11 import score_max
+        c = [10.0] * 40 + [20.0] + [20.0] * 40            # جهش ۱۰۰٪ در روز ۴۰
+        bars = [{"t": i * self.DAY, "h": v, "c": v, "qv": 1.0} for i, v in enumerate(c)]
+        p = Panel({"X": bars})
+        self.assertAlmostEqual(score_max(p, ["X"], 45 * self.DAY)["X"], 1.0, places=6)
+        self.assertAlmostEqual(score_max(p, ["X"], 39 * self.DAY)["X"], 0.0, places=6)
+        self.assertAlmostEqual(score_max(p, ["X"], 75 * self.DAY)["X"], 0.0, places=6)
+
+    def test_beats_requires_both_sharpe_and_return(self):
+        from mari_bot.ideas11 import _beats
+        hi = {"sharpe": 1.0, "total_return_pct": 100.0}
+        lo = {"sharpe": 0.5, "total_return_pct": 50.0}
+        self.assertTrue(_beats(hi, lo))
+        self.assertFalse(_beats(lo, hi))
+        self.assertFalse(_beats({"sharpe": 1.0, "total_return_pct": 10.0}, lo))   # شارپ بهتر، بازده کمتر
+        self.assertFalse(_beats({"sharpe": None}, lo))
+
+    def test_compare_needs_all_three_windows(self):
+        from mari_bot.ideas11 import compare
+        import random
+        rnd = random.Random(7)
+        noise = [rnd.gauss(0, 0.01) for _ in range(60)]
+        good = [{"top": 0.02 + z, "ew": 0.001 + z} for z in noise]
+        self.assertEqual(compare(good)["verdict"], "SUPPORTED_IN_TEST_RANGE")
+        mixed = [{"top": (0.02 if i < 30 else -0.02) + z, "ew": 0.001 + z} for i, z in enumerate(noise)]
+        self.assertEqual(compare(mixed)["verdict"], "FALSIFIED")
+        flat = [{"top": 0.02, "ew": 0.001} for _ in range(60)]
+        self.assertEqual(compare(flat)["verdict"], "FALSIFIED")      # نوسان صفر → شارپ نامعلوم
+
+    def test_gate_benchmark_is_gated_and_aligned(self):
+        from mari_bot.ideas10 import Panel, btc_gate, is_monday
+        from mari_bot.ideas11 import _gate_benchmark
+        import random
+        rnd, d = random.Random(11), {}
+        t0 = 1_577_836_800_000 + 4 * self.DAY
+        for j in range(12):
+            c, bars = 10.0, []
+            for i in range(600):
+                c *= 1 + rnd.gauss(0.001, 0.02)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99, "c": c, "qv": 1e6})
+            d[f"S{j}USDT"] = bars
+        d["BTCUSDT"] = d.pop("S0USDT")
+        p = Panel(d)
+        mondays = [t for t in sorted(p.sym["BTCUSDT"]["t"])
+                   if t0 + 400 * self.DAY <= t <= t0 + 590 * self.DAY and is_monday(t)]
+        from mari_bot.ideas10 import run_xs, score_high52
+        g = btc_gate(p)
+        top, _ = run_xs(p, mondays, score_high52, gate=g, frac=0.2)
+        rows = _gate_benchmark(p, mondays, top, g)
+        self.assertEqual(len(rows), len(top))
+        cash = [r for r in rows if not g(r["t"])]
+        self.assertTrue(all(abs(r["ew"]) < 1e-9 for r in cash))   # هفتهٔ نقد: محک هم نقد است
+
+
 if __name__ == "__main__":
     unittest.main()

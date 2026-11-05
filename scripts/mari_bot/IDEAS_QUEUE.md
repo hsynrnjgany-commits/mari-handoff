@@ -60,7 +60,8 @@
 | ایده | منبع | وضعیت |
 |---|---|---|
 | کری دلتا-نیوترال فاندینگ | He، Manela، Ross، von Wachter ۲۰۲۴ | صف |
-| MAX مومنتوم (بیشترین بازده روزانهٔ ۳۰ روز) | Li، Urquhart، Wang، Zhang، IRFA ۲۰۲۱ | صف |
+| MAX مومنتوم (بیشترین بازده روزانهٔ ۳۰ روز) | Li، Urquhart، Wang، Zhang، IRFA ۲۰۲۱ | در حال آزمون (ideas11) |
+| انتخاب ارز روی دروازهٔ BTC (G-053) | سرنخ ideas10 | در حال آزمون (ideas11) |
 | ارزش چشم‌انداز (خلاف جمع) | Chen، Lepori، Tai، Sung | صف |
 | بازگشت کوتاه‌مدت با حجم کم | Bianchi، Babiak، Dickerson، JBF ۲۰۲۲ | صف (شکننده به هزینه) |
 | بتای نزولی | Dobrynskaya، IRFA ۲۰۲۴ | صف |

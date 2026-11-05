@@ -1090,6 +1090,57 @@ def run_ideas10_research(start: str = "2020-06-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas11_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas11: دروازهٔ BTC در برابر انتخاب ارز (G-053) و MAX مومنتوم (X-054)."""
+    from .ideas11 import IDEA11_HYPOTHESES, run_ideas11
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas11(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:40Z",
+              "hypotheses": IDEA11_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۴ می‌رسد.",
+                               "G-053 از سرنخی آمد که در ideas10 پس از دیدن نتیجه دیده شد؛ پرسش اینجا عوض شده"
+                               " (آیا انتخاب ارز روی دروازه چیزی اضافه می‌کند؟) اما همان دوره است، پس قبولی"
+                               " آن نیاز به تکرار روی دورهٔ تازه دارد.",
+                               "فقط خرید؛ مقالهٔ MAX بازده خرید-فروش گزارش می‌کند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas11_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas11: دروازهٔ BTC در برابر انتخاب ارز، و MAX مومنتوم", "",
+          f"- دوره: {start} تا {report['period']['to']} — {res['mondays']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA11_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | دوره | سبد: بازده ٪ / افت ٪ / شارپ | محک: بازده ٪ / افت ٪ / شارپ |", "|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    names = {"full": "کل", "first_half": "نیمهٔ اول", "second_half": "نیمهٔ دوم"}
+    for hid, e in res["by_hypothesis"].items():
+        for k, fa in names.items():
+            md.append(f"| {hid} | {fa} | {f(e['portfolio'][k])} | {f(e['benchmark'][k])} |")
+    lm = res["by_hypothesis"]["H-MARI-X-054"].get("low_max_decile_info") or {}
+    md += ["", f"- اطلاعی: دهک **پایین** MAX (خلاف مقاله): {f(lm)}",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas11_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

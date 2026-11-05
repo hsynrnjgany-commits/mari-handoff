@@ -120,7 +120,7 @@ def score_high52(p: Panel, syms, t):
     return out
 
 
-def run_xs(p: Panel, mondays: list, score_fn, haircut=0.0, gate=None):
+def run_xs(p: Panel, mondays: list, score_fn, haircut=0.0, gate=None, frac=QUINTILE):
     """سیگنال با بستهٔ دوشنبه، اجرا با بستهٔ سه‌شنبه، نگه‌داری تا بستهٔ سه‌شنبهٔ بعد.
     gate(t) → False یعنی آن هفته نقد (فقط برای نسخهٔ اطلاعی با دروازهٔ BTC)."""
     weeks, prev_top, prev_ew = [], {}, {}
@@ -133,7 +133,7 @@ def run_xs(p: Panel, mondays: list, score_fn, haircut=0.0, gate=None):
             continue
         sc = score_fn(p, syms, t)
         ranked = sorted(sc, key=lambda s: -sc[s])
-        top = ranked[:max(1, int(len(ranked) * QUINTILE))]
+        top = ranked[:max(1, int(len(ranked) * frac))]
         on = gate(t) if gate else True
         w_top = {s: 1.0 / len(top) for s in top} if on else {}
         w_ew = {s: 1.0 / len(syms) for s in syms}
