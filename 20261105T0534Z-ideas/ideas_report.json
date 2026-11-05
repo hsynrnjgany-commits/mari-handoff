@@ -1,0 +1,105 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T05:35Z",
+ "hypotheses": {
+  "H-MARI-V-022": "T-006 با کنترل نوسان (هدف ۵۰٪): شارپ بیشتر و افت کمتر از T-006، روی BTC و ETH.",
+  "H-MARI-G-023": "تقاطع طلایی ۵۰/۲۰۰: شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۳ می‌رسد؛ قاعدهٔ تکرار روی ETH اعمال شد."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-V-022": {
+     "total_return_pct": 1316.72,
+     "cagr_pct": 36.94,
+     "max_drawdown_pct": 41.44,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.733,
+      "ci95_low": 0.246,
+      "ci95_high": 1.264
+     },
+     "trades": 194,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-G-023": {
+     "total_return_pct": 685.64,
+     "cagr_pct": 27.69,
+     "max_drawdown_pct": 63.69,
+     "sharpe": 0.76,
+     "weekly_bootstrap": {
+      "mean_pct": 0.676,
+      "ci95_low": 0.085,
+      "ci95_high": 1.308
+     },
+     "trades": 17,
+     "time_in_cash_pct": 46.9
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-V-022": {
+     "total_return_pct": 2453.89,
+     "cagr_pct": 46.85,
+     "max_drawdown_pct": 37.87,
+     "sharpe": 1.16,
+     "weekly_bootstrap": {
+      "mean_pct": 0.899,
+      "ci95_low": 0.346,
+      "ci95_high": 1.48
+     },
+     "trades": 257,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-G-023": {
+     "total_return_pct": 474.72,
+     "cagr_pct": 23.04,
+     "max_drawdown_pct": 80.01,
+     "sharpe": 0.65,
+     "weekly_bootstrap": {
+      "mean_pct": 0.726,
+      "ci95_low": -0.056,
+      "ci95_high": 1.521
+     },
+     "trades": 17,
+     "time_in_cash_pct": 48.7
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-V-022": "FALSIFIED",
+   "H-MARI-G-023": "FALSIFIED"
+  }
+ }
+}
