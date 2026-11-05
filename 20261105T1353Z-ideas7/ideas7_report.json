@@ -1,0 +1,128 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T13:55Z",
+ "hypotheses": {
+  "H-MARI-E-040": "روند چندسرعته (۵۰/۱۰۰/۱۵۰/۲۰۰، سهم = بله‌ها ÷ ۴): شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+  "H-MARI-M-041": "اثر اول ماه (آخرین روز + روزهای ۱ تا ۳): اختلاف میانگین بازده روزانه با بقیهٔ روزها، CI95 بالای صفر، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۱ می‌رسد.",
+  "E-040 میانگین ۱۵۰ را به‌عنوان یکی از چهار داور دارد؛ به T-006 وابسته است."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-E-040": {
+     "total_return_pct": 1875.64,
+     "cagr_pct": 42.45,
+     "max_drawdown_pct": 45.72,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.845,
+      "ci95_low": 0.308,
+      "ci95_high": 1.431
+     },
+     "trades": 348,
+     "time_in_cash_pct": 31.9
+    },
+    "TOM_ONLY_INFO": {
+     "total_return_pct": 60.65,
+     "cagr_pct": 5.78,
+     "max_drawdown_pct": 25.64,
+     "sharpe": 0.37,
+     "weekly_bootstrap": {
+      "mean_pct": 0.134,
+      "ci95_low": -0.108,
+      "ci95_high": 0.368
+     },
+     "trades": 204,
+     "time_in_cash_pct": 86.8
+    },
+    "H-MARI-M-041": {
+     "n_tom": 407,
+     "n_rest": 2672,
+     "tom_mean_pct": 0.1699,
+     "rest_mean_pct": 0.1235,
+     "tom_minus_rest": {
+      "diff_pct": 0.0464,
+      "ci95_low": -0.2823,
+      "ci95_high": 0.3792
+     }
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-E-040": {
+     "total_return_pct": 2148.39,
+     "cagr_pct": 44.65,
+     "max_drawdown_pct": 57.1,
+     "sharpe": 0.95,
+     "weekly_bootstrap": {
+      "mean_pct": 1.016,
+      "ci95_low": 0.295,
+      "ci95_high": 1.798
+     },
+     "trades": 358,
+     "time_in_cash_pct": 33.4
+    },
+    "TOM_ONLY_INFO": {
+     "total_return_pct": 180.79,
+     "cagr_pct": 13.02,
+     "max_drawdown_pct": 53.85,
+     "sharpe": 0.57,
+     "weekly_bootstrap": {
+      "mean_pct": 0.294,
+      "ci95_low": -0.067,
+      "ci95_high": 0.672
+     },
+     "trades": 204,
+     "time_in_cash_pct": 86.8
+    },
+    "H-MARI-M-041": {
+     "n_tom": 407,
+     "n_rest": 2672,
+     "tom_mean_pct": 0.3868,
+     "rest_mean_pct": 0.1024,
+     "tom_minus_rest": {
+      "diff_pct": 0.2843,
+      "ci95_low": -0.145,
+      "ci95_high": 0.7285
+     }
+    }
+   }
+  },
+  "verdict": {
+   "H-MARI-E-040": "FALSIFIED",
+   "H-MARI-M-041": "FALSIFIED"
+  }
+ }
+}
