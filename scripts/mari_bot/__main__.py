@@ -125,6 +125,12 @@ def cmd_macro(a):
                       for k, v in r["results"].items()}, ensure_ascii=False, indent=2))
 
 
+def cmd_funding(a):
+    from .research import run_funding_research
+    r = run_funding_research(start=a.start, out_dir=a.out)
+    print(json.dumps({"verdict": r["results"]["verdict"], "sources": r["sources"]}, ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -182,6 +188,10 @@ def main(argv=None):
     ic.add_argument("--start", default="2018-06-01")
     ic.add_argument("--out", default="research_out")
     ic.set_defaults(fn=cmd_ict)
+    fu = sub.add_parser("funding", help="آزمون نرخ فاندینگ روی BTC/ETH")
+    fu.add_argument("--start", default="2020-06-01")
+    fu.add_argument("--out", default="research_out")
+    fu.set_defaults(fn=cmd_funding)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

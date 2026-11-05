@@ -454,3 +454,49 @@ def run_ict_research(start: str = "2018-06-01", out_dir: str = "research_out") -
     with open(os.path.join(out_dir, "ict_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_funding_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """نرخ فاندینگ (F-017 مطالعهٔ رویداد، F-018 فیلتر روی T-006) روی BTC و ETH روزانه."""
+    from .funding import FUNDING_HYPOTHESES, WINDOW, fetch_funding, run_funding
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    pre = start_ms - (WINDOW + 30) * DAY_MS
+    daily, funding, sources = {}, {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, min(pre, start_ms - 200 * DAY_MS), end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+        name, rows, tried = fetch_funding(s, pre - 10 * DAY_MS, end, need_from_ms=pre)
+        funding[s], sources[s] = rows, {"used": name, "rows": len(rows), "failed_before": tried}
+    res = run_funding(daily, funding, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T04:20Z",
+              "hypotheses": FUNDING_HYPOTHESES, "sources": sources,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: با این اجرا شمار فرضیه‌ها به ۱۸ می‌رسد.",
+                               "بازده ۵روزه هم‌پوشانی دارد و روزهای شلوغ پشت‌سرهم‌اند؛ CI خوش‌بینانه است.",
+                               "فاندینگ از صرافی فیوچرز و قیمت از اسپات است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "funding_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# آزمون نرخ فاندینگ", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}",
+          f"- منبع: " + "، ".join(f"{k}: {v['used']} ({v['rows']} ردیف)" for k, v in sources.items()), ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {FUNDING_HYPOTHESES[hid]}")
+    md += ["", "## مطالعهٔ رویداد (بازده ۵ روز بعد، اجرا یک روز دیرتر)", "",
+           "| دارایی | همهٔ روزها ٪ | شلوغی خرید: تعداد / میانگین ٪ / اختلاف [CI95] | شلوغی فروش: تعداد / میانگین ٪ / اختلاف [CI95] |",
+           "|---|---|---|---|"]
+    for sym, e in res["events"].items():
+        def cell(x):
+            v = x["vs_all"] or {}
+            return f"{x['n']} / {x['mean_fwd5_pct']} / {v.get('diff_pct')} [{v.get('ci95_low')}, {v.get('ci95_high')}]"
+        md.append(f"| {sym} | {e['mean_fwd5_all_pct']} | {cell(e['crowded_long'])} | {cell(e['crowded_short'])} |")
+    md += ["", "## راهبرد روی BTC", "", "| روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | زمان نقد ٪ |",
+           "|---|---|---|---|---|---|"]
+    for name, st in res["strategy"].items():
+        md.append(f"| {name} | {st['total_return_pct']} | {st['max_drawdown_pct']} | {st['sharpe']} | "
+                  f"{st['trades']} | {st['time_in_cash_pct']} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "funding_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report

@@ -26,6 +26,10 @@ _ALLOWED = {
     TOOBIT: ("/quote/v1/klines", "/quote/v1/ticker/24hr", "/api/v1/exchangeInfo"),
     BINANCE_VISION: ("/api/v3/klines", "/api/v3/ticker/24hr", "/api/v3/exchangeInfo"),
     FRED: ("/graph/fredgraph.csv",),
+    # فاندینگ عمومی قراردادهای دائمی — فقط برای پژوهش، بدون کلید
+    "https://fapi.binance.com": ("/fapi/v1/fundingRate",),
+    "https://api.bybit.com": ("/v5/market/funding/history",),
+    "https://www.bitmex.com": ("/api/v1/funding",),
 }
 
 

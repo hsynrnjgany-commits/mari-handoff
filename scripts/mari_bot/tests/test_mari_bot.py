@@ -631,5 +631,41 @@ class TestLiveBoot(unittest.TestCase):
             self.assertEqual(r2.bot.last_ts, r.bot.last_ts)
 
 
+class FundingTests(unittest.TestCase):
+    def test_daily_sum_and_no_lookahead(self):
+        from mari_bot.funding import DAY_MS, crowding, daily_funding
+        days = [i * DAY_MS for i in range(400)]
+        rows = [(d + h * 3_600_000, 0.0001) for d in days for h in (0, 8, 16)]
+        df = daily_funding(rows, days)
+        self.assertAlmostEqual(df[5], 0.0003)
+        df2 = list(df)
+        df2[300] = 0.01                                   # جهش در روز ۳۰۰
+        p1, p2 = crowding(df), crowding(df2)
+        self.assertEqual(p1[:300], p2[:300])              # گذشته از آینده خبر ندارد
+        self.assertGreater(p2[300], 90)
+
+    def test_run_funding_synthetic(self):
+        import math
+        from mari_bot.funding import DAY_MS, run_funding
+        days = [1_577_836_800_000 + i * DAY_MS for i in range(900)]
+        daily = {}
+        for sym, a in (("BTCUSDT", 0.004), ("ETHUSDT", 0.006)):
+            px = [100 * math.exp(0.0008 * i + 0.3 * math.sin(i / 40)) for i in range(900)]
+            daily[sym] = [{"t": t, "o": p, "h": p * (1 + a), "l": p * (1 - a), "c": p, "v": 1, "qv": 1}
+                          for t, p in zip(days, px)]
+        funding = {s: [(t + h * 3_600_000, 0.0001 * math.sin(i / 25)) for i, t in enumerate(days) for h in (0, 8, 16)]
+                   for s in ("BTCUSDT", "ETHUSDT")}
+        r = run_funding(daily, funding, days[300], days[-1])
+        self.assertIn(r["verdict"]["H-MARI-F-017"], ("FALSIFIED", "SUPPORTED_IN_TEST_RANGE"))
+        self.assertGreater(r["events"]["BTCUSDT"]["crowded_long"]["n"], 0)
+        self.assertEqual(r["coverage"]["BTCUSDT"]["days_with_funding_pct"], 100.0)
+
+    def test_funding_paths_allowed_and_readonly(self):
+        from mari_bot.data import _ALLOWED
+        for base, paths in _ALLOWED.items():
+            for p in paths:
+                self.assertNotIn("order", p.lower())
+
+
 if __name__ == "__main__":
     unittest.main()
