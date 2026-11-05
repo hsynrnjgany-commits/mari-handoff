@@ -1040,6 +1040,56 @@ def run_ideas9_research(start: str = "2018-06-01", alt_start: str = "2021-01-01"
     return report
 
 
+def run_ideas10_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas10: عامل روند کریپتو (C-051) و نزدیکی به سقف ۵۲ هفته (N-052)، بین‌مقطعی، شامل ارزهای حذف‌شده."""
+    from .ideas10 import IDEA10_HYPOTHESES, run_ideas10
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas10(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T17:55Z",
+              "hypotheses": IDEA10_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed), "failed_sample": failed[:10]},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۵۲ می‌رسد.",
+                               "C-051 نسخهٔ ساده‌شدهٔ مقاله است (۷ میانگین قیمت به جای ۲۸ سیگنال و elastic net).",
+                               "فقط خرید؛ مقاله‌ها بازده خرید-فروش را گزارش می‌کنند.",
+                               "ارزهایی که پیش از حذف هیچ داده‌ای در API عمومی ندارند، دیده نمی‌شوند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas10_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas10: عامل روند کریپتو و سقف ۵۲ هفته", "",
+          f"- دوره: {start} تا {report['period']['to']} — {res['mondays']} هفته",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA10_HYPOTHESES[hid]}")
+    md += ["", "| فرضیه | اضافهٔ هفتگی ٪ [CI95] | نیمهٔ اول ٪ | نیمهٔ دوم ٪ | با ضرر ۵۰٪ حذف ٪ | سبد: بازده / افت / شارپ | وزن برابر: بازده / افت / شارپ | با دروازهٔ BTC: بازده / افت / شارپ |",
+           "|---|---|---|---|---|---|---|---|"]
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')}"  # noqa: E731
+    for hid, e in res["by_hypothesis"].items():
+        a = e["excess_all"] or {}
+        md.append(f"| {hid} | {a.get('mean_pct')} [{a.get('ci95_low')}, {a.get('ci95_high')}] | "
+                  f"{(e['excess_first_half'] or {}).get('mean_pct')} | {(e['excess_second_half'] or {}).get('mean_pct')} | "
+                  f"{(e['haircut50_excess_all'] or {}).get('mean_pct')} | {f(e['top'])} | {f(e['ew'])} | {f(e['btc_gated_info'])} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas10_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

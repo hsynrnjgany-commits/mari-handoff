@@ -214,6 +214,12 @@ def cmd_ideas9(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas10(a):
+    from .research import run_ideas10_research
+    r = run_ideas10_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -341,6 +347,10 @@ def main(argv=None):
     i9.add_argument("--start", default="2018-06-01")
     i9.add_argument("--out", default="research_out")
     i9.set_defaults(fn=cmd_ideas9)
+    i10 = sub.add_parser("ideas10", help="عامل روند کریپتو و سقف ۵۲ هفته (بین‌مقطعی)")
+    i10.add_argument("--start", default="2020-06-01")
+    i10.add_argument("--out", default="research_out")
+    i10.set_defaults(fn=cmd_ideas10)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")

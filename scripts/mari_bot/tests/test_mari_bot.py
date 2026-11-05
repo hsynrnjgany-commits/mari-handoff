@@ -1159,5 +1159,52 @@ class Ideas9Tests(unittest.TestCase):
         self.assertEqual(sig[155], {"BTCUSDT": 0.5, "A": 0.5})
 
 
+class Ideas10Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _daily(self, n_syms=30, days=500, seed=7, planted=False):
+        import random
+        rnd, out = random.Random(seed), {}
+        t0 = 1_577_836_800_000 + 4 * self.DAY            # ۲۰۲۰-۰۱-۰۵
+        for j in range(n_syms):
+            c, bars, drift = 10.0, [], 0.0
+            for i in range(days):
+                if planted and i % 7 == 1:                   # روند هفتهٔ قبل ادامه پیدا می‌کند
+                    drift = 0.004 if bars and bars[-1]["c"] > bars[max(0, len(bars) - 20)]["c"] else -0.004
+                c *= 1 + (drift if planted else 0) + rnd.gauss(0, 0.03)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.02, "l": c * 0.98, "c": c,
+                             "qv": 1e6 * (j + 1)})
+            out[f"S{j}USDT"] = bars
+        out["BTCUSDT"] = out.pop("S0USDT")
+        return out, t0
+
+    def test_universe_point_in_time_and_history(self):
+        from mari_bot.ideas10 import Panel, universe
+        d, t0 = self._daily(days=400)
+        d["NEWUSDT"] = [{"t": t0 + i * self.DAY, "o": 1, "h": 1, "l": 1, "c": 1, "qv": 1e12} for i in range(300, 400)]
+        p = Panel(d)
+        u = universe(p, t0 + 399 * self.DAY, top=5)
+        self.assertNotIn("NEWUSDT", u)                  # تاریخچهٔ کوتاه
+        self.assertEqual(u[0], "S29USDT")               # پرحجم‌ترین
+
+    def test_delisted_coin_uses_last_close(self):
+        from mari_bot.ideas10 import Panel
+        p = Panel({"X": [{"t": 0, "h": 1, "c": 1.0}, {"t": self.DAY, "h": 2, "c": 2.0}]})
+        self.assertEqual(p.close_at_or_before("X", 10 * self.DAY), 2.0)
+        self.assertIsNone(p.close_at_or_before("X", -1))
+
+    def test_noise_mostly_falsified_and_planted_supported(self):
+        from mari_bot.ideas10 import run_ideas10
+        fp = 0
+        for k in range(3):
+            d, t0 = self._daily(seed=100 + k)
+            r = run_ideas10(d, t0 + 366 * self.DAY, t0 + 499 * self.DAY)
+            fp += r["verdict"]["H-MARI-C-051"] != "FALSIFIED"
+        self.assertLessEqual(fp, 1)
+        d, t0 = self._daily(seed=3, days=700, planted=True)
+        r = run_ideas10(d, t0 + 366 * self.DAY, t0 + 699 * self.DAY)
+        self.assertEqual(r["verdict"]["H-MARI-C-051"], "SUPPORTED_IN_TEST_RANGE")
+
+
 if __name__ == "__main__":
     unittest.main()
