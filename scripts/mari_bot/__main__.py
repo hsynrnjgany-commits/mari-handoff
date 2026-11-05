@@ -142,6 +142,12 @@ def cmd_notify_research(a):
     notify_research(a.kind, a.dir, a.status == "success")
 
 
+def cmd_ideas(a):
+    from .research import run_ideas_research
+    r = run_ideas_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_ict(a):
     from .research import run_ict_research
     r = run_ict_research(start=a.start, out_dir=a.out)
@@ -206,6 +212,10 @@ def main(argv=None):
     pa = sub.add_parser("pattern", help="الگوی مشترک پنهان ارزهای صعودی")
     pa.add_argument("--out", default="research_out")
     pa.set_defaults(fn=cmd_pattern)
+    idp = sub.add_parser("ideas", help="صف ایده‌ها: کنترل نوسان و تقاطع طلایی")
+    idp.add_argument("--start", default="2018-06-01")
+    idp.add_argument("--out", default="research_out")
+    idp.set_defaults(fn=cmd_ideas)
     nr = sub.add_parser("notify-research", help="خلاصهٔ پژوهش را به تلگرام صاحب ربات می‌فرستد")
     nr.add_argument("--kind", required=True)
     nr.add_argument("--dir", required=True)

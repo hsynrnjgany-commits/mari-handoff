@@ -766,5 +766,32 @@ class BlacklistTests(unittest.TestCase):
         self.assertIn("BLACKLIST_Q1", inspect.getsource(MariBot._scan))
 
 
+class IdeasTests(unittest.TestCase):
+    def _d(self):
+        import random
+        rnd = random.Random(7)
+        t0, px, bars = 1_514_764_800_000, 100.0, []
+        for i in range(1500):
+            px *= 1 + 0.0008 + 0.03 * math.sin(i / 90) / 10 + rnd.gauss(0, 0.03)
+            bars.append({"t": t0 + i * 86_400_000, "o": px, "h": px * 1.01, "l": px * .99, "c": px, "v": 1, "qv": 1})
+        return {"BTCUSDT": bars, "ETHUSDT": [dict(b) for b in bars]}
+
+    def test_t006_matches_reference_and_voltarget_is_partial(self):
+        from mari_bot.classics import run_weights
+        from mari_bot.ideas import realized_vol, run_ideas, t006_for, voltarget_for
+        from mari_bot.macro import t006_fn
+        d = self._d()
+        a, b = d["BTCUSDT"][300]["t"], d["BTCUSDT"][-1]["t"]
+        ref, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, t006_fn)
+        mine, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, t006_for("BTCUSDT"))
+        self.assertEqual(ref["total_return_pct"], mine["total_return_pct"])
+        c = [x["c"] for x in d["BTCUSDT"]]
+        self.assertGreater(realized_vol(c, 100), 0.3)                    # ~۰٫۰۳ روزانه ≈ ۵۷٪ سالانه
+        vt, _, _ = run_weights({"BTCUSDT": d["BTCUSDT"]}, ["BTCUSDT"], a, b, voltarget_for("BTCUSDT"))
+        self.assertLess(vt["max_drawdown_pct"], mine["max_drawdown_pct"])  # وزن کمتر از ۱ → افت کمتر
+        r = run_ideas(d, a, b)
+        self.assertEqual(set(r["verdict"]), {"H-MARI-V-022", "H-MARI-G-023"})
+
+
 if __name__ == "__main__":
     unittest.main()
