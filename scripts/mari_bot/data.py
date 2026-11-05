@@ -35,7 +35,8 @@ _ALLOWED = {
 }
 BINANCE_ARCHIVE = "https://data.binance.vision"     # بایگانی عمومی فایل‌های ماهانه (بدون محدودیت جغرافیایی)
 _ARCHIVE_PREFIX = "/data/futures/um/monthly/fundingRate/"
-_ARCHIVE_PREFIXES = (_ARCHIVE_PREFIX, "/data/futures/um/daily/metrics/")
+_PERP_KLINES_PREFIX = "/data/futures/um/monthly/klines/"
+_ARCHIVE_PREFIXES = (_ARCHIVE_PREFIX, "/data/futures/um/daily/metrics/", _PERP_KLINES_PREFIX)
 
 
 def http_get_bytes(path: str, base: str = BINANCE_ARCHIVE, timeout: float = 60.0, retries: int = 3) -> bytes | None:

@@ -244,6 +244,12 @@ def cmd_ideas14(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas15(a):
+    from .research import run_ideas15_research
+    r = run_ideas15_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -391,6 +397,10 @@ def main(argv=None):
     i14.add_argument("--start", default="2018-01-01")
     i14.add_argument("--out", default="research_out")
     i14.set_defaults(fn=cmd_ideas14)
+    i15 = sub.add_parser("ideas15", help="کری دلتا-نیوترال با قیمت واقعی دائمی")
+    i15.add_argument("--start", default="2020-06-01")
+    i15.add_argument("--out", default="research_out")
+    i15.set_defaults(fn=cmd_ideas15)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")

@@ -1310,6 +1310,63 @@ def run_ideas14_research(start: str = "2018-01-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas15_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas15: کری دلتا-نیوترال با قیمت واقعی قرارداد دائمی (Y-060)."""
+    from .funding import daily_funding, fetch_funding
+    from .ideas15 import IDEA15_HYPOTHESES, fetch_perp_daily, run_ideas15
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    days = list(range(start_ms, end, DAY_MS))
+    spot, perp, fund, sources = {}, {}, {}, {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 10 * DAY_MS, end, interval="1d")
+        clean = quality_check(bars, interval_ms=DAY_MS)["clean"]
+        spot[s] = {b["t"]: b["c"] for b in clean}
+        perp[s] = fetch_perp_daily(s, start_ms, end)
+        name, rows, tried = fetch_funding(s, start_ms - 20 * DAY_MS, end, need_from_ms=start_ms)
+        fund[s] = daily_funding(rows, days)
+        sources[s] = {"funding": name, "spot_days": len(spot[s]), "perp_days": len(perp[s]),
+                      "settled_days": sum(1 for v in fund[s] if v is not None)}
+    res = run_ideas15(days, spot, perp, fund)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T20:30Z",
+              "hypotheses": IDEA15_HYPOTHESES, "sources": sources,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۰ می‌رسد.",
+                               "قیمت بستهٔ روزانه استفاده می‌شود؛ نوسان basis درون‌روز و خطر لیکویید"
+                               " شدن لحظه‌ای دیده نمی‌شود. پس حتی این نسخه هم کمی خوش‌بینانه است.",
+                               "مارجین کامل فرض شده (بدون اهرم)؛ بازده واقعی با اهرم بیشتر و ریسک لیکویید"
+                               " شدن هم بیشتر است.",
+                               "هزینهٔ تأمین مارجین و نرخ بهرهٔ وام مدل نشده است.",
+                               "روزهایی که دادهٔ اسپات یا دائمی نیست، بیرون از موقعیت شمرده می‌شوند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas15_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas15: کری دلتا-نیوترال با قیمت واقعی قرارداد دائمی", "",
+          f"- دوره: {start} تا {report['period']['to']}",
+          "- داده: " + "، ".join(f"{k}: اسپات {v['spot_days']} روز، دائمی {v['perp_days']} روز، تسویه {v['settled_days']}"
+                                 for k, v in sources.items()), ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA15_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | نسخه | بازده کل ٪ | بیشترین افت ٪ | شارپ | بدترین روز ٪ | چرخه |",
+           "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("H-MARI-Y-060", "ZERO_BASIS_INFO", "ALWAYS_ON_INFO"):
+            st = (x or {}).get(name) or {}
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('worst_day_pct')} | {st.get('cycles')} |")
+    md += ["", "## اختلاف قیمت دائمی و اسپات (basis)", "",
+           "| دارایی | میانگین ٪ | صدک ۱ ٪ | صدک ۹۹ ٪ | کمینه ٪ | بیشینه ٪ |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        b = (x or {}).get("BASIS_INFO") or {}
+        md.append(f"| {sym} | {b.get('mean_pct')} | {b.get('p01_pct')} | {b.get('p99_pct')} | "
+                  f"{b.get('min_pct')} | {b.get('max_pct')} |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas15_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

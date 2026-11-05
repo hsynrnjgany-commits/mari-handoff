@@ -1443,5 +1443,62 @@ class Ideas14Tests(unittest.TestCase):
         self.assertIn("vol_30d", r["picked"])
 
 
+class Ideas15Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def _days(self, n):
+        return [i * self.DAY for i in range(n)]
+
+    def test_parse_kline_csv_handles_micros_and_headers(self):
+        from mari_bot.ideas15 import parse_kline_csv
+        txt = ("open_time,open,high,low,close,volume\n"
+               "1609459200000,1,2,0.5,100.5,7\n"
+               "1609545600000000,1,2,0.5,101.5,7\n")
+        rows = parse_kline_csv(txt)
+        self.assertEqual([c for _, c in rows], [100.5, 101.5])
+        self.assertTrue(all(t % self.DAY == 0 for t, _ in rows))
+
+    def test_basis_gain_when_premium_converges(self):
+        from mari_bot.ideas15 import run_basis_carry
+        n = 400
+        days = self._days(n)
+        spot = {t: 100.0 for t in days}
+        # دائمی با صرف ۲٪ شروع می‌کند و تا روز ۳۰۰ به صفر می‌رسد: سود پوشش
+        perp = {t: 100.0 * (1 + 0.02 * max(0.0, 1 - i / 300)) for i, t in enumerate(days)}
+        fund = [0.0] * n
+        r = run_basis_carry(days, spot, perp, fund, fee=0.0, always_on=True)
+        self.assertGreater(r["total_return_pct"], 0.5)      # همگرایی صرف = سود
+        rising = {t: 100.0 * (1 + 0.02 * (i / 300)) for i, t in enumerate(days)}
+        r2 = run_basis_carry(days, spot, rising, fund, fee=0.0, always_on=True)
+        self.assertLess(r2["total_return_pct"], 0)          # بازشدن صرف = زیان
+
+    def test_zero_basis_matches_pure_funding_accrual(self):
+        from mari_bot.ideas15 import run_basis_carry
+        n = 400
+        days = self._days(n)
+        spot = {t: 100.0 + i for i, t in enumerate(days)}   # قیمت بالا می‌رود
+        perp = {t: 90.0 + i for i, t in enumerate(days)}    # با صرف منفی ثابت
+        fund = [0.0005] * n
+        z = run_basis_carry(days, spot, perp, fund, fee=0.0, always_on=True, zero_basis=True)
+        self.assertGreater(z["sharpe"], 3)                  # بدون basis: جریان تقریباً بی‌ریسک
+        self.assertLess(z["max_drawdown_pct"], 1.0)
+
+    def test_price_gaps_are_counted_out_of_position(self):
+        from mari_bot.ideas15 import run_basis_carry
+        days = self._days(300)
+        spot = {t: 100.0 for i, t in enumerate(days) if i % 2 == 0}
+        perp = dict(spot)
+        r = run_basis_carry(days, spot, perp, [0.0005] * 300, always_on=True)
+        self.assertTrue(r.get("insufficient"))              # نیمی از روزها داده ندارند
+
+    def test_basis_stats(self):
+        from mari_bot.ideas15 import basis_stats
+        days = self._days(200)
+        spot = {t: 100.0 for t in days}
+        perp = {t: 101.0 for t in days}
+        b = basis_stats(days, spot, perp)
+        self.assertAlmostEqual(b["mean_pct"], 1.0, places=3)
+
+
 if __name__ == "__main__":
     unittest.main()
