@@ -952,5 +952,36 @@ class TradfiTests(unittest.TestCase):
             self.assertTrue(tradable_symbol(s), s)
 
 
+class Ideas7Tests(unittest.TestCase):
+    def test_turn_of_month_window(self):
+        from datetime import datetime, timezone
+        from mari_bot.ideas7 import is_tom
+        ms = lambda s: int(datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+        for d in ("2024-01-31", "2024-02-01", "2024-02-03", "2024-02-29", "2023-02-28", "2024-12-31"):
+            self.assertTrue(is_tom(ms(d)), d)
+        for d in ("2024-02-04", "2024-02-28", "2024-01-15", "2023-02-27"):
+            self.assertFalse(is_tom(ms(d)), d)
+
+    def test_ensemble_weight_steps(self):
+        from mari_bot.ideas7 import ensemble_weight
+        up = [float(i) for i in range(1, 301)]
+        self.assertIsNone(ensemble_weight(up, 150))
+        self.assertEqual(ensemble_weight(up, 299), 1.0)
+        down = list(reversed(up))
+        self.assertEqual(ensemble_weight(down, 299), 0.0)
+
+    def test_planted_tom_effect_detected(self):
+        from mari_bot.ideas7 import is_tom, tom_test
+        DAY = 86_400_000
+        t0 = 1_546_300_800_000                                         # 2019-01-01
+        bars, c = [], 100.0
+        for i in range(900):
+            t = t0 + i * DAY
+            c *= 1.01 if is_tom(t) else (0.999 if i % 2 else 1.0)
+            bars.append({"t": t, "c": c})
+        r = tom_test(bars, t0, t0 + 900 * DAY)
+        self.assertGreater(r["tom_minus_rest"]["ci95_low"], 0)
+
+
 if __name__ == "__main__":
     unittest.main()

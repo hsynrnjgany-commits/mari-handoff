@@ -910,3 +910,44 @@ def run_sessions_research(start: str = "2021-01-01", out_dir: str = "research_ou
     with open(os.path.join(out_dir, "sessions_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_ideas7_research(start: str = "2018-06-01", out_dir: str = "research_out") -> dict:
+    """ideas7: روند چندسرعته (E-040) و اثر اول ماه (M-041) روی BTC و ETH."""
+    from .ideas7 import IDEA7_HYPOTHESES, run_ideas7
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    daily = {}
+    for s in ("BTCUSDT", "ETHUSDT"):
+        bars = fetch_history(s, start_ms - 260 * DAY_MS, end, interval="1d")
+        daily[s] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas7(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-05T13:55Z",
+              "hypotheses": IDEA7_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۴۱ می‌رسد.",
+                               "E-040 میانگین ۱۵۰ را به‌عنوان یکی از چهار داور دارد؛ به T-006 وابسته است."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas7_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# ideas7: روند چندسرعته و اثر اول ماه", "", f"- دوره: {report['period']['from']} تا {report['period']['to']}", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA7_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | روش | بازده کل ٪ | بیشترین افت ٪ | شارپ | معامله | روز نقد ٪ |", "|---|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        for name in ("T-006", "H-MARI-E-040", "TOM_ONLY_INFO"):
+            st = x[name]
+            md.append(f"| {sym} | {name} | {st.get('total_return_pct')} | {st.get('max_drawdown_pct')} | "
+                      f"{st.get('sharpe')} | {st.get('trades')} | {st.get('time_in_cash_pct')} |")
+    md += ["", "## M-041: بازده روزانه در پنجرهٔ اول ماه", "",
+           "| دارایی | روز پنجره | روز دیگر | میانگین پنجره ٪ | میانگین بقیه ٪ | اختلاف ٪ [CI95] |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        t = x["H-MARI-M-041"]
+        ci = t["tom_minus_rest"] or {}
+        md.append(f"| {sym} | {t['n_tom']} | {t['n_rest']} | {t['tom_mean_pct']} | {t['rest_mean_pct']} | "
+                  f"{ci.get('diff_pct')} [{ci.get('ci95_low')}, {ci.get('ci95_high')}] |")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas7_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
