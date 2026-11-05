@@ -1,0 +1,86 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T07:05Z",
+ "hypotheses": {
+  "H-MARI-S-036": "شکار کف/سقف آسیا در لندن با بازگشت → بازده نیویورک بیشتر/کمتر از معمول (CI95، BTC و ETH).",
+  "H-MARI-S-037": "آسیای آرام + شکست یک‌طرفهٔ لندن → نیویورک خلاف جهت؛ نرخ درستی > ۵۰٪ با CI95 (BTC و ETH)."
+ },
+ "period": {
+  "from": "2021-01-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۳۹ می‌رسد.",
+  "روزهایی که یکی از سشن‌ها ساعت گمشده دارد کنار گذاشته می‌شوند."
+ ],
+ "results": {
+  "by_asset": {
+   "BTCUSDT": {
+    "S-036": {
+     "n_days": 2127,
+     "mean_ny_pct": 0.0033,
+     "bull": {
+      "n": 421,
+      "vs_all": {
+       "diff_pct": -0.048,
+       "ci95_low": -0.304,
+       "ci95_high": 0.207
+      }
+     },
+     "bear": {
+      "n": 466,
+      "vs_all": {
+       "diff_pct": -0.085,
+       "ci95_low": -0.335,
+       "ci95_high": 0.164
+      }
+     }
+    },
+    "S-037": {
+     "hit": {
+      "rate_pct": 53.0,
+      "ci95_low": 48.45,
+      "ci95_high": 57.35,
+      "n": 483
+     }
+    },
+    "days": 2127
+   },
+   "ETHUSDT": {
+    "S-036": {
+     "n_days": 2127,
+     "mean_ny_pct": 0.0148,
+     "bull": {
+      "n": 390,
+      "vs_all": {
+       "diff_pct": -0.146,
+       "ci95_low": -0.507,
+       "ci95_high": 0.223
+      }
+     },
+     "bear": {
+      "n": 479,
+      "vs_all": {
+       "diff_pct": 0.037,
+       "ci95_low": -0.29,
+       "ci95_high": 0.362
+      }
+     }
+    },
+    "S-037": {
+     "hit": {
+      "rate_pct": 49.11,
+      "ci95_low": 44.75,
+      "ci95_high": 53.47,
+      "n": 505
+     }
+    },
+    "days": 2127
+   }
+  },
+  "verdict": {
+   "H-MARI-S-036": "FALSIFIED",
+   "H-MARI-S-037": "FALSIFIED"
+  }
+ }
+}
