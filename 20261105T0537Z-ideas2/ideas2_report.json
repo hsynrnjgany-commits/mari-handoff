@@ -1,0 +1,118 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-05T05:45Z",
+ "hypotheses": {
+  "H-MARI-H-024": "نگه‌داری از هاوینگ تا ۱۸ ماه بعد: شارپ بیشتر و افت کمتر یا برابر T-006، روی BTC و ETH.",
+  "H-MARI-W-025": "روز برتر هفته (کشف ۲۰۱۸-۲۰۲۲) در ۲۰۲۳ تا اکنون هم بالاتر از میانگین است (CI95)، روی BTC و ETH."
+ },
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-05"
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۲۵ می‌رسد.",
+  "هاوینگ: فقط دو رویداد در دوره؛ توان آماری کم."
+ ],
+ "results": {
+  "halving": {
+   "BTCUSDT": {
+    "T-006": {
+     "total_return_pct": 2107.38,
+     "cagr_pct": 44.33,
+     "max_drawdown_pct": 45.05,
+     "sharpe": 1.07,
+     "weekly_bootstrap": {
+      "mean_pct": 0.888,
+      "ci95_low": 0.315,
+      "ci95_high": 1.519
+     },
+     "trades": 65,
+     "time_in_cash_pct": 46.4
+    },
+    "H-MARI-H-024": {
+     "total_return_pct": 1118.65,
+     "cagr_pct": 34.51,
+     "max_drawdown_pct": 53.14,
+     "sharpe": 1.0,
+     "weekly_bootstrap": {
+      "mean_pct": 0.698,
+      "ci95_low": 0.226,
+      "ci95_high": 1.2
+     },
+     "trades": 4,
+     "time_in_cash_pct": 64.4
+    }
+   },
+   "ETHUSDT": {
+    "T-006": {
+     "total_return_pct": 2668.53,
+     "cagr_pct": 48.26,
+     "max_drawdown_pct": 67.1,
+     "sharpe": 0.97,
+     "weekly_bootstrap": {
+      "mean_pct": 1.095,
+      "ci95_low": 0.316,
+      "ci95_high": 1.905
+     },
+     "trades": 69,
+     "time_in_cash_pct": 48.2
+    },
+    "H-MARI-H-024": {
+     "total_return_pct": 2941.6,
+     "cagr_pct": 49.92,
+     "max_drawdown_pct": 63.2,
+     "sharpe": 1.04,
+     "weekly_bootstrap": {
+      "mean_pct": 1.033,
+      "ci95_low": 0.374,
+      "ci95_high": 1.745
+     },
+     "trades": 4,
+     "time_in_cash_pct": 64.4
+    }
+   }
+  },
+  "weekday": {
+   "BTCUSDT": {
+    "best_day": 0,
+    "discovery_means_pct": {
+     "0": 0.415,
+     "1": -0.004,
+     "2": 0.412,
+     "3": -0.273,
+     "4": 0.199,
+     "5": 0.119,
+     "6": -0.032
+    },
+    "test_vs_all": {
+     "diff_pct": 0.258,
+     "ci95_low": -0.254,
+     "ci95_high": 0.783
+    },
+    "test_n": 201
+   },
+   "ETHUSDT": {
+    "best_day": 0,
+    "discovery_means_pct": {
+     "0": 0.364,
+     "1": -0.091,
+     "2": 0.411,
+     "3": -0.359,
+     "4": 0.266,
+     "5": 0.464,
+     "6": 0.137
+    },
+    "test_vs_all": {
+     "diff_pct": 0.206,
+     "ci95_low": -0.463,
+     "ci95_high": 0.89
+    },
+    "test_n": 201
+   }
+  },
+  "verdict": {
+   "H-MARI-H-024": "FALSIFIED",
+   "H-MARI-W-025": "FALSIFIED"
+  }
+ }
+}
