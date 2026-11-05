@@ -89,7 +89,34 @@ def _bitmex(sym, start_ms, end_ms):
     return out
 
 
-_FETCHERS = (("binance", _binance), ("bybit", _bybit), ("bitmex", _bitmex))
+def _archive(sym, start_ms, end_ms):
+    """بایگانی ماهانهٔ بایننس: CSV داخل zip با ستون‌های calc_time, funding_interval_hours, last_funding_rate."""
+    import csv
+    import io
+    import zipfile
+    from datetime import datetime, timezone
+    from .data import _ARCHIVE_PREFIX, http_get_bytes
+    out = []
+    d = datetime.fromtimestamp(start_ms / 1000, timezone.utc).replace(day=1)
+    last = datetime.fromtimestamp(end_ms / 1000, timezone.utc)
+    while d <= last:
+        name = f"{sym}-fundingRate-{d:%Y-%m}"
+        blob = http_get_bytes(f"{_ARCHIVE_PREFIX}{sym}/{name}.zip")
+        if blob:
+            with zipfile.ZipFile(io.BytesIO(blob)) as z:
+                text = z.read(z.namelist()[0]).decode("utf-8", "replace")
+            for row in csv.reader(io.StringIO(text)):
+                if row and row[0].isdigit():
+                    t = int(row[0])
+                    if start_ms <= t < end_ms:
+                        out.append((t, float(row[-1])))
+        d = d.replace(year=d.year + (d.month == 12), month=d.month % 12 + 1)
+        time.sleep(0.1)
+    return out
+
+
+_SYMS["binance_archive"] = {"BTCUSDT": "BTCUSDT", "ETHUSDT": "ETHUSDT"}
+_FETCHERS = (("binance", _binance), ("binance_archive", _archive), ("bybit", _bybit), ("bitmex", _bitmex))
 
 
 def fetch_funding(sym: str, start_ms: int, end_ms: int, need_from_ms: int) -> tuple[str, list, dict]:
