@@ -28,7 +28,7 @@ _ALLOWED = {
     FRED: ("/graph/fredgraph.csv",),
     # فاندینگ عمومی قراردادهای دائمی — فقط برای پژوهش، بدون کلید
     "https://fapi.binance.com": ("/fapi/v1/fundingRate",),
-    "https://api.bybit.com": ("/v5/market/funding/history",),
+    "https://api.bybit.com": ("/v5/market/funding/history", "/v5/market/kline"),
     "https://www.bitmex.com": ("/api/v1/funding",),
     # جایگزین‌هایی که از سرورهای ابری مسدود نیستند (بایننس 451، بای‌بیت و بیت‌مکس 403)
     "https://www.okx.com": ("/api/v5/public/funding-rate-history",),
@@ -37,6 +37,8 @@ _ALLOWED = {
     "https://api.bitget.com": ("/api/v2/mix/market/history-fund-rate",),
     # شاخص ترس و طمع (alternative.me) — عمومی، بدون کلید، فقط برای پژوهش
     "https://api.alternative.me": ("/fng/",),
+    # کوین‌بیس: تاریخچهٔ بلند BTC و ETH (از ۲۰۱۵ و ۲۰۱۶) — عمومی، بدون کلید، فقط پژوهش
+    "https://api.exchange.coinbase.com": ("/products/BTC-USD/candles", "/products/ETH-USD/candles"),
 }
 BINANCE_ARCHIVE = "https://data.binance.vision"     # بایگانی عمومی فایل‌های ماهانه (بدون محدودیت جغرافیایی)
 _ARCHIVE_PREFIX = "/data/futures/um/monthly/fundingRate/"
