@@ -1,0 +1,558 @@
+{
+ "diagnostic": true,
+ "not_a_hypothesis": true,
+ "trace": {
+  "coin_weeks": 6330,
+  "n_over_100pct": 15,
+  "n_over_300pct": 1,
+  "n_below_minus90pct": 0,
+  "top": [
+   {
+    "ret_pct": 96302.9,
+    "sym": "COCOSUSDT",
+    "week": "2021-01-18",
+    "regime": "bull",
+    "n_held": 15,
+    "contrib_to_week_pct": 6420.2
+   },
+   {
+    "ret_pct": 254.4,
+    "sym": "MBLUSDT",
+    "week": "2021-03-08",
+    "regime": "bull",
+    "n_held": 17,
+    "contrib_to_week_pct": 15.0
+   },
+   {
+    "ret_pct": 222.7,
+    "sym": "SHIBUSDT",
+    "week": "2024-02-26",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 11.1
+   },
+   {
+    "ret_pct": 159.7,
+    "sym": "IOTXUSDT",
+    "week": "2021-08-02",
+    "regime": "bear",
+    "n_held": 20,
+    "contrib_to_week_pct": 8.0
+   },
+   {
+    "ret_pct": 159.6,
+    "sym": "DOCKUSDT",
+    "week": "2021-03-01",
+    "regime": "bull",
+    "n_held": 17,
+    "contrib_to_week_pct": 9.4
+   },
+   {
+    "ret_pct": 152.5,
+    "sym": "NKNUSDT",
+    "week": "2021-03-01",
+    "regime": "bull",
+    "n_held": 17,
+    "contrib_to_week_pct": 9.0
+   },
+   {
+    "ret_pct": 142.1,
+    "sym": "NPXSUSDT",
+    "week": "2021-01-04",
+    "regime": "bull",
+    "n_held": 15,
+    "contrib_to_week_pct": 9.5
+   },
+   {
+    "ret_pct": 129.4,
+    "sym": "XRPUSDT",
+    "week": "2020-11-16",
+    "regime": "bull",
+    "n_held": 14,
+    "contrib_to_week_pct": 9.2
+   },
+   {
+    "ret_pct": 127.8,
+    "sym": "RVNUSDT",
+    "week": "2021-02-15",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 8.0
+   },
+   {
+    "ret_pct": 126.3,
+    "sym": "XLMUSDT",
+    "week": "2020-11-16",
+    "regime": "bull",
+    "n_held": 14,
+    "contrib_to_week_pct": 9.0
+   },
+   {
+    "ret_pct": 122.9,
+    "sym": "TRXUSDT",
+    "week": "2024-11-25",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 6.1
+   },
+   {
+    "ret_pct": 113.2,
+    "sym": "COCOSUSDT",
+    "week": "2021-01-11",
+    "regime": "bull",
+    "n_held": 15,
+    "contrib_to_week_pct": 7.5
+   },
+   {
+    "ret_pct": 110.5,
+    "sym": "BNBUSDT",
+    "week": "2021-02-01",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 6.9
+   },
+   {
+    "ret_pct": 109.0,
+    "sym": "BCHUSDT",
+    "week": "2023-06-19",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 5.4
+   },
+   {
+    "ret_pct": 105.8,
+    "sym": "HBARUSDT",
+    "week": "2024-11-11",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 5.3
+   },
+   {
+    "ret_pct": 92.6,
+    "sym": "OGNUSDT",
+    "week": "2021-02-01",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 5.8
+   },
+   {
+    "ret_pct": 91.3,
+    "sym": "DREPUSDT",
+    "week": "2021-03-01",
+    "regime": "bull",
+    "n_held": 17,
+    "contrib_to_week_pct": 5.4
+   },
+   {
+    "ret_pct": 88.0,
+    "sym": "TRXUSDT",
+    "week": "2021-03-29",
+    "regime": "bull",
+    "n_held": 18,
+    "contrib_to_week_pct": 4.9
+   },
+   {
+    "ret_pct": 87.6,
+    "sym": "RVNUSDT",
+    "week": "2021-08-02",
+    "regime": "bear",
+    "n_held": 20,
+    "contrib_to_week_pct": 4.4
+   },
+   {
+    "ret_pct": 87.3,
+    "sym": "RVNUSDT",
+    "week": "2021-02-08",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 5.5
+   },
+   {
+    "ret_pct": -78.7,
+    "sym": "FTTUSDT",
+    "week": "2022-10-31",
+    "regime": "bear",
+    "n_held": 20,
+    "contrib_to_week_pct": -3.9
+   },
+   {
+    "ret_pct": 77.8,
+    "sym": "CAKEUSDT",
+    "week": "2023-10-30",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 3.9
+   },
+   {
+    "ret_pct": 77.7,
+    "sym": "BNBUSDT",
+    "week": "2021-02-15",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 4.9
+   },
+   {
+    "ret_pct": 77.4,
+    "sym": "ETCUSDT",
+    "week": "2022-03-14",
+    "regime": "bear",
+    "n_held": 20,
+    "contrib_to_week_pct": 3.9
+   },
+   {
+    "ret_pct": 76.8,
+    "sym": "EGLDUSDT",
+    "week": "2021-09-06",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 3.8
+   },
+   {
+    "ret_pct": 76.6,
+    "sym": "KEYUSDT",
+    "week": "2021-02-15",
+    "regime": "bull",
+    "n_held": 16,
+    "contrib_to_week_pct": 4.8
+   },
+   {
+    "ret_pct": 74.3,
+    "sym": "COSUSDT",
+    "week": "2021-03-01",
+    "regime": "bull",
+    "n_held": 17,
+    "contrib_to_week_pct": 4.4
+   },
+   {
+    "ret_pct": 74.2,
+    "sym": "ICPUSDT",
+    "week": "2024-03-18",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 3.7
+   },
+   {
+    "ret_pct": -74.0,
+    "sym": "FTTUSDT",
+    "week": "2022-11-07",
+    "regime": "bear",
+    "n_held": 20,
+    "contrib_to_week_pct": -3.7
+   },
+   {
+    "ret_pct": 73.9,
+    "sym": "XLMUSDT",
+    "week": "2025-07-07",
+    "regime": "bull",
+    "n_held": 20,
+    "contrib_to_week_pct": 3.7
+   }
+  ],
+  "weekly_port_top": [
+   [
+    6416.1,
+    "2021-01-18",
+    "bull"
+   ],
+   [
+    44.6,
+    "2021-03-01",
+    "bull"
+   ],
+   [
+    43.7,
+    "2021-02-01",
+    "bull"
+   ],
+   [
+    37.2,
+    "2020-11-16",
+    "bull"
+   ],
+   [
+    29.3,
+    "2024-11-25",
+    "bull"
+   ],
+   [
+    29.3,
+    "2024-11-04",
+    "bull"
+   ],
+   [
+    28.6,
+    "2021-08-02",
+    "bear"
+   ],
+   [
+    27.1,
+    "2021-03-29",
+    "bull"
+   ],
+   [
+    24.8,
+    "2021-07-19",
+    "bear"
+   ],
+   [
+    22.4,
+    "2025-05-05",
+    "bull"
+   ],
+   [
+    22.0,
+    "2021-06-21",
+    "bear"
+   ],
+   [
+    21.8,
+    "2026-09-14",
+    "bull"
+   ],
+   [
+    21.5,
+    "2024-02-26",
+    "bull"
+   ],
+   [
+    21.5,
+    "2021-02-08",
+    "bull"
+   ],
+   [
+    21.4,
+    "2021-09-27",
+    "bull"
+   ]
+  ]
+ },
+ "daily_jumps_over_5x": {
+  "count": 28,
+  "top": [
+   {
+    "sym": "LUNAUSDT",
+    "day": "2022-05-31",
+    "ratio": 177400.0,
+    "size": 177399.99999999997,
+    "prev": 5e-05,
+    "close": 8.87
+   },
+   {
+    "sym": "LUNAUSDT",
+    "day": "2022-05-12",
+    "ratio": 0.000297,
+    "size": 3365.3125,
+    "prev": 1.0769,
+    "close": 0.00032
+   },
+   {
+    "sym": "COCOSUSDT",
+    "day": "2021-01-23",
+    "ratio": 1295.395683,
+    "size": 1295.3956834532373,
+    "prev": 0.000695,
+    "close": 0.9003
+   },
+   {
+    "sym": "QUICKUSDT",
+    "day": "2023-07-21",
+    "ratio": 0.000804,
+    "size": 1243.5059493883023,
+    "prev": 74.2,
+    "close": 0.05967
+   },
+   {
+    "sym": "SUNUSDT",
+    "day": "2021-06-18",
+    "ratio": 0.001199,
+    "size": 834.2511346444779,
+    "prev": 27.572,
+    "close": 0.03305
+   },
+   {
+    "sym": "BNXUSDT",
+    "day": "2023-02-22",
+    "ratio": 0.009031,
+    "size": 110.72555205047318,
+    "prev": 175.5,
+    "close": 1.585
+   },
+   {
+    "sym": "DREPUSDT",
+    "day": "2021-04-02",
+    "ratio": 107.577602,
+    "size": 107.57760194765673,
+    "prev": 0.026288,
+    "close": 2.828
+   },
+   {
+    "sym": "XLMUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.036641,
+    "size": 27.291925465838506,
+    "prev": 8.788,
+    "close": 0.322
+   },
+   {
+    "sym": "1INCHUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.040198,
+    "size": 24.87716415828386,
+    "prev": 3.21,
+    "close": 0.129034
+   },
+   {
+    "sym": "VIDTUSDT",
+    "day": "2022-11-09",
+    "ratio": 0.051237,
+    "size": 19.51732673267327,
+    "prev": 0.4731,
+    "close": 0.02424
+   },
+   {
+    "sym": "SUSHIUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.052717,
+    "size": 18.96923076923077,
+    "prev": 4.932,
+    "close": 0.26
+   },
+   {
+    "sym": "TRXUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.053389,
+    "size": 18.73060344827586,
+    "prev": 8.691,
+    "close": 0.464
+   },
+   {
+    "sym": "BCHUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.059117,
+    "size": 16.91549295774648,
+    "prev": 12.01,
+    "close": 0.71
+   },
+   {
+    "sym": "LUNAUSDT",
+    "day": "2022-05-11",
+    "ratio": 0.061678,
+    "size": 16.21320456866933,
+    "prev": 17.46,
+    "close": 1.0769
+   },
+   {
+    "sym": "STRAXUSDT",
+    "day": "2024-03-28",
+    "ratio": 0.1026,
+    "size": 9.746575342465755,
+    "prev": 1.423,
+    "close": 0.146
+   },
+   {
+    "sym": "SUSHIUPUSDT",
+    "day": "2021-04-18",
+    "ratio": 0.105512,
+    "size": 9.477631578947369,
+    "prev": 28.812,
+    "close": 3.04
+   },
+   {
+    "sym": "BTCSTUSDT",
+    "day": "2021-03-19",
+    "ratio": 0.128743,
+    "size": 7.767430299515306,
+    "prev": 374.996,
+    "close": 48.278
+   },
+   {
+    "sym": "LUNAUSDT",
+    "day": "2022-05-13",
+    "ratio": 0.15625,
+    "size": 6.4,
+    "prev": 0.00032,
+    "close": 5e-05
+   },
+   {
+    "sym": "OMUSDT",
+    "day": "2025-04-13",
+    "ratio": 0.161199,
+    "size": 6.203527546571541,
+    "prev": 6.2606,
+    "close": 1.0092
+   },
+   {
+    "sym": "AAVEUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.162897,
+    "size": 6.138840453356582,
+    "prev": 28.165,
+    "close": 4.588
+   },
+   {
+    "sym": "DEXEUSDT",
+    "day": "2026-07-21",
+    "ratio": 0.174781,
+    "size": 5.721451612903225,
+    "prev": 35.473,
+    "close": 6.2
+   },
+   {
+    "sym": "NFPUSDT",
+    "day": "2026-07-01",
+    "ratio": 5.683084,
+    "size": 5.683083511777302,
+    "prev": 0.00467,
+    "close": 0.02654
+   },
+   {
+    "sym": "VIDTUSDT",
+    "day": "2025-04-12",
+    "ratio": 0.178341,
+    "size": 5.6072234762979685,
+    "prev": 0.02484,
+    "close": 0.00443
+   },
+   {
+    "sym": "UNFIUSDT",
+    "day": "2022-06-07",
+    "ratio": 5.520913,
+    "size": 5.520912547528518,
+    "prev": 3.419,
+    "close": 18.876
+   },
+   {
+    "sym": "DOTUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.184578,
+    "size": 5.417775914474374,
+    "prev": 103.382,
+    "close": 19.082
+   },
+   {
+    "sym": "HIFIUSDT",
+    "day": "2025-09-12",
+    "ratio": 5.404844,
+    "size": 5.40484429065744,
+    "prev": 0.0867,
+    "close": 0.4686
+   },
+   {
+    "sym": "YFIUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.19172,
+    "size": 5.21594827586207,
+    "prev": 12.101,
+    "close": 2.32
+   },
+   {
+    "sym": "XTZUPUSDT",
+    "day": "2021-05-19",
+    "ratio": 0.196864,
+    "size": 5.0796460176991145,
+    "prev": 0.574,
+    "close": 0.113
+   }
+  ]
+ }
+}
