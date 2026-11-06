@@ -1,0 +1,149 @@
+{
+ "registered_before_results": true,
+ "registered_at": "2026-11-06T03:40Z",
+ "hypotheses": {
+  "H-MARI-L-066": "کم‌نوسانی (فقط خرید پنجک کم‌نوسان بر پایهٔ انحراف معیار بازده لگاریتمی ۶۰ روز، از ۱۰۰ ارز پرحجم، بازتوزیع هر ۴ هفته): در بازار صعودی و نزولی هر دو جداگانه، از ≥۹۵٪ سبدهای تصادفی هم‌نقد هم در شارپ و هم در بازده بهتر."
+ },
+ "period": {
+  "from": "2020-06-01",
+  "to": "2026-11-06"
+ },
+ "data": {
+  "symbols_listed_incl_delisted": 700,
+  "symbols_with_data": 697,
+  "failed": 0
+ },
+ "known_biases": [
+  "MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۶ می‌رسد.",
+  "مقاله خرید-فروش است؛ اینجا فقط خرید (فروش استقراضی از ایران در دسترس نیست).",
+  "مقاله دورهٔ نگه‌داری ۱ ماه دارد؛ اینجا ۴ هفته.",
+  "مقاله اثر را در سال‌های اخیر قوی‌تر و در سال‌های اول ضعیف‌تر گزارش می‌کند."
+ ],
+ "results": {
+  "H-MARI-L-066": {
+   "weeks_total": 334,
+   "weeks_in_market": {
+    "bull": 198,
+    "bear": 134
+   },
+   "bull": {
+    "weeks": 200,
+    "portfolio": {
+     "total_return_pct": 165777.6,
+     "max_drawdown_pct": 59.8,
+     "sharpe": 0.54,
+     "weeks": 200
+    },
+    "benchmark_median_random": {
+     "total_return_pct": 646.5,
+     "max_drawdown_pct": 84.5,
+     "sharpe": 0.92,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 5.5,
+    "pct_draws_beaten_return": 100.0,
+    "verdict": "FALSIFIED"
+   },
+   "bear": {
+    "weeks": 134,
+    "portfolio": {
+     "total_return_pct": -64.0,
+     "max_drawdown_pct": 71.8,
+     "sharpe": -0.25,
+     "weeks": 134
+    },
+    "benchmark_median_random": {
+     "total_return_pct": -85.1,
+     "max_drawdown_pct": 87.7,
+     "sharpe": -0.51,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 99.0,
+    "pct_draws_beaten_return": 100.0,
+    "verdict": "SUPPORTED_IN_TEST_RANGE"
+   },
+   "all": {
+    "weeks": 334,
+    "portfolio": {
+     "total_return_pct": 59695.6,
+     "max_drawdown_pct": 80.0,
+     "sharpe": 0.42,
+     "weeks": 334
+    },
+    "benchmark_median_random": {
+     "total_return_pct": 15.7,
+     "max_drawdown_pct": 96.9,
+     "sharpe": 0.41,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 58.0,
+    "pct_draws_beaten_return": 100.0,
+    "verdict": "FALSIFIED"
+   }
+  },
+  "HIGH_VOL_INFO": {
+   "weeks_total": 334,
+   "weeks_in_market": {
+    "bull": 198,
+    "bear": 134
+   },
+   "bull": {
+    "weeks": 200,
+    "portfolio": {
+     "total_return_pct": 16.9,
+     "max_drawdown_pct": 93.9,
+     "sharpe": 0.49,
+     "weeks": 200
+    },
+    "benchmark_median_random": {
+     "total_return_pct": 675.8,
+     "max_drawdown_pct": 84.2,
+     "sharpe": 0.95,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 0.0,
+    "pct_draws_beaten_return": 0.0,
+    "verdict": "FALSIFIED"
+   },
+   "bear": {
+    "weeks": 134,
+    "portfolio": {
+     "total_return_pct": -97.0,
+     "max_drawdown_pct": 97.1,
+     "sharpe": -1.22,
+     "weeks": 134
+    },
+    "benchmark_median_random": {
+     "total_return_pct": -85.0,
+     "max_drawdown_pct": 87.6,
+     "sharpe": -0.51,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 0.0,
+    "pct_draws_beaten_return": 0.0,
+    "verdict": "FALSIFIED"
+   },
+   "all": {
+    "weeks": 334,
+    "portfolio": {
+     "total_return_pct": -96.5,
+     "max_drawdown_pct": 99.8,
+     "sharpe": -0.14,
+     "weeks": 334
+    },
+    "benchmark_median_random": {
+     "total_return_pct": 19.2,
+     "max_drawdown_pct": 96.9,
+     "sharpe": 0.41,
+     "n_draws": 200
+    },
+    "pct_draws_beaten_sharpe": 0.0,
+    "pct_draws_beaten_return": 0.0,
+    "verdict": "FALSIFIED"
+   }
+  },
+  "verdict": {
+   "H-MARI-L-066": "FALSIFIED"
+  }
+ }
+}
