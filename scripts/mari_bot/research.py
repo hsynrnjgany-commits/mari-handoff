@@ -1541,7 +1541,7 @@ def run_ideas18_research(out_dir: str = "research_out") -> dict:
         bars = fetch_history(sym, by_window[0] - 200 * DAY_MS, end, interval="1d")
         bn[sym] = quality_check(bars, interval_ms=DAY_MS)["clean"]
     res = run_ideas18(cb, windows, end, bybit=by, binance=bn, bybit_window=by_window)
-    report = {"registered_before_results": True, "registered_at": "2026-11-06T03:00Z",
+    report = {"registered_before_results": True, "registered_at": "2026-11-06T02:50Z",
               "hypotheses": IDEA18_HYPOTHESES, "sources": sources,
               "period": {"held_out_BTC": "2015-07-01 تا 2018-06-01", "held_out_ETH": "2016-11-01 تا 2018-06-01",
                          "bybit_info": f"2022-01-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
