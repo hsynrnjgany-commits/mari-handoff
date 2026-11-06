@@ -1,0 +1,186 @@
+{
+ "method": "Deflated Sharpe Ratio — Bailey و López de Prado (۲۰۱۴)",
+ "why": "با ۶۰+ فرضیهٔ آزموده‌شده، «بهترین» نتیجه حتی روی دادهٔ تصادفی هم شارپ بالا نشان می‌دهد.",
+ "n_trials_assumed": 64,
+ "period": {
+  "from": "2018-06-01",
+  "to": "2026-11-06"
+ },
+ "note": "پراکندگی شارپِ آزمون‌ها ثبت نشده بود؛ به‌جای یک عدد، چهار فرض گزارش می‌شود.",
+ "results": {
+  "T-006 (BTC بالای SMA150)": {
+   "backtest": {
+    "total_return_pct": 1986.3,
+    "max_drawdown_pct": 45.05,
+    "sharpe": 1.05,
+    "trades": 65
+   },
+   "sensitivity": {
+    "sd_trial_sharpes=0.02": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.02,
+     "sharpe_annual": 1.055,
+     "skew": 0.647,
+     "kurtosis": 12.823,
+     "threshold_sharpe_annual": 0.905,
+     "psr_vs_zero": 0.999,
+     "dsr": 0.6698,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.04": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.04,
+     "sharpe_annual": 1.055,
+     "skew": 0.647,
+     "kurtosis": 12.823,
+     "threshold_sharpe_annual": 1.811,
+     "psr_vs_zero": 0.999,
+     "dsr": 0.013,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.06": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.06,
+     "sharpe_annual": 1.055,
+     "skew": 0.647,
+     "kurtosis": 12.823,
+     "threshold_sharpe_annual": 2.716,
+     "psr_vs_zero": 0.999,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.08": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.08,
+     "sharpe_annual": 1.055,
+     "skew": 0.647,
+     "kurtosis": 12.823,
+     "threshold_sharpe_annual": 3.621,
+     "psr_vs_zero": 0.999,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    }
+   }
+  },
+  "C-007 (لاک‌پشت ۵۵/۲۰)": {
+   "backtest": {
+    "total_return_pct": 816.48,
+    "max_drawdown_pct": 42.05,
+    "sharpe": 0.87,
+    "trades": 44
+   },
+   "sensitivity": {
+    "sd_trial_sharpes=0.02": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.02,
+     "sharpe_annual": 0.874,
+     "skew": 0.769,
+     "kurtosis": 16.596,
+     "threshold_sharpe_annual": 0.905,
+     "psr_vs_zero": 0.995,
+     "dsr": 0.4632,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.04": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.04,
+     "sharpe_annual": 0.874,
+     "skew": 0.769,
+     "kurtosis": 16.596,
+     "threshold_sharpe_annual": 1.811,
+     "psr_vs_zero": 0.995,
+     "dsr": 0.0029,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.06": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.06,
+     "sharpe_annual": 0.874,
+     "skew": 0.769,
+     "kurtosis": 16.596,
+     "threshold_sharpe_annual": 2.716,
+     "psr_vs_zero": 0.995,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.08": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.08,
+     "sharpe_annual": 0.874,
+     "skew": 0.769,
+     "kurtosis": 16.596,
+     "threshold_sharpe_annual": 3.621,
+     "psr_vs_zero": 0.995,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    }
+   }
+  },
+  "BTC_BUY_HOLD (مرجع)": {
+   "backtest": {
+    "total_return_pct": 894.42,
+    "max_drawdown_pct": 76.63,
+    "sharpe": 0.76,
+    "trades": 1
+   },
+   "sensitivity": {
+    "sd_trial_sharpes=0.02": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.02,
+     "sharpe_annual": 0.755,
+     "skew": -0.358,
+     "kurtosis": 13.829,
+     "threshold_sharpe_annual": 0.905,
+     "psr_vs_zero": 0.9851,
+     "dsr": 0.3328,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.04": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.04,
+     "sharpe_annual": 0.755,
+     "skew": -0.358,
+     "kurtosis": 13.829,
+     "threshold_sharpe_annual": 1.811,
+     "psr_vs_zero": 0.9851,
+     "dsr": 0.0012,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.06": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.06,
+     "sharpe_annual": 0.755,
+     "skew": -0.358,
+     "kurtosis": 13.829,
+     "threshold_sharpe_annual": 2.716,
+     "psr_vs_zero": 0.9851,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    },
+    "sd_trial_sharpes=0.08": {
+     "n_obs": 3079,
+     "n_trials": 64,
+     "sd_of_trial_sharpes_per_period": 0.08,
+     "sharpe_annual": 0.755,
+     "skew": -0.358,
+     "kurtosis": 13.829,
+     "threshold_sharpe_annual": 3.621,
+     "psr_vs_zero": 0.9851,
+     "dsr": 0.0,
+     "verdict": "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING"
+    }
+   }
+  }
+ }
+}
