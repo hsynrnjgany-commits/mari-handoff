@@ -165,6 +165,10 @@ jobs:
             python -m mari_bot funding --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
             exit 0
           fi
+          if [ "${{ inputs.kind }}" = "dsr" ]; then
+            python -m mari_bot dsr --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "ict" ]; then
             python -m mari_bot ict --start "${{ inputs.start_date || '2018-06-01' }}" --out "$RUN_DIR"
             exit 0

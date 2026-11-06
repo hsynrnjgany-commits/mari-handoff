@@ -775,6 +775,43 @@ class TestFundingFallbackSources(unittest.TestCase):
         self.assertTrue(rows)
 
 
+class TestDeflatedSharpe(unittest.TestCase):
+    def test_threshold_grows_with_trials(self):
+        from mari_bot.dsr import expected_max_sharpe
+        a, b = expected_max_sharpe(10, 0.04), expected_max_sharpe(1000, 0.04)
+        self.assertGreater(b, a)
+        self.assertEqual(expected_max_sharpe(1, 0.04), 0.0)
+
+    def test_psr_monotone_and_bounded(self):
+        from mari_bot.dsr import psr
+        lo = psr(0.02, 1000, 0.0, 3.0)
+        hi = psr(0.08, 1000, 0.0, 3.0)
+        self.assertLess(lo, hi)
+        self.assertTrue(0.0 <= lo <= 1.0 and 0.0 <= hi <= 1.0)
+        self.assertGreater(psr(0.05, 2000, 0.0, 3.0), psr(0.05, 200, 0.0, 3.0))   # دادهٔ بیشتر، اطمینان بیشتر
+
+    def test_many_trials_can_kill_a_real_looking_edge(self):
+        import random
+
+        from mari_bot.dsr import deflated_sharpe, verdict
+        rnd = random.Random(3)
+        rets = [rnd.gauss(0.0012, 0.02) for _ in range(1500)]      # شارپ سالانهٔ ~۱٫۱
+        one = deflated_sharpe(rets, 1, 0.04)
+        many = deflated_sharpe(rets, 5000, 0.04)
+        self.assertGreater(one["dsr"], many["dsr"])
+        self.assertEqual(verdict(1.0), "SIGNIFICANT_AFTER_MULTIPLE_TESTING")
+        self.assertEqual(verdict(0.5), "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING")
+
+    def test_pure_noise_is_not_significant(self):
+        import random
+
+        from mari_bot.dsr import deflated_sharpe, verdict
+        rnd = random.Random(11)
+        rets = [rnd.gauss(0.0, 0.02) for _ in range(1500)]
+        d = deflated_sharpe(rets, 64, 0.04)
+        self.assertEqual(verdict(d["dsr"]), "NOT_SIGNIFICANT_AFTER_MULTIPLE_TESTING")
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

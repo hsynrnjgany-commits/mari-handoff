@@ -280,6 +280,13 @@ def cmd_ict(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_dsr(a):
+    from .research import run_dsr_audit
+    r = run_dsr_audit(start=a.start, n_trials=a.trials, out_dir=a.out)
+    print(json.dumps({k: v["sensitivity"]["sd_trial_sharpes=0.04"] for k, v in r["results"].items()},
+                     ensure_ascii=False, indent=2))
+
+
 def cmd_verify(a):
     from .ledger import verify_chain
     print(json.dumps(verify_chain(a.path), ensure_ascii=False))
@@ -431,6 +438,11 @@ def main(argv=None):
     nr.add_argument("--dir", required=True)
     nr.add_argument("--status", default="success")
     nr.set_defaults(fn=cmd_notify_research)
+    ds = sub.add_parser("dsr", help="شارپ تعدیل‌شده برای روش‌های قبول‌شده (تصحیح چندآزمونی)")
+    ds.add_argument("--start", default="2018-06-01")
+    ds.add_argument("--trials", type=int, default=64)
+    ds.add_argument("--out", default="research_out")
+    ds.set_defaults(fn=cmd_dsr)
     v = sub.add_parser("verify-ledger")
     v.add_argument("path")
     v.set_defaults(fn=cmd_verify)

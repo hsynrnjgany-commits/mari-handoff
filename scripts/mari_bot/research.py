@@ -1588,3 +1588,63 @@ def run_p044_research(out_dir: str = "research_out") -> dict:
     with open(os.path.join(out_dir, "p044_report_fa.md"), "w", encoding="utf-8") as fh:
         fh.write("\n".join(md) + "\n")
     return report
+
+
+def run_dsr_audit(start: str = "2018-06-01", n_trials: int = 64, out_dir: str = "research_out") -> dict:
+    """شارپ تعدیل‌شده برای روش‌های قبول‌شده: آیا لبه پس از تصحیح چندآزمونی می‌ماند؟
+
+    سری بازده روزانهٔ هر روش از نو ساخته می‌شود (تصمیم روی بستهٔ t، اجرا روی بستهٔ t+1).
+    پراکندگی شارپ آزمون‌ها ناشناخته است، پس DSR برای چند مقدار گزارش می‌شود (تحلیل حساسیت).
+    """
+    from .classics import hold_btc, run_weights, turtle
+    from .dsr import deflated_sharpe, verdict
+    from .macro import t006_fn
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    bars = fetch_history("BTCUSDT", start_ms - 260 * DAY_MS, end, interval="1d")
+    daily = {"BTCUSDT": quality_check(bars, interval_ms=DAY_MS)["clean"]}
+    strategies = {"T-006 (BTC بالای SMA150)": t006_fn,
+                  "C-007 (لاک‌پشت ۵۵/۲۰)": turtle,
+                  "BTC_BUY_HOLD (مرجع)": hold_btc}
+    out = {}
+    for name, fn in strategies.items():
+        st, curve, _ = run_weights(daily, ["BTCUSDT"], start_ms, end, fn)
+        rets = [curve[i] / curve[i - 1] - 1 for i in range(1, len(curve)) if curve[i - 1] > 0]
+        row = {"backtest": {k: st.get(k) for k in ("total_return_pct", "max_drawdown_pct", "sharpe", "trades")},
+               "sensitivity": {}}
+        for sd in (0.02, 0.04, 0.06, 0.08):      # پراکندگی شارپ روزانهٔ آزمون‌ها (فرض‌های محافظه‌کارانه تا سخت‌گیرانه)
+            d = deflated_sharpe(rets, n_trials, sd)
+            d["verdict"] = verdict(d["dsr"])
+            row["sensitivity"][f"sd_trial_sharpes={sd}"] = d
+        out[name] = row
+    report = {
+        "method": "Deflated Sharpe Ratio — Bailey و López de Prado (۲۰۱۴)",
+        "why": "با ۶۰+ فرضیهٔ آزموده‌شده، «بهترین» نتیجه حتی روی دادهٔ تصادفی هم شارپ بالا نشان می‌دهد.",
+        "n_trials_assumed": n_trials,
+        "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+        "note": "پراکندگی شارپِ آزمون‌ها ثبت نشده بود؛ به‌جای یک عدد، چهار فرض گزارش می‌شود.",
+        "results": out,
+    }
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "dsr_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    md = ["# شارپ تعدیل‌شده: آیا لبه پس از ۶۰+ آزمون می‌ماند؟", "",
+          f"- روش: {report['method']}", f"- دوره: {start} تا {report['period']['to']}",
+          f"- تعداد آزمون فرض‌شده: {n_trials}", f"- {report['note']}", "",
+          "| روش | شارپ سالانه | چولگی | کشیدگی | آستانهٔ شانس (sd=۰٫۰۴) | DSR (sd=۰٫۰۴) | حکم |",
+          "|---|---|---|---|---|---|---|"]
+    for name, row in out.items():
+        d = row["sensitivity"]["sd_trial_sharpes=0.04"]
+        ok = "✅ معنادار" if d["verdict"].startswith("SIGNIFICANT") else "❌ معنادار نیست"
+        md.append(f"| {name} | {d['sharpe_annual']} | {d['skew']} | {d['kurtosis']} | "
+                  f"{d['threshold_sharpe_annual']} | {d['dsr']} | {ok} |")
+    md += ["", "## حساسیت به پراکندگی شارپ آزمون‌ها", "", "| روش | sd=۰٫۰۲ | sd=۰٫۰۴ | sd=۰٫۰۶ | sd=۰٫۰۸ |",
+           "|---|---|---|---|---|"]
+    for name, row in out.items():
+        cells = " | ".join(str(row["sensitivity"][f"sd_trial_sharpes={sd}"]["dsr"]) for sd in (0.02, 0.04, 0.06, 0.08))
+        md.append(f"| {name} | {cells} |")
+    md += ["", "DSR یعنی احتمال اینکه لبه واقعی باشد و صرفاً از «بهترین‌چینی میان ده‌ها آزمون» نیامده باشد.",
+           "قاعدهٔ متعارف: DSR ≥ ۰٫۹۵ لازم است.", "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "dsr_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
