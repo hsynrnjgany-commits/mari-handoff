@@ -24,6 +24,10 @@ FUNDING_HYPOTHESES = {
     "H-MARI-F-018": "BTC بالای SMA150 و نبودِ شلوغی خرید؛ وگرنه نقد. باید شارپ T-006 را بزند و افتش بدتر نباشد.",
 }
 
+OKX = "https://www.okx.com"
+GATE = "https://api.gateio.ws"
+KUCOIN_F = "https://api-futures.kucoin.com"
+BITGET = "https://api.bitget.com"
 BINANCE_FAPI = "https://fapi.binance.com"
 BYBIT = "https://api.bybit.com"
 BITMEX = "https://www.bitmex.com"
@@ -32,7 +36,79 @@ _SYMS = {
     "binance": {"BTCUSDT": "BTCUSDT", "ETHUSDT": "ETHUSDT"},
     "bybit": {"BTCUSDT": "BTCUSDT", "ETHUSDT": "ETHUSDT"},
     "bitmex": {"BTCUSDT": "XBTUSD", "ETHUSDT": "ETHUSD"},
+    "okx": {"BTCUSDT": "BTC-USDT-SWAP", "ETHUSDT": "ETH-USDT-SWAP"},
+    "gate": {"BTCUSDT": "BTC_USDT", "ETHUSDT": "ETH_USDT"},
+    "kucoin": {"BTCUSDT": "XBTUSDTM", "ETHUSDT": "ETHUSDTM"},
+    "bitget": {"BTCUSDT": "BTCUSDT", "ETHUSDT": "ETHUSDT"},
 }
+
+
+def _okx(sym, start_ms, end_ms):
+    """صفحه‌بندی رو به عقب با «after» (قدیمی‌تر از این زمان)."""
+    out, cursor, guard = [], end_ms, 0
+    while guard < 60:
+        guard += 1
+        d = http_get_json("/api/v5/public/funding-rate-history",
+                          {"instId": sym, "after": cursor, "limit": 100}, base=OKX, retries=3, timeout=30)
+        rows = (d or {}).get("data") or []
+        if not rows:
+            break
+        got = [(int(x["fundingTime"]), float(x["fundingRate"])) for x in rows]
+        out += [r for r in got if start_ms <= r[0] <= end_ms]
+        oldest = min(t for t, _ in got)
+        if oldest <= start_ms or oldest >= cursor:
+            break
+        cursor = oldest
+    return out
+
+
+def _gate(sym, start_ms, end_ms):
+    """gate فقط آخرین N رکورد می‌دهد (بدون بازهٔ زمانی)؛ برای «تازه» کافی است."""
+    d = http_get_json("/api/v4/futures/usdt/funding_rate", {"contract": sym, "limit": 1000},
+                      base=GATE, retries=3, timeout=30)
+    out = []
+    for x in d or []:
+        t = int(x["t"]) * 1000
+        if start_ms <= t <= end_ms:
+            out.append((t, float(x["r"])))
+    return out
+
+
+def _kucoin(sym, start_ms, end_ms):
+    out, cur, guard = [], start_ms, 0
+    while cur < end_ms and guard < 120:
+        guard += 1
+        end = min(cur + 100 * 86_400_000, end_ms)
+        d = http_get_json("/api/v1/contract/funding-rates", {"symbol": sym, "from": cur, "to": end},
+                          base=KUCOIN_F, retries=3, timeout=30)
+        rows = (d or {}).get("data") or []
+        if not rows:
+            break
+        out += [(int(x["timepoint"]), float(x["fundingRate"])) for x in rows]
+        cur = end + 1
+    return out
+
+
+def _bitget(sym, start_ms, end_ms):
+    out, page, guard, seen = [], 1, 0, set()
+    while guard < 60:
+        guard += 1
+        d = http_get_json("/api/v2/mix/market/history-fund-rate",
+                          {"symbol": sym, "productType": "usdt-futures", "pageNo": page, "pageSize": 100},
+                          base=BITGET, retries=3, timeout=30)
+        rows = (d or {}).get("data") or []
+        if not rows:
+            break
+        got = [(int(x["fundingTime"]), float(x["fundingRate"])) for x in rows]
+        fresh = [r for r in got if r[0] not in seen]
+        if not fresh:                       # صفحهٔ تکراری: پایان
+            break
+        seen.update(t for t, _ in got)
+        out += [r for r in fresh if start_ms <= r[0] <= end_ms]
+        if min(t for t, _ in got) <= start_ms:
+            break
+        page += 1
+    return out
 
 
 def _binance(sym, start_ms, end_ms):
@@ -116,7 +192,9 @@ def _archive(sym, start_ms, end_ms):
 
 
 _SYMS["binance_archive"] = {"BTCUSDT": "BTCUSDT", "ETHUSDT": "ETHUSDT"}
-_FETCHERS = (("binance", _binance), ("binance_archive", _archive), ("bybit", _bybit), ("bitmex", _bitmex))
+# ترتیب: ارزان‌ترین و کامل‌ترین اول؛ سپس جایگزین‌هایی که از سرور ابری در دسترس‌اند.
+_FETCHERS = (("binance", _binance), ("binance_archive", _archive), ("bybit", _bybit), ("bitmex", _bitmex),
+             ("okx", _okx), ("bitget", _bitget), ("kucoin", _kucoin), ("gate", _gate))
 
 
 def fetch_funding(sym: str, start_ms: int, end_ms: int, need_from_ms: int) -> tuple[str, list, dict]:

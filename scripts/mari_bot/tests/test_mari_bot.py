@@ -725,6 +725,56 @@ class TestSavingsPlan(unittest.TestCase):
             self.assertEqual(sp.s["units"], 0.0)
 
 
+class TestFundingFallbackSources(unittest.TestCase):
+    """پارسر هر منبع جایگزین با پاسخ نمونهٔ مستندشدهٔ همان صرافی."""
+
+    def test_parsers(self):
+        from mari_bot import funding as F
+        H = 3_600_000
+        t0 = 1_700_000_000_000
+        cases = {
+            "okx": ({"data": [{"fundingRate": "0.0001", "fundingTime": str(t0)},
+                              {"fundingRate": "-0.0002", "fundingTime": str(t0 - 8 * H)}]}, F._okx),
+            "gate": ([{"t": t0 // 1000, "r": "0.0001"}, {"t": (t0 - 8 * H) // 1000, "r": "-0.0002"}], F._gate),
+            "kucoin": ({"data": [{"timepoint": t0, "fundingRate": 0.0001},
+                                 {"timepoint": t0 - 8 * H, "fundingRate": -0.0002}]}, F._kucoin),
+            "bitget": ({"data": [{"fundingTime": str(t0), "fundingRate": "0.0001"},
+                                 {"fundingTime": str(t0 - 8 * H), "fundingRate": "-0.0002"}]}, F._bitget),
+        }
+        for name, (payload, fn) in cases.items():
+            once = [payload]                      # صفحهٔ دوم خالی: پایان صفحه‌بندی
+
+            def one(*a, _q=once, **k):
+                return _q.pop(0) if _q else ({"data": []} if name != "gate" else [])
+            with mock.patch.object(F, "http_get_json", one):
+                rows = fn(F._SYMS[name]["BTCUSDT"], t0 - 30 * H, t0)
+            self.assertEqual(sorted(rows), [(t0 - 8 * H, -0.0002), (t0, 0.0001)], name)
+
+    def test_every_fetcher_has_symbols_and_allowed_host(self):
+        from mari_bot import funding as F
+        from mari_bot.data import _ALLOWED
+        for name, _ in F._FETCHERS:
+            self.assertIn(name, F._SYMS, name)
+        for base in (F.OKX, F.GATE, F.KUCOIN_F, F.BITGET):
+            self.assertIn(base, _ALLOWED, base)
+
+    def test_fetch_recent_falls_through_to_working_source(self):
+        from mari_bot import funding as F
+        from mari_bot.funding_live import fetch_recent
+        D_ = 86_400_000
+        now = 10 * D_
+        good = [(d * D_ + h * 8 * 3_600_000, 0.0001) for d in range(10) for h in range(3)]
+
+        def boom(*a, **k):
+            raise D.DataError("HTTP_451")
+        fetchers = (("binance", boom), ("bybit", boom), ("okx", lambda *a, **k: good))
+        with mock.patch.object(F, "_FETCHERS", fetchers), \
+                mock.patch("mari_bot.funding_live._FETCHERS", fetchers):
+            name, rows = fetch_recent("BTCUSDT", now)
+        self.assertEqual(name, "okx")
+        self.assertTrue(rows)
+
+
 class TestLiveBoot(unittest.TestCase):
     def test_first_boot_does_not_replay_history(self):
         from mari_bot import live

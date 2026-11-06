@@ -30,6 +30,11 @@ _ALLOWED = {
     "https://fapi.binance.com": ("/fapi/v1/fundingRate",),
     "https://api.bybit.com": ("/v5/market/funding/history",),
     "https://www.bitmex.com": ("/api/v1/funding",),
+    # جایگزین‌هایی که از سرورهای ابری مسدود نیستند (بایننس 451، بای‌بیت و بیت‌مکس 403)
+    "https://www.okx.com": ("/api/v5/public/funding-rate-history",),
+    "https://api.gateio.ws": ("/api/v4/futures/usdt/funding_rate",),
+    "https://api-futures.kucoin.com": ("/api/v1/contract/funding-rates",),
+    "https://api.bitget.com": ("/api/v2/mix/market/history-fund-rate",),
     # شاخص ترس و طمع (alternative.me) — عمومی، بدون کلید، فقط برای پژوهش
     "https://api.alternative.me": ("/fng/",),
 }
