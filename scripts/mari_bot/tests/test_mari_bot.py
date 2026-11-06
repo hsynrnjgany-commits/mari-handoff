@@ -1714,5 +1714,89 @@ class ResearchNotifyVerdictCoverageTests(unittest.TestCase):
         self.assertFalse(out[:-1].endswith("کل"))      # مرز کلمه
 
 
+class RegimeToolTests(unittest.TestCase):
+    """ابزار دو-رژیمی: درس شمارهٔ ۹ — شارپ بهتر با بازده بدتر = کمتر در بازار بودن."""
+    DAY = 86_400_000
+
+    def _panel(self, n_syms=40, days=1200, seed=9, lucky=None):
+        """بازار با یک دورهٔ صعودی و یک دورهٔ نزولی برای BTC؛ lucky = نماد با بازده بهتر."""
+        import random
+        from mari_bot.ideas10 import Panel
+        rnd, d = random.Random(seed), {}
+        t0 = 1_514_764_800_000 + 4 * self.DAY            # دوشنبه
+        for j in range(n_syms):
+            c, bars = 10.0, []
+            for i in range(days):
+                mu = 0.004 if i < days // 2 else -0.004   # نیمهٔ اول صعودی، نیمهٔ دوم نزولی
+                if lucky and f"S{j}USDT" in lucky:
+                    mu += 0.004
+                c *= max(0.05, 1 + mu + rnd.gauss(0, 0.03))
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99,
+                             "c": c, "qv": 1e6})
+            d[f"S{j}USDT"] = bars
+        d["BTCUSDT"] = d.pop("S0USDT")
+        return Panel(d), t0
+
+    def test_regime_of_follows_btc_sma(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.regime import regime_of
+        up = [{"t": i * self.DAY, "h": 1.0, "c": 100.0 + i, "qv": 1.0} for i in range(400)]
+        p = Panel({"BTCUSDT": up})
+        self.assertEqual(regime_of(p, 300 * self.DAY), "bull")
+        down = [{"t": i * self.DAY, "h": 1.0, "c": 500.0 - i, "qv": 1.0} for i in range(400)]
+        self.assertEqual(regime_of(Panel({"BTCUSDT": down}), 300 * self.DAY), "bear")
+        self.assertIsNone(regime_of(p, 10 * self.DAY))   # تاریخچهٔ کم
+
+    def test_random_selection_does_not_beat_random_benchmark(self):
+        from mari_bot.regime import overall_verdict, run_two_regime
+        p, t0 = self._panel(seed=11)
+        import random
+        rnd = random.Random(1)
+        def pick(pp, t):
+            elig = [s for s in pp.sym if pp.i(s, t) is not None]
+            return elig, rnd.sample(elig, 5) if len(elig) >= 5 else []
+        r = run_two_regime(p, t0 + 200 * self.DAY, t0 + 1199 * self.DAY, pick, hold_weeks=4,
+                           n_draws=40, seed=5)
+        self.assertEqual(overall_verdict(r), "FALSIFIED")
+        self.assertGreater(r["bull"]["weeks"], 30)
+        self.assertGreater(r["bear"]["weeks"], 30)
+
+    def test_genuine_edge_is_detected_in_both_regimes(self):
+        from mari_bot.regime import overall_verdict, run_two_regime
+        lucky = {f"S{j}USDT" for j in range(30, 40)}
+        p, t0 = self._panel(seed=12, lucky=lucky)
+        def pick(pp, t):
+            elig = [s for s in pp.sym if pp.i(s, t) is not None]
+            return elig, [s for s in elig if s in lucky]
+        r = run_two_regime(p, t0 + 200 * self.DAY, t0 + 1199 * self.DAY, pick, hold_weeks=4,
+                           n_draws=40, seed=6)
+        self.assertEqual(overall_verdict(r), "SUPPORTED_IN_TEST_RANGE")
+
+    def test_sitting_in_cash_fails_because_benchmark_is_cash_matched(self):
+        """قاعده‌ای که در بازار نزولی نقد می‌ماند نباید «قبول» بگیرد — ایراد ideas14."""
+        from mari_bot.regime import run_two_regime
+        p, t0 = self._panel(seed=13)
+        from mari_bot.regime import regime_of
+        def pick(pp, t):
+            elig = [s for s in pp.sym if pp.i(s, t) is not None]
+            if regime_of(pp, t) == "bear":
+                return elig, []                          # در بازار نزولی نقد
+            return elig, elig[:5]
+        r = run_two_regime(p, t0 + 200 * self.DAY, t0 + 1199 * self.DAY, pick, hold_weeks=1,
+                           n_draws=40, seed=7)
+        # نقد ماندن دیگر «قبول» نمی‌گیرد: محک هم‌نقد است، پس برتریِ الکی از بین می‌رود
+        self.assertEqual(r["bear"]["verdict"], "FALSIFIED")
+        self.assertLess(r["weeks_in_market"]["bear"], 5)
+        self.assertLess(r["bear"]["pct_draws_beaten_return"], 95.0)
+
+    def test_overall_requires_both_regimes(self):
+        from mari_bot.regime import overall_verdict
+        ok, no = {"verdict": "SUPPORTED_IN_TEST_RANGE"}, {"verdict": "FALSIFIED"}
+        self.assertEqual(overall_verdict({"bull": ok, "bear": ok}), "SUPPORTED_IN_TEST_RANGE")
+        self.assertEqual(overall_verdict({"bull": ok, "bear": no}), "FALSIFIED")
+        self.assertEqual(overall_verdict({"bull": ok, "bear": {"verdict": "INSUFFICIENT_DATA"}}),
+                         "INSUFFICIENT_DATA")
+
+
 if __name__ == "__main__":
     unittest.main()
