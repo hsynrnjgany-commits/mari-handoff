@@ -73,6 +73,10 @@ jobs:
             python -m mari_bot oi --samples "$SAMPLES" $POOL --out "$RUN_DIR"
             exit 0
           fi
+          if [ "${{ inputs.kind }}" = "diag19" ]; then
+            python -m mari_bot diag19 --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
+            exit 0
+          fi
           if [ "${{ inputs.kind }}" = "ideas19" ]; then
             python -m mari_bot ideas19 --start "${{ inputs.start_date || '2020-06-01' }}" --out "$RUN_DIR"
             exit 0

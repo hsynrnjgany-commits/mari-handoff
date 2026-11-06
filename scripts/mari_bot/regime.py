@@ -54,7 +54,8 @@ def _step(p: Panel, syms, t_in, t_out, prev, cost=0.0015):
 
 
 def run_two_regime(p: Panel, start_ms: int, end_ms: int, select_fn, hold_weeks: int,
-                   n_draws: int = N_DRAWS, seed: int = 90, cost: float = 0.0015) -> dict:
+                   n_draws: int = N_DRAWS, seed: int = 90, cost: float = 0.0015,
+                   trace: bool = False) -> dict:
     """select_fn(p, t) → (فهرست واجدان شرایط، فهرست انتخاب‌شده‌ها) با دادهٔ تا بستهٔ t.
 
     سبد و n_draws سبد تصادفیِ هم‌نقد هم‌زمان ساخته می‌شوند؛ سپس بازده هفتگی هر کدام
@@ -65,7 +66,7 @@ def run_two_regime(p: Panel, start_ms: int, end_ms: int, select_fn, hold_weeks: 
     rnd = random.Random(seed)
     live, prev_p = {}, {}
     draws = [{"live": {}, "prev": {}, "rets": []} for _ in range(n_draws)]
-    weeks, regimes, port = [], [], []
+    weeks, regimes, port, cw = [], [], [], []
     in_market = {"bull": 0, "bear": 0}
     for k in range(len(mondays) - 1):
         t, t_in, t_out = mondays[k], mondays[k] + DAY_MS, mondays[k + 1] + DAY_MS
@@ -84,6 +85,9 @@ def run_two_regime(p: Panel, start_ms: int, end_ms: int, select_fn, hold_weeks: 
             in_market[reg] += 1
         r, prev_p = _step(p, held, t_in, t_out, prev_p, cost)
         port.append(r)
+        if trace and held:
+            for s_ in held:
+                cw.append((_ret(p, s_, t_in, t_out), s_, t, reg, len(held)))
         weeks.append(t)
         regimes.append(reg)
         n_new, n_hold = len(picked), len(held)
@@ -95,6 +99,21 @@ def run_two_regime(p: Panel, start_ms: int, end_ms: int, select_fn, hold_weeks: 
             rr, st["prev"] = _step(p, rh, t_in, t_out, st["prev"], cost)
             st["rets"].append(rr)
     out = {"weeks_total": len(port), "weeks_in_market": in_market}
+    if trace:
+        import time as _time
+        cw.sort(key=lambda x: -abs(x[0]))
+        out["trace"] = {
+            "coin_weeks": len(cw),
+            "n_over_100pct": sum(1 for x in cw if x[0] > 1.0),
+            "n_over_300pct": sum(1 for x in cw if x[0] > 3.0),
+            "n_below_minus90pct": sum(1 for x in cw if x[0] < -0.9),
+            "top": [{"ret_pct": round(x[0] * 100, 1), "sym": x[1],
+                     "week": _time.strftime("%Y-%m-%d", _time.gmtime(x[2] / 1000)),
+                     "regime": x[3], "n_held": x[4],
+                     "contrib_to_week_pct": round(x[0] / max(1, x[4]) * 100, 1)} for x in cw[:30]],
+            "weekly_port_top": sorted(((round(r_ * 100, 1), _time.strftime("%Y-%m-%d", _time.gmtime(w / 1000)), g)
+                                       for r_, w, g in zip(port, weeks, regimes)), reverse=True)[:15],
+        }
     for reg in ("bull", "bear", "all"):
         idx = [i for i, g in enumerate(regimes) if reg == "all" or g == reg]
         ps = curve_stats([port[i] for i in idx])

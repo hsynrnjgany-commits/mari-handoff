@@ -274,6 +274,12 @@ def cmd_ideas19(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_diag19(a):
+    from .research import run_diag19
+    r = run_diag19(start=a.start, out_dir=a.out)
+    print(json.dumps((r.get("trace") or {}).get("top", [])[:5], ensure_ascii=False, indent=1))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -447,6 +453,10 @@ def main(argv=None):
     i19.add_argument("--start", default="2020-06-01")
     i19.add_argument("--out", default="research_out")
     i19.set_defaults(fn=cmd_ideas19)
+    d19 = sub.add_parser("diag19", help="تشخیص منبع عدد ناممکن ideas19")
+    d19.add_argument("--start", default="2020-06-01")
+    d19.add_argument("--out", default="research_out")
+    d19.set_defaults(fn=cmd_diag19)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")

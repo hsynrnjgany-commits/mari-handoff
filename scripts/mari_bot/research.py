@@ -1642,6 +1642,60 @@ def run_ideas19_research(start: str = "2020-06-01", out_dir: str = "research_out
     return report
 
 
+def run_diag19(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """تشخیص (فرضیه نیست): کدام ارز و کدام هفته عدد ناممکن ideas19 را ساخت؟"""
+    from .ideas10 import Panel
+    from .ideas19 import HOLD_WEEKS, make_selector
+    from .regime import run_two_regime
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily = {}
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError:
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    p = Panel(daily)
+    res = run_two_regime(p, start_ms, end, make_selector("low"), HOLD_WEEKS, n_draws=5, seed=66, trace=True)
+    # پرش‌های روزانهٔ بزرگ در کل جهان (بدون توجه به انتخاب)
+    jumps = []
+    for s_, d in p.sym.items():
+        c, ts = d["c"], d["ts"]
+        for j in range(1, len(c)):
+            if c[j - 1] > 0 and (c[j] / c[j - 1] > 5 or c[j] / c[j - 1] < 0.2) and ts[j] >= start_ms:
+                jumps.append({"sym": s_, "day": datetime.fromtimestamp(ts[j] / 1000, timezone.utc).strftime("%Y-%m-%d"),
+                              "ratio": round(c[j] / c[j - 1], 3), "prev": c[j - 1], "close": c[j]})
+    jumps.sort(key=lambda x: -max(x["ratio"], 1 / x["ratio"]))
+    report = {"diagnostic": True, "not_a_hypothesis": True, "trace": res.get("trace"),
+              "daily_jumps_over_5x": {"count": len(jumps), "top": jumps[:40]}}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "diag19_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    tr = res.get("trace") or {}
+    md = ["# تشخیص ideas19: منبع عدد ناممکن (فرضیه نیست)", "",
+          f"- ارز-هفته‌های نگه‌داشته: {tr.get('coin_weeks')} — بالای +۱۰۰٪: {tr.get('n_over_100pct')}، "
+          f"بالای +۳۰۰٪: {tr.get('n_over_300pct')}، زیر منفی ۹۰٪: {tr.get('n_below_minus90pct')}",
+          f"- پرش‌های روزانهٔ بیش از ۵ برابر (یا کمتر از یک‌پنجم) در کل جهان از {start}: {len(jumps)}", "",
+          "## بزرگ‌ترین بازده‌های هفتگی ارزهای نگه‌داشته", "",
+          "| بازده ٪ | نماد | هفته | رژیم | تعداد در سبد | سهم در بازده هفته ٪ |", "|---|---|---|---|---|---|"]
+    for x in tr.get("top", [])[:25]:
+        md.append(f"| {x['ret_pct']} | {x['sym']} | {x['week']} | {x['regime']} | {x['n_held']} | {x['contrib_to_week_pct']} |")
+    md += ["", "## بهترین هفته‌های سبد", "", "| بازده سبد ٪ | هفته | رژیم |", "|---|---|---|"]
+    for r_, w, g in tr.get("weekly_port_top", []):
+        md.append(f"| {r_} | {w} | {g} |")
+    md += ["", "## بزرگ‌ترین پرش‌های روزانه در کل جهان", "", "| نماد | روز | نسبت | بستهٔ قبل | بسته |", "|---|---|---|---|---|"]
+    for x in jumps[:30]:
+        md.append(f"| {x['sym']} | {x['day']} | {x['ratio']} | {x['prev']} | {x['close']} |")
+    with open(os.path.join(out_dir, "diag19_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
