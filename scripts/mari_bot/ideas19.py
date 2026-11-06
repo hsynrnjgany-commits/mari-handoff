@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""ideas19 — ثبت پیشاپیش در RESEARCH_LOG (2026-11-06T03:40Z). فقط تمرینی، فقط خرید.
+"""ideas19 — ثبت پیشاپیش در RESEARCH_LOG (2026-11-06T02:55Z). فقط تمرینی، فقط خرید.
 
 H-MARI-L-066: ناهنجاری کم‌نوسانی («Revisiting the low-volatility anomaly in cryptocurrency
               markets»، Finance Research Letters 2026) — تنها مقالهٔ یافته‌شده که روی همین دادهٔ
