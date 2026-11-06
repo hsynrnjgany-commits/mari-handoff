@@ -1942,5 +1942,41 @@ class VenuesAndIdeas18Tests(unittest.TestCase):
         self.assertEqual(r2["verdict"]["H-MARI-T-065"], "FALSIFIED")    # ETH غایب → رد، نه قبول
 
 
+class Ideas19Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_log_vol_and_rebalance_weeks(self):
+        from mari_bot.ideas10 import Panel
+        from mari_bot.ideas19 import is_rebalance_week, log_vol
+        calm = [{"t": i * self.DAY, "h": 1.0, "c": 100.0 * (1.001 if i % 2 else 0.999), "qv": 1.0} for i in range(100)]
+        wild = [{"t": i * self.DAY, "h": 1.0, "c": 100.0 * (1.05 if i % 2 else 0.95), "qv": 1.0} for i in range(100)]
+        p = Panel({"A": calm, "B": wild})
+        self.assertLess(log_vol(p, "A", 99 * self.DAY), log_vol(p, "B", 99 * self.DAY))
+        self.assertIsNone(log_vol(p, "A", 10 * self.DAY))
+        weeks = [w * 7 * self.DAY for w in range(12)]
+        self.assertEqual(sum(is_rebalance_week(t) for t in weeks), 3)
+
+    def test_selector_picks_lowest_quintile_only_on_rebalance(self):
+        from mari_bot.ideas19 import make_selector, is_rebalance_week
+        import random
+        from mari_bot.ideas10 import Panel
+        rnd, d = random.Random(4), {}
+        t0 = 1_514_764_800_000 + 4 * self.DAY
+        for j in range(30):
+            c, bars, sd = 10.0, [], 0.005 + 0.002 * j
+            for i in range(500):
+                c *= 1 + rnd.gauss(0, sd)
+                bars.append({"t": t0 + i * self.DAY, "o": c, "h": c, "l": c, "c": c, "qv": 1e6})
+            d[f"S{j}USDT"] = bars
+        p = Panel(d)
+        ts = [t0 + i * self.DAY for i in range(400, 480)]
+        reb = next(t for t in ts if is_rebalance_week(t) and (t // self.DAY + 3) % 7 == 0)
+        non = next(t for t in ts if not is_rebalance_week(t) and (t // self.DAY + 3) % 7 == 0)
+        elig, picked = make_selector("low")(p, reb)
+        self.assertEqual(len(picked), 6)
+        self.assertTrue(all(int(s[1:-4]) < 12 for s in picked))       # کم‌نوسان‌ترین‌ها
+        self.assertEqual(make_selector("low")(p, non)[1], [])
+
+
 if __name__ == "__main__":
     unittest.main()
