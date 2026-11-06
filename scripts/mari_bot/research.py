@@ -1589,6 +1589,59 @@ def run_ideas18_research(out_dir: str = "research_out") -> dict:
     return report
 
 
+def run_ideas19_research(start: str = "2020-06-01", out_dir: str = "research_out") -> dict:
+    """ideas19: کم‌نوسانی (L-066) با آزمون دو-رژیمی و محک هم‌نقد."""
+    from .ideas19 import IDEA19_HYPOTHESES, run_ideas19
+    start_ms = int(datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    syms = pick_universe_all()
+    daily, failed = {}, []
+    for s in syms:
+        try:
+            bars = fetch_history(s, start_ms - 400 * DAY_MS, end, interval="1d")
+        except DataError as e:
+            failed.append(f"{s}:{e}")
+            continue
+        if bars:
+            q = quality_check(bars, interval_ms=DAY_MS)
+            if q["n"] > 0:
+                daily[s] = q["clean"]
+    res = run_ideas19(daily, start_ms, end)
+    report = {"registered_before_results": True, "registered_at": "2026-11-06T02:55Z",
+              "hypotheses": IDEA19_HYPOTHESES,
+              "period": {"from": start, "to": datetime.fromtimestamp(end / 1000, timezone.utc).strftime("%Y-%m-%d")},
+              "data": {"symbols_listed_incl_delisted": len(syms), "symbols_with_data": len(daily),
+                       "failed": len(failed)},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۶ می‌رسد.",
+                               "مقاله خرید-فروش است؛ اینجا فقط خرید (فروش استقراضی از ایران در دسترس نیست).",
+                               "مقاله دورهٔ نگه‌داری ۱ ماه دارد؛ اینجا ۴ هفته.",
+                               "مقاله اثر را در سال‌های اخیر قوی‌تر و در سال‌های اول ضعیف‌تر گزارش می‌کند."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas19_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    f = lambda c: f"{(c or {}).get('total_return_pct')} / {(c or {}).get('max_drawdown_pct')} / {(c or {}).get('sharpe')}"  # noqa: E731
+    md = ["# ideas19: کم‌نوسانی، آزمون دو-رژیمی", "",
+          f"- دوره: {start} تا {report['period']['to']}",
+          f"- نمادها: {len(syms)} فهرست‌شده (شامل حذف‌شده)، {len(daily)} با داده", ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA19_HYPOTHESES[hid]}")
+    md += ["", "| سبد | رژیم | هفته | سبد: بازده ٪ / افت ٪ / شارپ | میانهٔ تصادفی: بازده ٪ / افت ٪ / شارپ | بهتر از قرعه‌ها (شارپ / بازده) | حکم |",
+           "|---|---|---|---|---|---|---|"]
+    for name, key in (("کم‌نوسان (L-066)", "H-MARI-L-066"), ("پرنوسان (اطلاعی)", "HIGH_VOL_INFO")):
+        r = res[key]
+        for reg, fa in (("bull", "صعودی"), ("bear", "نزولی"), ("all", "کل")):
+            x = r.get(reg) or {}
+            md.append(f"| {name} | {fa} | {x.get('weeks')} | {f(x.get('portfolio'))} | "
+                      f"{f(x.get('benchmark_median_random'))} | {x.get('pct_draws_beaten_sharpe')}٪ / "
+                      f"{x.get('pct_draws_beaten_return')}٪ | {x.get('verdict')} |")
+    md += ["", f"- هفته‌های در بازار (کم‌نوسان): {res['H-MARI-L-066'].get('weeks_in_market')}",
+           "", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas19_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict

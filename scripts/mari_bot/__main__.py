@@ -268,6 +268,12 @@ def cmd_ideas18(a):
     print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
 
 
+def cmd_ideas19(a):
+    from .research import run_ideas19_research
+    r = run_ideas19_research(start=a.start, out_dir=a.out)
+    print(json.dumps(r["results"]["verdict"], ensure_ascii=False, indent=2))
+
+
 def cmd_oi(a):
     from .research import run_oi_research
     r = run_oi_research(samples=a.samples, out_dir=a.out, pooled=a.pooled)
@@ -437,6 +443,10 @@ def main(argv=None):
     i18 = sub.add_parser("ideas18", help="روش برنده روی دادهٔ کوین‌بیس پیش از بایننس + تکرار بای‌بیت")
     i18.add_argument("--out", default="research_out")
     i18.set_defaults(fn=cmd_ideas18)
+    i19 = sub.add_parser("ideas19", help="کم‌نوسانی با آزمون دو-رژیمی")
+    i19.add_argument("--start", default="2020-06-01")
+    i19.add_argument("--out", default="research_out")
+    i19.set_defaults(fn=cmd_ideas19)
     oi = sub.add_parser("oi", help="O-042: جهش OI پیش از ورود شکارچی ساعتی")
     oi.add_argument("--samples", required=True, help="مسیر trades.json نمونه‌ها، جداشده با کاما")
     oi.add_argument("--out", default="research_out")
