@@ -1668,9 +1668,10 @@ def run_diag19(start: str = "2020-06-01", out_dir: str = "research_out") -> dict
         c, ts = d["c"], d["ts"]
         for j in range(1, len(c)):
             if c[j - 1] > 0 and (c[j] / c[j - 1] > 5 or c[j] / c[j - 1] < 0.2) and ts[j] >= start_ms:
+                raw = c[j] / c[j - 1]
                 jumps.append({"sym": s_, "day": datetime.fromtimestamp(ts[j] / 1000, timezone.utc).strftime("%Y-%m-%d"),
-                              "ratio": round(c[j] / c[j - 1], 3), "prev": c[j - 1], "close": c[j]})
-    jumps.sort(key=lambda x: -max(x["ratio"], 1 / x["ratio"]))
+                              "ratio": round(raw, 6), "size": max(raw, 1 / raw), "prev": c[j - 1], "close": c[j]})
+    jumps.sort(key=lambda x: -x["size"])          # بزرگی پرش، بدون تقسیم بر عدد گردشده
     report = {"diagnostic": True, "not_a_hypothesis": True, "trace": res.get("trace"),
               "daily_jumps_over_5x": {"count": len(jumps), "top": jumps[:40]}}
     os.makedirs(out_dir, exist_ok=True)
