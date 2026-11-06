@@ -1848,5 +1848,62 @@ class RegimeToolTests(unittest.TestCase):
                          "INSUFFICIENT_DATA")
 
 
+class VenuesAndIdeas18Tests(unittest.TestCase):
+    DAY = 86_400_000
+
+    def test_parse_coinbase_reorders_fields(self):
+        from mari_bot.venues import parse_coinbase
+        rows = [[1438387200, 280.0, 290.0, 285.0, 284.0, 1000.0],   # time, low, high, open, close, vol
+                ["bad"]]
+        b = parse_coinbase(rows)
+        self.assertEqual(len(b), 1)
+        self.assertEqual((b[0]["o"], b[0]["h"], b[0]["l"], b[0]["c"]), (285.0, 290.0, 280.0, 284.0))
+        self.assertEqual(b[0]["t"] % self.DAY, 0)
+
+    def test_parse_bybit(self):
+        from mari_bot.venues import parse_bybit
+        js = {"retCode": 0, "result": {"list": [["1640995200000", "46000", "47000", "45500", "46500", "10", "1"]]}}
+        b = parse_bybit(js)
+        self.assertEqual((b[0]["o"], b[0]["h"], b[0]["l"], b[0]["c"]), (46000.0, 47000.0, 45500.0, 46500.0))
+        self.assertEqual(parse_bybit({}), [])
+
+    def test_compare_closes(self):
+        from mari_bot.venues import compare_closes
+        a = [{"t": i * self.DAY, "c": 100.0} for i in range(10)]
+        b = [{"t": i * self.DAY, "c": 100.1} for i in range(5, 15)]
+        r = compare_closes(a, b)
+        self.assertEqual(r["common_days"], 5)
+        self.assertAlmostEqual(r["median_abs_diff_pct"], 0.0999, places=3)
+
+    def test_fetchers_only_hit_allowlisted_paths(self):
+        from mari_bot.data import DataError, http_get_json
+        with self.assertRaises(DataError):
+            http_get_json("/orders", base="https://api.exchange.coinbase.com")
+        with self.assertRaises(DataError):
+            http_get_json("/v5/order/create", base="https://api.bybit.com")
+
+    def test_beats_hold_needs_both(self):
+        from mari_bot.ideas18 import beats_hold
+        self.assertTrue(beats_hold({"sharpe": 1.2, "max_drawdown_pct": 40}, {"sharpe": 0.8, "max_drawdown_pct": 80}))
+        self.assertFalse(beats_hold({"sharpe": 1.2, "max_drawdown_pct": 90}, {"sharpe": 0.8, "max_drawdown_pct": 80}))
+        self.assertFalse(beats_hold({"sharpe": 0.5, "max_drawdown_pct": 40}, {"sharpe": 0.8, "max_drawdown_pct": 80}))
+
+    def test_run_ideas18_trend_beats_hold_on_boom_bust(self):
+        from mari_bot.ideas18 import run_ideas18
+        t0 = 1_420_070_400_000                     # ۲۰۱۵-۰۱-۰۱
+        def series(n, peak):
+            out, c = [], 100.0
+            for i in range(n):
+                c *= 1.006 if i < peak else 0.990  # رشد بلند، سپس ریزش بلند
+                out.append({"t": t0 + i * self.DAY, "o": c, "h": c * 1.01, "l": c * 0.99, "c": c})
+            return out
+        cb = {"BTCUSDT": series(1300, 900), "ETHUSDT": series(1300, 900)}
+        w = {s: (t0 + 200 * self.DAY, t0 + 1299 * self.DAY) for s in cb}
+        r = run_ideas18(cb, w, t0 + 1299 * self.DAY)
+        self.assertEqual(r["verdict"]["H-MARI-T-065"], "SUPPORTED_IN_TEST_RANGE")
+        r2 = run_ideas18({"BTCUSDT": cb["BTCUSDT"]}, w, t0 + 1299 * self.DAY)
+        self.assertEqual(r2["verdict"]["H-MARI-T-065"], "FALSIFIED")    # ETH غایب → رد، نه قبول
+
+
 if __name__ == "__main__":
     unittest.main()

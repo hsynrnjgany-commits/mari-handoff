@@ -1510,6 +1510,85 @@ def run_ideas17_research(start: str = "2018-01-01", out_dir: str = "research_out
     return report
 
 
+def run_ideas18_research(out_dir: str = "research_out") -> dict:
+    """ideas18: T-006 روی دادهٔ کوین‌بیس پیش از بایننس (T-065)، و تکرار اطلاعی روی بای‌بیت."""
+    from .ideas18 import IDEA18_HYPOTHESES, run_ideas18
+    from .venues import fetch_bybit_daily, fetch_coinbase_daily
+    ms = lambda d: int(datetime.strptime(d, "%Y-%m-%d").replace(tzinfo=timezone.utc).timestamp() * 1000)  # noqa: E731
+    end = int(time.time() * 1000) // DAY_MS * DAY_MS
+    held_end = ms("2018-06-01")
+    windows = {"BTCUSDT": (ms("2015-07-01"), held_end), "ETHUSDT": (ms("2016-11-01"), held_end)}
+    cb, sources = {}, {}
+    for sym, fetch_from in (("BTCUSDT", "2015-01-01"), ("ETHUSDT", "2016-05-01")):
+        try:
+            bars = fetch_coinbase_daily(sym, ms(fetch_from), end)
+            cb[sym] = quality_check(bars, interval_ms=DAY_MS)["clean"] if bars else []
+            sources[f"coinbase_{sym}"] = {"bars": len(cb[sym]),
+                                          "first": datetime.fromtimestamp(cb[sym][0]["t"] / 1000, timezone.utc).strftime("%Y-%m-%d") if cb[sym] else None}
+        except DataError as e:
+            cb[sym] = []
+            sources[f"coinbase_{sym}"] = {"error": str(e)}
+    by_window = (ms("2022-01-01"), end)
+    by, bn = {}, {}
+    for sym in ("BTCUSDT", "ETHUSDT"):
+        try:
+            b = fetch_bybit_daily(sym, by_window[0] - 200 * DAY_MS, end)
+            by[sym] = quality_check(b, interval_ms=DAY_MS)["clean"] if b else []
+            sources[f"bybit_{sym}"] = {"bars": len(by[sym])}
+        except DataError as e:
+            by[sym] = []
+            sources[f"bybit_{sym}"] = {"error": str(e)}
+        bars = fetch_history(sym, by_window[0] - 200 * DAY_MS, end, interval="1d")
+        bn[sym] = quality_check(bars, interval_ms=DAY_MS)["clean"]
+    res = run_ideas18(cb, windows, end, bybit=by, binance=bn, bybit_window=by_window)
+    report = {"registered_before_results": True, "registered_at": "2026-11-06T03:00Z",
+              "hypotheses": IDEA18_HYPOTHESES, "sources": sources,
+              "period": {"held_out_BTC": "2015-07-01 تا 2018-06-01", "held_out_ETH": "2016-11-01 تا 2018-06-01",
+                         "bybit_info": f"2022-01-01 تا {datetime.fromtimestamp(end / 1000, timezone.utc).strftime('%Y-%m-%d')}"},
+              "known_biases": ["MULTIPLE_TESTS: شمار فرضیه‌ها به ۶۵ می‌رسد.",
+                               "کوین‌بیس به دلار آمریکا قیمت می‌دهد، نه تتر؛ برای روند بلندمدت اختلاف ناچیز است.",
+                               "دورهٔ دیده‌نشدهٔ ETH فقط حدود ۱۹ ماه است؛ توان آماری محدود.",
+                               "دورهٔ دیده‌نشده شامل حباب ۲۰۱۷ و ریزش ۲۰۱۸ است؛ یک چرخهٔ کامل، نه چند چرخه.",
+                               "بای‌بیت روی همان بازه‌ای که بایننس دیده شده اجرا می‌شود؛ پس فقط آزمون سلامت داده است، نه تکرار مستقل فرضیه."],
+              "results": res}
+    os.makedirs(out_dir, exist_ok=True)
+    with open(os.path.join(out_dir, "ideas18_report.json"), "w", encoding="utf-8") as fh:
+        json.dump(report, fh, ensure_ascii=False, indent=1)
+    f = lambda c: f"{c.get('total_return_pct')} / {c.get('max_drawdown_pct')} / {c.get('sharpe')} / {c.get('trades')}"  # noqa: E731
+    md = ["# ideas18: روش برنده روی داده‌ای که هرگز دیده نشده (کوین‌بیس ۲۰۱۵ تا ۲۰۱۸)", "",
+          "- منابع: " + "، ".join(f"{k}: {v}" for k, v in sources.items()), ""]
+    for hid, v in res["verdict"].items():
+        md.append(f"- {hid}: **{v}** — {IDEA18_HYPOTHESES[hid]}")
+    md += ["", "| دارایی | دوره | روش | بازده ٪ / افت ٪ / شارپ / معامله |", "|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        if x.get("insufficient"):
+            md.append(f"| {sym} | — | داده کافی نیست ({x.get('bars')} کندل) | — |")
+            continue
+        for per, key in (("**دیده‌نشده**", "held_out"), ("کل (اطلاعی)", "full_period_info")):
+            for name in ("BUY_HOLD", "T-006"):
+                md.append(f"| {sym} | {per} | {name} | {f(x[key][name])} |")
+    md += ["", "## استحکام طول میانگین روی دورهٔ دیده‌نشده (اطلاعی)", "",
+           "| دارایی | SMA100 | SMA125 | SMA150 | SMA175 | SMA200 |", "|---|---|---|---|---|---|"]
+    for sym, x in res["by_asset"].items():
+        if x.get("insufficient"):
+            continue
+        L = x["held_out"]["lengths_info"]
+        md.append(f"| {sym} شارپ | " + " | ".join(str(L[f'SMA{n}'].get('sharpe')) for n in (100, 125, 150, 175, 200)) + " |")
+    md += ["", "## بای‌بیت در برابر بایننس (فقط سلامت داده)", ""]
+    for sym, c in (res.get("bybit_replication_info") or {}).items():
+        if not c.get("available"):
+            md.append(f"- {sym}: در دسترس نبود ({c.get('bybit_bars')} کندل)")
+            continue
+        dc = c["data_check"]
+        md.append(f"- {sym}: {dc.get('common_days')} روز مشترک، میانهٔ اختلاف بسته {dc.get('median_abs_diff_pct')}٪، "
+                  f"بیشینه {dc.get('max_abs_diff_pct')}٪ — شارپ T-006 بای‌بیت {c['bybit_T006'].get('sharpe')} "
+                  f"در برابر بایننس {c['binance_T006'].get('sharpe')} — نتیجهٔ یکسان: {'بله' if c['same_conclusion'] else '**نه**'}")
+    md += ["", "> همه‌چیز تمرینی است — بدون سفارش واقعی"]
+    with open(os.path.join(out_dir, "ideas18_report_fa.md"), "w", encoding="utf-8") as fh:
+        fh.write("\n".join(md) + "\n")
+    return report
+
+
 def run_oi_research(samples: str, out_dir: str = "research_out", pooled: bool = False) -> dict:
     """O-042 (هر نمونه جدا) یا O-043 (ادغام نمونه‌های تازه): جهش OI پیش از ورود شکارچی ساعتی."""
     from .oi import OI_HYPOTHESES, SURGE, collect, combine, evaluate, pooled_verdict
